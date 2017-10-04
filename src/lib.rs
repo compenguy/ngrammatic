@@ -116,6 +116,7 @@ impl Pad {
 
 
 #[derive(Debug)]
+#[derive(Default)]
 pub struct Ngram {
     arity: usize,
     text: String,
@@ -167,8 +168,8 @@ impl Ngram {
     pub fn count_allgrams(&self, other: &Ngram) -> usize {
         // This is a shortcut that counts all grams between both ngrams
         // Then subtracts out one instance of the grams that are in common
-        self.text_padded.len() + other.text_padded.len() - (2 * self.arity) + 2 -
-        self.count_samegrams(other)
+        self.text_padded.chars().count() + other.text_padded.chars().count() -
+        (2 * self.arity) + 2 - self.count_samegrams(other)
     }
 
     pub fn count_samegrams(&self, other: &Ngram) -> usize {
@@ -206,9 +207,9 @@ impl Ngram {
         if self.arity > self.text_padded.len() {
             return;
         }
-        for i in 0..(self.text_padded.len() - self.arity + 1) {
-            let gram = self.text_padded[i..i + self.arity].to_owned();
-            let count = self.grams.entry(gram).or_insert(0);
+        let chars_padded: Vec<char> = self.text_padded.chars().collect();
+        for window in chars_padded.windows(self.arity) {
+            let count = self.grams.entry(window.iter().collect()).or_insert(0);
             *count += 1;
         }
     }
@@ -434,4 +435,14 @@ mod tests {
         assert_eq!(corpus.search("b", 0.5).len(), 2);
     }
 
+    #[test]
+    fn corpus_search_emoji() {
+        let mut corpus = Corpus::new(1, Pad::None, Pad::None);
+        corpus.add_text("\u{1f60f}\u{1f346}");
+        corpus.add_text("ba");
+        corpus.add_text("cd");
+
+        assert_eq!(corpus.search("ac", 0.3).len(), 2);
+        assert_eq!(corpus.search("\u{1f346}d", 0.3).len(), 2);
+    }
 }
