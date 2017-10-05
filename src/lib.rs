@@ -20,9 +20,9 @@ to lowest.
 # Examples
 
 ```rust
-use ngrammatic::{Corpus, Pad};
+use ngrammatic::{CorpusBuilder, Pad};
 
-let mut corpus = Corpus::new(2, Pad::Auto, Pad::Auto);
+let mut corpus = CorpusBuilder::new().arity(2).pad_full(Pad::Auto).finish();
 
 // Build up the list of known words
 corpus.add_text("pie");
@@ -113,7 +113,6 @@ impl Pad {
         }
     }
 }
-
 
 #[derive(Debug)]
 #[derive(Default)]
@@ -213,28 +212,56 @@ impl Ngram {
             *count += 1;
         }
     }
+}
 
-    pub fn new_padded(text: &str, arity: usize, pad_left: Pad, pad_right: Pad) -> Self {
-        // arity is clamped to be no less than 1
-        let arity = arity.max(1);
-        let mut ngram: Ngram = Ngram {
-            arity: arity,
+#[derive(Debug)]
+pub struct NgramBuilder {
+    arity: usize,
+    pad_left: Pad,
+    pad_right: Pad,
+    text: String,
+}
+
+impl NgramBuilder {
+    pub fn new(text: &str) -> Self {
+        NgramBuilder {
+            arity: 2,
+            pad_left: Pad::Auto,
+            pad_right: Pad::Auto,
             text: text.to_owned(),
-            text_padded: Pad::pad_text(text, pad_left, pad_right, arity - 1),
+        }
+    }
+
+    pub fn pad_left(mut self, pad_left: Pad) -> Self {
+        self.pad_left = pad_left;
+        self
+    }
+
+    pub fn pad_right(mut self, pad_right: Pad) -> Self {
+        self.pad_right = pad_right;
+        self
+    }
+
+    pub fn pad_full(mut self, pad: Pad) -> Self {
+        self.pad_left = pad.clone();
+        self.pad_right = pad;
+        self
+    }
+
+    pub fn arity(mut self, arity: usize) -> Self {
+        self.arity = arity.max(1);
+        self
+    }
+
+    pub fn finish(self) -> Ngram {
+        let mut ngram = Ngram {
+            arity: self.arity,
+            text: self.text.clone(),
+            text_padded: Pad::pad_text(&self.text, self.pad_left, self.pad_right, self.arity - 1),
             grams: HashMap::new(),
         };
         ngram.init();
         ngram
-    }
-
-    #[allow(dead_code)]
-    pub fn new_autopad(text: &str, arity: usize) -> Self {
-        Ngram::new_padded(text, arity, Pad::Auto, Pad::Auto)
-    }
-
-    #[allow(dead_code)]
-    pub fn new(text: &str, arity: usize) -> Self {
-        Ngram::new_padded(text, arity, Pad::None, Pad::None)
     }
 }
 
@@ -257,7 +284,11 @@ impl Corpus {
         let arity = self.arity;
         let pad_left = self.pad_left.clone();
         let pad_right = self.pad_right.clone();
-        self.add_ngram(Ngram::new_padded(text, arity, pad_left, pad_right));
+        self.add_ngram(NgramBuilder::new(text)
+            .arity(arity)
+            .pad_left(pad_left)
+            .pad_right(pad_right)
+            .finish());
     }
 
     #[allow(dead_code)]
@@ -281,10 +312,11 @@ impl Corpus {
 
     #[allow(dead_code)]
     pub fn search(&self, text: &str, threshold: f32) -> Vec<SearchResult> {
-        let item = Ngram::new_padded(text,
-                                     self.arity,
-                                     self.pad_left.clone(),
-                                     self.pad_right.clone());
+        let item = NgramBuilder::new(text)
+            .arity(self.arity)
+            .pad_left(self.pad_left.clone())
+            .pad_right(self.pad_right.clone())
+            .finish();
         let mut results: Vec<SearchResult> =
             self.ngrams.values().filter_map(|n| item.matches(n, threshold)).collect();
 
@@ -293,14 +325,71 @@ impl Corpus {
         results.truncate(10);
         results
     }
+}
 
-    pub fn new(arity: usize, pad_left: Pad, pad_right: Pad) -> Self {
-        Corpus {
-            arity: arity,
-            ngrams: HashMap::new(),
-            pad_left: pad_left.clone(),
-            pad_right: pad_right.clone(),
+#[derive(Debug)]
+pub struct CorpusBuilder {
+    arity: usize,
+    pad_left: Pad,
+    pad_right: Pad,
+    texts: Vec<String>,
+}
+
+impl Default for CorpusBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a> CorpusBuilder {
+    pub fn new() -> Self {
+        CorpusBuilder {
+            arity: 2,
+            pad_left: Pad::Auto,
+            pad_right: Pad::Auto,
+            texts: Vec::new(),
         }
+    }
+
+    pub fn pad_left(mut self, pad_left: Pad) -> Self {
+        self.pad_left = pad_left;
+        self
+    }
+
+    pub fn pad_right(mut self, pad_right: Pad) -> Self {
+        self.pad_right = pad_right;
+        self
+    }
+
+    pub fn pad_full(mut self, pad: Pad) -> Self {
+        self.pad_left = pad.clone();
+        self.pad_right = pad;
+        self
+    }
+
+    pub fn arity(mut self, arity: usize) -> Self {
+        self.arity = arity.max(1);
+        self
+    }
+
+    pub fn fill<'i, I>(mut self, iterable: I) -> Self
+        where I: IntoIterator<Item = &'i str>
+    {
+        self.texts.extend(iterable.into_iter().map(|x| x.to_owned()));
+        self
+    }
+
+    pub fn finish(self) -> Corpus {
+        let mut corpus = Corpus {
+            arity: self.arity,
+            ngrams: HashMap::new(),
+            pad_left: self.pad_left,
+            pad_right: self.pad_right,
+        };
+        for text in self.texts {
+            corpus.add_text(&text);
+        }
+        corpus
     }
 }
 
@@ -330,13 +419,17 @@ mod tests {
 
     #[test]
     fn arity_clamp_empty_string_nopad() {
-        let ngram = Ngram::new("", 1);
+        let ngram = NgramBuilder::new("").arity(1).pad_full(Pad::None).finish();
         assert!(ngram.is_empty());
     }
 
     #[test]
     fn arity_clamp_empty_string_padded() {
-        let ngram = Ngram::new_padded("", 2, Pad::Pad("--".to_owned()), Pad::Pad("++".to_owned()));
+        let ngram = NgramBuilder::new("")
+            .arity(2)
+            .pad_left(Pad::Pad("--".to_owned()))
+            .pad_right(Pad::Pad("++".to_owned()))
+            .finish();
         assert!(ngram.contains("--"));
         assert!(ngram.contains("-+"));
         assert!(ngram.contains("++"));
@@ -344,19 +437,23 @@ mod tests {
 
     #[test]
     fn empty_string_nopad() {
-        let ngram = Ngram::new("", 2);
+        let ngram = NgramBuilder::new("").arity(2).pad_full(Pad::None).finish();
         assert!(ngram.is_empty());
     }
 
     #[test]
     fn empty_string_autopad() {
-        let ngram = Ngram::new_autopad("", 2);
+        let ngram = NgramBuilder::new("").arity(2).finish();
         assert!(ngram.contains("  "));
     }
 
     #[test]
     fn empty_string_strpad() {
-        let ngram = Ngram::new_padded("", 2, Pad::Pad("--".to_owned()), Pad::Pad("++".to_owned()));
+        let ngram = NgramBuilder::new("")
+            .arity(2)
+            .pad_left(Pad::Pad("--".to_owned()))
+            .pad_right(Pad::Pad("++".to_owned()))
+            .finish();
         assert!(ngram.contains("--"));
         assert!(ngram.contains("-+"));
         assert!(ngram.contains("++"));
@@ -364,13 +461,13 @@ mod tests {
 
     #[test]
     fn short_string_nopad() {
-        let ngram = Ngram::new("ab", 2);
+        let ngram = NgramBuilder::new("ab").arity(2).pad_full(Pad::None).finish();
         assert!(ngram.contains("ab"));
     }
 
     #[test]
     fn short_string_autopad() {
-        let ngram = Ngram::new_autopad("ab", 2);
+        let ngram = NgramBuilder::new("ab").arity(2).finish();
         assert!(ngram.contains(" a"));
         assert!(ngram.contains("ab"));
         assert!(ngram.contains("b "));
@@ -378,10 +475,11 @@ mod tests {
 
     #[test]
     fn short_string_strpad() {
-        let ngram = Ngram::new_padded("ab",
-                                      2,
-                                      Pad::Pad("--".to_owned()),
-                                      Pad::Pad("++".to_owned()));
+        let ngram = NgramBuilder::new("ab")
+            .arity(2)
+            .pad_left(Pad::Pad("--".to_owned()))
+            .pad_right(Pad::Pad("++".to_owned()))
+            .finish();
         assert!(ngram.contains("--"));
         assert!(ngram.contains("-a"));
         assert!(ngram.contains("ab"));
@@ -400,23 +498,41 @@ mod tests {
 
     #[test]
     fn similarity_identical() {
-        let ngram0 = Ngram::new_autopad("ab", 2);
-        let ngram1 = Ngram::new_autopad("ab", 2);
+        let ngram0 = NgramBuilder::new("ab").arity(2).finish();
+        let ngram1 = NgramBuilder::new("ab").arity(2).finish();
         assert!(float_approx_eq(ngram0.similarity_to(&ngram1, 3.0), 1.0, None));
     }
 
     #[test]
     fn similarity_completelydifferent() {
-        let ngram0 = Ngram::new_autopad("ab", 2);
-        let ngram1 = Ngram::new_autopad("cd", 2);
+        let ngram0 = NgramBuilder::new("ab").arity(2).finish();
+        let ngram1 = NgramBuilder::new("cd").arity(2).finish();
         assert!(float_approx_eq(ngram0.similarity_to(&ngram1, 3.0), 0.0, None));
     }
 
     #[test]
+    fn corpus_add_text_before_setting_arity() {
+        let corpus = CorpusBuilder::new().fill(vec!["ab", "ba"]).finish();
+        println!("{:?}", corpus);
+    }
+
+    #[test]
+    fn corpus_set_arity_after_adding_text() {
+        let corpus = CorpusBuilder::new().arity(2).fill(vec!["ab", "ba"]).arity(3).finish();
+        println!("{:?}", corpus);
+    }
+
+    #[test]
+    fn corpus_set_padding_after_adding_text() {
+        let corpus =
+            CorpusBuilder::new().arity(2).fill(vec!["ab", "ba"]).pad_full(Pad::None).finish();
+        println!("{:?}", corpus);
+    }
+
+    #[test]
     fn corpus_add_multiple() {
-        let mut corpus = Corpus::new(2, Pad::Auto, Pad::Auto);
-        corpus.add_text("ab");
-        corpus.add_text("ba");
+        let corpus =
+            CorpusBuilder::new().arity(2).pad_full(Pad::Auto).fill(vec!["ab", "ba"]).finish();
         assert_eq!(corpus.is_empty(), false);
         assert_eq!(corpus.get_key("ab"), Some("ab".to_owned()));
         assert_eq!(corpus.get_key("ba"), Some("ba".to_owned()));
@@ -425,11 +541,8 @@ mod tests {
 
     #[test]
     fn corpus_search() {
-        let mut corpus = Corpus::new(1, Pad::None, Pad::None);
-        corpus.add_text("ab");
-        corpus.add_text("ba");
-        corpus.add_text("cd");
-
+        let corpus =
+            CorpusBuilder::new().arity(1).pad_full(Pad::None).fill(vec!["ab", "ba", "cd"]).finish();
         assert_eq!(corpus.search("ce", 0.3).len(), 1);
         assert_eq!(corpus.search("ec", 0.3).len(), 1);
         assert_eq!(corpus.search("b", 0.5).len(), 2);
@@ -437,10 +550,11 @@ mod tests {
 
     #[test]
     fn corpus_search_emoji() {
-        let mut corpus = Corpus::new(1, Pad::None, Pad::None);
-        corpus.add_text("\u{1f60f}\u{1f346}");
-        corpus.add_text("ba");
-        corpus.add_text("cd");
+        let corpus = CorpusBuilder::new()
+            .arity(1)
+            .pad_full(Pad::None)
+            .fill(vec!["\u{1f60f}\u{1f346}", "ba", "cd"])
+            .finish();
 
         assert_eq!(corpus.search("ac", 0.3).len(), 2);
         assert_eq!(corpus.search("\u{1f346}d", 0.3).len(), 2);
