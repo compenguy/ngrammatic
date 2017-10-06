@@ -115,6 +115,7 @@ impl Pad {
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 #[derive(Default)]
 pub struct Ngram {
     arity: usize,
@@ -266,6 +267,7 @@ impl NgramBuilder {
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Corpus {
     arity: usize,
     ngrams: HashMap<String, Ngram>,
