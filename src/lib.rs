@@ -94,6 +94,12 @@ pub enum Pad {
     Pad(String),
 }
 
+impl Default for Pad {
+    fn default() -> Self {
+        Pad::Auto
+    }
+}
+
 impl Pad {
     pub fn to_string(&self, autopad_width: usize) -> String {
         match *self {
@@ -216,6 +222,7 @@ impl Ngram {
 }
 
 #[derive(Debug)]
+#[derive(Default)]
 pub struct NgramBuilder {
     arity: usize,
     pad_left: Pad,
@@ -268,6 +275,7 @@ impl NgramBuilder {
 
 #[derive(Debug)]
 #[derive(Clone)]
+#[derive(Default)]
 pub struct Corpus {
     arity: usize,
     ngrams: HashMap<String, Ngram>,
