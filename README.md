@@ -25,9 +25,9 @@ ngrammatic = { git = 'https://github.com/compenguy/ngrammatic' }
 To do fuzzy matching, build up your corpus of valid symbols like this:
 
 ```rust
-use ngrammatic::{Corpus, Pad};
+use ngrammatic::{CorpusBuilder, Pad};
 
-let mut corpus = Corpus::new(2, Pad::Auto, Pad::Auto);
+let mut corpus = CorpusBuilder::new().arity(2).pad_full(Pad::Auto).finish();
 
 // Build up the list of known words
 corpus.add_text("pie");
@@ -56,7 +56,7 @@ if let Some(top_result) = corpus.search(word, 0.25).first() {
 ### `case_insensitive_ngrams` feature
 
 This crate has a feature, `case_insensitive_ngrams`, that can be enabled. It
-folds all ngrams down to a single case, make all searches case insensitive.
+folds all ngrams down to a single case, making all searches case insensitive.
 
 Do not rely on this feature, as its likely to be replaced by a general-purpose
 key-transformation closure in the future.
