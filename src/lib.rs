@@ -114,8 +114,7 @@ impl Pad {
             pad_left.to_string(autopad_width) + text.to_lowercase().as_ref() +
             pad_right.to_string(autopad_width).as_ref()
         } else {
-            pad_left.to_string(autopad_width) + text.as_ref() +
-            pad_right.to_string(autopad_width).as_ref()
+            pad_left.to_string(autopad_width) + text + pad_right.to_string(autopad_width).as_ref()
         }
     }
 }
