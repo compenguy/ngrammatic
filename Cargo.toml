@@ -16,7 +16,3 @@ name = "ngrammatic"
 
 [dependencies]
 
-[features]
-default = ["case_insensitive_ngrams"]
-
-case_insensitive_ngrams = []

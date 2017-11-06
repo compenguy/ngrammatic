@@ -22,7 +22,10 @@ to lowest.
 ```rust
 use ngrammatic::{CorpusBuilder, Pad};
 
-let mut corpus = CorpusBuilder::new().arity(2).pad_full(Pad::Auto).finish();
+let mut corpus = CorpusBuilder::new()
+    .arity(2)
+    .pad_full(Pad::Auto)
+    .finish();
 
 // Build up the list of known words
 corpus.add_text("pie");
@@ -110,12 +113,7 @@ impl Pad {
     }
 
     pub fn pad_text(text: &str, pad_left: Pad, pad_right: Pad, autopad_width: usize) -> String {
-        if cfg!(feature = "case_insensitive_ngrams") {
-            pad_left.to_string(autopad_width) + text.to_lowercase().as_ref() +
-            pad_right.to_string(autopad_width).as_ref()
-        } else {
-            pad_left.to_string(autopad_width) + text + pad_right.to_string(autopad_width).as_ref()
-        }
+        pad_left.to_string(autopad_width) + text + pad_right.to_string(autopad_width).as_ref()
     }
 }
 
@@ -272,14 +270,23 @@ impl NgramBuilder {
     }
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
-#[derive(Default)]
 pub struct Corpus {
     arity: usize,
-    ngrams: HashMap<String, Ngram>,
     pad_left: Pad,
     pad_right: Pad,
+    ngrams: HashMap<String, Ngram>,
+    key_trans: Box<Fn(&str) -> String>,
+}
+
+impl std::fmt::Debug for Corpus {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Corpus {{\n")?;
+        write!(f, "  arity: {:?},\n", self.arity)?;
+        write!(f, "  pad_left: {:?},\n", self.pad_left)?;
+        write!(f, "  pad_right: {:?},\n", self.pad_right)?;
+        write!(f, "  ngrams: {:?},\n", self.ngrams)?;
+        write!(f, "}}\n")
+    }
 }
 
 impl Corpus {
@@ -293,7 +300,8 @@ impl Corpus {
         let arity = self.arity;
         let pad_left = self.pad_left.clone();
         let pad_right = self.pad_right.clone();
-        self.add_ngram(NgramBuilder::new(text)
+        let new_key = &(self.key_trans)(text);
+        self.add_ngram(NgramBuilder::new(new_key)
             .arity(arity)
             .pad_left(pad_left)
             .pad_right(pad_right)
@@ -307,21 +315,19 @@ impl Corpus {
 
     #[allow(dead_code)]
     pub fn get_key(&self, text: &str) -> Option<String> {
-        if self.ngrams.contains_key(text) {
+        if self.ngrams.contains_key(&(self.key_trans)(text)) {
             Some(text.to_owned())
-        } else if cfg!(feature = "case_insensitive_ngrams") {
+        } else {
             self.ngrams
                 .values()
-                .find(|x| x.text.to_lowercase() == text.to_lowercase())
+                .find(|x| (self.key_trans)(&x.text) == (self.key_trans)(text))
                 .map(|x| x.text.clone())
-        } else {
-            None
         }
     }
 
     #[allow(dead_code)]
     pub fn search(&self, text: &str, threshold: f32) -> Vec<SearchResult> {
-        let item = NgramBuilder::new(text)
+        let item = NgramBuilder::new(&(self.key_trans)(text))
             .arity(self.arity)
             .pad_left(self.pad_left.clone())
             .pad_right(self.pad_right.clone())
@@ -336,12 +342,23 @@ impl Corpus {
     }
 }
 
-#[derive(Debug)]
 pub struct CorpusBuilder {
     arity: usize,
     pad_left: Pad,
     pad_right: Pad,
     texts: Vec<String>,
+    key_trans: Box<Fn(&str) -> String>,
+}
+
+impl std::fmt::Debug for CorpusBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "CorpusBuilder {{\n")?;
+        write!(f, "  arity: {:?},\n", self.arity)?;
+        write!(f, "  pad_left: {:?},\n", self.pad_left)?;
+        write!(f, "  pad_right: {:?},\n", self.pad_right)?;
+        write!(f, "  texts: {:?},\n", self.texts)?;
+        write!(f, "}}\n")
+    }
 }
 
 impl Default for CorpusBuilder {
@@ -350,12 +367,13 @@ impl Default for CorpusBuilder {
     }
 }
 
-impl<'a> CorpusBuilder {
+impl CorpusBuilder {
     pub fn new() -> Self {
         CorpusBuilder {
             arity: 2,
             pad_left: Pad::Auto,
             pad_right: Pad::Auto,
+            key_trans: Box::new(|x| x.into()),
             texts: Vec::new(),
         }
     }
@@ -381,11 +399,20 @@ impl<'a> CorpusBuilder {
         self
     }
 
-    pub fn fill<'i, I>(mut self, iterable: I) -> Self
-        where I: IntoIterator<Item = &'i str>
+    pub fn fill<'it, It>(mut self, iterable: It) -> Self
+        where It: IntoIterator<Item = &'it str>
     {
         self.texts.extend(iterable.into_iter().map(|x| x.to_owned()));
         self
+    }
+
+    pub fn set_key_trans(mut self, key_trans: Box<Fn(&str) -> String>) -> Self {
+        self.key_trans = key_trans;
+        self
+    }
+
+    pub fn set_case_insensitive(self) -> Self {
+        self.set_key_trans(Box::new(|x| x.to_lowercase()))
     }
 
     pub fn finish(self) -> Corpus {
@@ -394,6 +421,7 @@ impl<'a> CorpusBuilder {
             ngrams: HashMap::new(),
             pad_left: self.pad_left,
             pad_right: self.pad_right,
+            key_trans: self.key_trans,
         };
         for text in self.texts {
             corpus.add_text(&text);
@@ -554,6 +582,32 @@ mod tests {
             CorpusBuilder::new().arity(1).pad_full(Pad::None).fill(vec!["ab", "ba", "cd"]).finish();
         assert_eq!(corpus.search("ce", 0.3).len(), 1);
         assert_eq!(corpus.search("ec", 0.3).len(), 1);
+        assert_eq!(corpus.search("b", 0.5).len(), 2);
+    }
+
+    #[test]
+    fn corpus_case_insensitive_corpus_search() {
+        let corpus = CorpusBuilder::new()
+            .arity(1)
+            .pad_full(Pad::None)
+            .fill(vec!["Ab", "Ba", "Cd"])
+            .set_case_insensitive()
+            .finish();
+        assert_eq!(corpus.search("ce", 0.3).len(), 1);
+        assert_eq!(corpus.search("ec", 0.3).len(), 1);
+        assert_eq!(corpus.search("b", 0.5).len(), 2);
+    }
+
+    #[test]
+    fn corpus_case_insensitive_corpus_search_terms() {
+        let corpus = CorpusBuilder::new()
+            .arity(1)
+            .pad_full(Pad::None)
+            .fill(vec!["Ab", "Ba", "Cd"])
+            .set_case_insensitive()
+            .finish();
+        assert_eq!(corpus.search("cE", 0.3).len(), 1);
+        assert_eq!(corpus.search("eC", 0.3).len(), 1);
         assert_eq!(corpus.search("b", 0.5).len(), 2);
     }
 
