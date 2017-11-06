@@ -13,13 +13,13 @@ Not published yet.
 
 ### Installation
 
-This crate is not yet published on [crates.io](https://crates.io/crates/).
+This crate is published on [crates.io](https://crates.io/crates/).
 
 To use it, add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-ngrammatic = { git = 'https://github.com/compenguy/ngrammatic' }
+ngrammatic = "0.2.0"
 ```
 
 ### Usage
