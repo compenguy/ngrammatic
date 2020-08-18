@@ -431,7 +431,7 @@ pub struct Corpus {
     pad_left: Pad,
     pad_right: Pad,
     ngrams: HashMap<String, Ngram>,
-    key_trans: Box<dyn Fn(&str) -> String + Send>,
+    key_trans: Box<dyn Fn(&str) -> String + Send + Sync>,
 }
 
 impl std::fmt::Debug for Corpus {
@@ -562,7 +562,7 @@ pub struct CorpusBuilder {
     pad_left: Pad,
     pad_right: Pad,
     texts: Vec<String>,
-    key_trans: Box<dyn Fn(&str) -> String + Send>,
+    key_trans: Box<dyn Fn(&str) -> String + Send + Sync>,
 }
 
 impl std::fmt::Debug for CorpusBuilder {
@@ -667,7 +667,7 @@ impl CorpusBuilder {
     /// }
     /// # }
     /// ```
-    pub fn key_trans(mut self, key_trans: Box<dyn Fn(&str) -> String + Send>) -> Self {
+    pub fn key_trans(mut self, key_trans: Box<dyn Fn(&str) -> String + Send + Sync>) -> Self {
         self.key_trans = key_trans;
         self
     }
