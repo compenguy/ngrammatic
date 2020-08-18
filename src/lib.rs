@@ -50,8 +50,8 @@ assert_eq!(top_match.unwrap().text,String::from("tomato"));
 
 #![deny(missing_docs)]
 
-use std::collections::HashMap;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::f32;
 
 /// Holds a fuzzy match search result string, and its associated similarity
@@ -90,8 +90,7 @@ impl SearchResult {
 /// Having some sort of padding is especially important for small words
 /// Auto pad pre/appends `arity`-1 space chars
 /// [Read more about the effect of ngram padding](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0107510)
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Pad {
     /// No padding should be added before generating ngrams.
     None,
@@ -114,11 +113,9 @@ impl Pad {
     /// Render this `Pad` instance as a string
     pub(crate) fn to_string(&self, autopad_width: usize) -> String {
         match *self {
-            Pad::Auto => {
-                std::iter::repeat(" ")
-                    .take(autopad_width)
-                    .collect::<String>()
-            }
+            Pad::Auto => std::iter::repeat(" ")
+                .take(autopad_width)
+                .collect::<String>(),
             Pad::Pad(ref p) => p.to_string(),
             Pad::None => "".to_string(),
         }
@@ -137,9 +134,7 @@ impl Pad {
 
 /// Stores a "word", with all its n-grams. The "arity" member determines the
 /// value of "n" used in generating the n-grams.
-#[derive(Debug)]
-#[derive(Clone)]
-#[derive(Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Ngram {
     /// The "symbol size" for the ngrams
     pub arity: usize,
@@ -229,8 +224,8 @@ impl Ngram {
     pub(crate) fn count_allgrams(&self, other: &Ngram) -> usize {
         // This is a shortcut that counts all grams between both ngrams
         // Then subtracts out one instance of the grams that are in common
-        self.text_padded.chars().count() + other.text_padded.chars().count() -
-            (2 * self.arity) + 2 - self.count_samegrams(other)
+        self.text_padded.chars().count() + other.text_padded.chars().count() - (2 * self.arity) + 2
+            - self.count_samegrams(other)
     }
 
     /// Returns a count of grams that are common between this
@@ -305,8 +300,7 @@ impl Ngram {
 // We provide a builder for ngrams to ensure initialization operations are
 // performed in the correct order, without requiring an extensive parameter list
 // to a constructor method, and allowing default values by omission.
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct NgramBuilder {
     arity: usize,
     pad_left: Pad,
@@ -499,7 +493,6 @@ impl Corpus {
         );
     }
 
-
     /// If the corpus is empty.
     #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
@@ -541,7 +534,8 @@ impl Corpus {
             .pad_left(self.pad_left.clone())
             .pad_right(self.pad_right.clone())
             .finish();
-        let mut results: Vec<SearchResult> = self.ngrams
+        let mut results: Vec<SearchResult> = self
+            .ngrams
             .values()
             .filter_map(|n| item.matches(n, threshold))
             .collect();
@@ -644,9 +638,8 @@ impl CorpusBuilder {
     where
         It: IntoIterator<Item = &'it str>,
     {
-        self.texts.extend(
-            iterable.into_iter().map(|x| x.to_string()),
-        );
+        self.texts
+            .extend(iterable.into_iter().map(|x| x.to_string()));
         self
     }
 
@@ -706,8 +699,6 @@ impl CorpusBuilder {
         corpus
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
