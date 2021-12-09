@@ -1,6 +1,6 @@
 [package]
 name = "ngrammatic"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["Will Page <compenguy@gmail.com>"]
 description = "Character-oriented ngram generator and fuzzy matching library."
 homepage = "https://github.com/compenguy/ngrammatic"
