@@ -224,8 +224,13 @@ impl Ngram {
     pub(crate) fn count_allgrams(&self, other: &Ngram) -> usize {
         // This is a shortcut that counts all grams between both ngrams
         // Then subtracts out one instance of the grams that are in common
-        self.text_padded.chars().count() + other.text_padded.chars().count() - (2 * self.arity) + 2
-            - self.count_samegrams(other)
+        let self_length = self.text_padded.chars().count();
+        let other_length = other.text_padded.chars().count();
+        if self_length < self.arity || other_length < self.arity {
+            0  // if either ngram is too small, they can't share a common gram
+        } else {
+            self_length + other_length - (2 * self.arity) + 2 - self.count_samegrams(other)
+        }
     }
 
     /// Returns a count of grams that are common between this
@@ -913,5 +918,27 @@ mod tests {
 
         assert_eq!(corpus.search("ac", 0.3).len(), 2);
         assert_eq!(corpus.search("\u{1f346}d", 0.3).len(), 2);
+    }
+
+    #[test]
+    fn corpus_search_small_word() {
+        let corpus = CorpusBuilder::new()
+            .arity(5)
+            .pad_full(Pad::Pad(" ".to_string()))
+            .fill(vec!["ab"])
+            .case_insensitive()
+            .finish();
+        assert!(corpus.search("a", 0.).is_empty());
+    }
+
+        #[test]
+    fn corpus_search_empty_string() {
+        let corpus = CorpusBuilder::new()
+            .arity(3)
+            .pad_full(Pad::Pad(" ".to_string()))
+            .fill(vec!["a"])
+            .case_insensitive()
+            .finish();
+        assert!(corpus.search("", 0.).is_empty());
     }
 }
