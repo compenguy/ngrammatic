@@ -931,7 +931,7 @@ mod tests {
         assert!(corpus.search("a", 0.).is_empty());
     }
 
-        #[test]
+    #[test]
     fn corpus_search_empty_string() {
         let corpus = CorpusBuilder::new()
             .arity(3)
