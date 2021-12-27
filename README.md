@@ -8,8 +8,7 @@ Licensed under the MIT license.
 
 ### Documentation
 
-Not published yet.
-
+https://docs.rs/ngrammatic/latest/ngrammatic/
 
 ### Installation
 
@@ -19,7 +18,7 @@ To use it, add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-ngrammatic = "0.3.2"
+ngrammatic = "0.3.4"
 ```
 
 ### Usage

@@ -1,10 +1,11 @@
 [package]
 name = "ngrammatic"
-version = "0.3.3"
+version = "0.3.4"
 authors = ["Will Page <compenguy@gmail.com>"]
 description = "Character-oriented ngram generator and fuzzy matching library."
 homepage = "https://github.com/compenguy/ngrammatic"
 repository = "https://github.com/compenguy/ngrammatic"
+documentation = "https://docs.rs/ngrammatic"
 readme = "README.md"
 categories = ["text-processing"]
 keywords = ["fuzzy", "ngrams", "shingles"]
