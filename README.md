@@ -18,7 +18,7 @@ To use it, add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-ngrammatic = "0.3.4"
+ngrammatic = "0.4.0"
 ```
 
 ### Usage
@@ -27,8 +27,7 @@ To do fuzzy matching, build up your corpus of valid symbols like this:
 ```rust
 use ngrammatic::{CorpusBuilder, Pad};
 
-let mut corpus = CorpusBuilder::new()
-    .arity(2)
+let mut corpus = CorpusBuilder::<2>::new()
     .pad_full(Pad::Auto)
     .finish();
 
