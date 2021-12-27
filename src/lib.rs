@@ -171,7 +171,7 @@ impl Ngram {
     }
 
     /// Calculate the similarity of this `Ngram` and an `other`, for a given `warp`
-    /// factor.
+    /// factor (clamped to the range 1.0 to 3.0).
     /// ```rust
     /// # use ngrammatic::NgramBuilder;
     /// # fn main() {
@@ -189,7 +189,8 @@ impl Ngram {
     }
 
     /// Determines if this `Ngram` matches a given `other` `Ngram`, for a given
-    /// `threshold` of certainty.
+    /// `threshold` of certainty. This is equivalent to `matches_with_warp` and a warp
+    /// of 2.0.
     /// ```rust
     /// # use ngrammatic::NgramBuilder;
     /// # fn main() {
@@ -204,7 +205,31 @@ impl Ngram {
     /// # }
     /// ```
     pub fn matches(&self, other: &Ngram, threshold: f32) -> Option<SearchResult> {
-        let similarity = self.similarity_to(other, 2.0);
+        self.matches_with_warp(other, 2.0, threshold)
+    }
+
+    /// Determines if this `Ngram` matches a given `other` `Ngram`, with the specified warp
+    /// (clamped to the range 1.0 to 3.0), and for a given `threshold` of certainty.
+    /// ```rust
+    /// # use ngrammatic::NgramBuilder;
+    /// # fn main() {
+    /// let a = NgramBuilder::new("tomato").finish();
+    /// let b = NgramBuilder::new("tomacco").finish();
+    /// if let Some(word_match) = a.matches_with_warp(&b, 2.0, 0.40) {
+    ///     println!("{} matches {} with {:.0}% certainty", a.text, b.text, word_match.similarity *
+    ///     100.0);
+    /// } else {
+    ///     println!("{} doesn't look anything like {}.", a.text, b.text);
+    /// }
+    /// # }
+    /// ```
+    pub fn matches_with_warp(
+        &self,
+        other: &Ngram,
+        warp: f32,
+        threshold: f32,
+    ) -> Option<SearchResult> {
+        let similarity = self.similarity_to(other, warp);
         if similarity >= threshold {
             Some(SearchResult::new(other.text.clone(), similarity))
         } else {
@@ -227,7 +252,7 @@ impl Ngram {
         let self_length = self.text_padded.chars().count();
         let other_length = other.text_padded.chars().count();
         if self_length < self.arity || other_length < self.arity {
-            0  // if either ngram is too small, they can't share a common gram
+            0 // if either ngram is too small, they can't share a common gram
         } else {
             self_length + other_length - (2 * self.arity) + 2 - self.count_samegrams(other)
         }
@@ -534,6 +559,27 @@ impl Corpus {
     /// ```
     #[allow(dead_code)]
     pub fn search(&self, text: &str, threshold: f32) -> Vec<SearchResult> {
+        self.search_with_warp(text, 2.0, threshold)
+    }
+
+    /// Perform a fuzzy search of the `Corpus` for `Ngrams` with a custom `warp` for
+    /// results above some `threshold` of similarity to the supplied `text`.  Returns
+    /// up to 10 results, sorted by highest similarity to lowest.
+    /// ```rust
+    /// # use ngrammatic::CorpusBuilder;
+    /// # fn main() {
+    /// let mut corpus = CorpusBuilder::new().finish();
+    /// corpus.add_text("tomato");
+    /// let results = corpus.search_with_warp("tomacco", 2.0, 0.40);
+    /// if let Some(result) = results.first() {
+    ///     println!("Closest match to 'tomacco' in the corpus was {}", result.text);
+    /// } else {
+    ///     println!("The corpus contained no words similar to 'tomacco'.");
+    /// }
+    /// # }
+    /// ```
+    #[allow(dead_code)]
+    pub fn search_with_warp(&self, text: &str, warp: f32, threshold: f32) -> Vec<SearchResult> {
         let item = NgramBuilder::new(&(self.key_trans)(text))
             .arity(self.arity)
             .pad_left(self.pad_left.clone())
@@ -542,7 +588,7 @@ impl Corpus {
         let mut results: Vec<SearchResult> = self
             .ngrams
             .values()
-            .filter_map(|n| item.matches(n, threshold))
+            .filter_map(|n| item.matches_with_warp(n, warp, threshold))
             .collect();
 
         // Sort highest similarity to lowest
