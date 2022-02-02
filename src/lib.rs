@@ -471,7 +471,7 @@ pub struct Corpus {
     pad_left: Pad,
     pad_right: Pad,
     ngrams: HashMap<String, Ngram>,
-    gram_to_ngram: HashMap<String, Vec<Ngram>>,
+    gram_to_words: HashMap<String, Vec<String>>,
     key_trans: Box<dyn Fn(&str) -> String + Send + Sync>,
 }
 
@@ -509,8 +509,8 @@ impl Corpus {
     pub fn add_ngram(&mut self, ngram: Ngram) {
         self.ngrams.insert(ngram.text.to_string(), ngram.clone());
         for gram in ngram.grams.keys() {
-            let ngram_list = self.gram_to_ngram.entry(gram.clone()).or_insert_with(Vec::new);
-            ngram_list.push(ngram.clone());
+            let ngram_list = self.gram_to_words.entry(gram.clone()).or_insert_with(Vec::new);
+            ngram_list.push(ngram.text.to_string());
         }
     }
 
@@ -606,11 +606,13 @@ impl Corpus {
             .pad_left(self.pad_left.clone())
             .pad_right(self.pad_right.clone())
             .finish();
-        let ngrams_to_consider: HashSet<&Ngram> = item.grams.keys()
-                                             .filter_map(|g| self.gram_to_ngram.get(g))
-                                             .flatten()
-                                             .collect();
-
+        let mut ngrams_to_consider: HashSet<&Ngram> = HashSet::new();
+        for gram in item.grams.keys() {
+            if let Some(words) =  self.gram_to_words.get(gram) {
+                // Fetch ngrams from raw words
+                ngrams_to_consider.extend(words.iter().filter_map(|word| self.ngrams.get(word)));
+            }
+        }
         let mut results: Vec<SearchResult> = ngrams_to_consider
             .iter()
             .filter_map(|n| item.matches_with_warp(n, warp, threshold))
@@ -765,7 +767,7 @@ impl CorpusBuilder {
         let mut corpus = Corpus {
             arity: self.arity,
             ngrams: HashMap::new(),
-            gram_to_ngram: HashMap::new(),
+            gram_to_words: HashMap::new(),
             pad_left: self.pad_left,
             pad_right: self.pad_right,
             key_trans: self.key_trans,
