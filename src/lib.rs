@@ -606,12 +606,10 @@ impl Corpus {
             .pad_left(self.pad_left.clone())
             .pad_right(self.pad_right.clone())
             .finish();
-        let mut ngrams_to_consider: HashSet<&Ngram> = HashSet::new();
-        for gram in item.grams.keys() {
-            if let Some(ngrams) =  self.gram_to_ngram.get(gram) {
-                ngrams_to_consider.extend(ngrams.iter());
-            }
-        }
+        let ngrams_to_consider: HashSet<&Ngram> = item.grams.keys()
+                                             .filter_map(|g| self.gram_to_ngram.get(g))
+                                             .flatten()
+                                             .collect();
 
         let mut results: Vec<SearchResult> = ngrams_to_consider
             .iter()
