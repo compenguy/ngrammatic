@@ -51,8 +51,9 @@ assert_eq!(top_match.unwrap().text,String::from("tomato"));
 #![deny(missing_docs)]
 
 use std::cmp::Ordering;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::f32;
+use std::hash::{Hash, Hasher};
 
 /// Holds a fuzzy match search result string, and its associated similarity
 /// to the query text.
@@ -146,6 +147,21 @@ pub struct Ngram {
     /// A collection of all generated ngrams for the text, with a
     /// count of how many times that ngram appears in the text
     pub grams: HashMap<String, usize>,
+}
+
+impl PartialEq for Ngram {
+    fn eq(&self, other: &Self) -> bool {
+        self.text_padded == other.text_padded &&
+            self.arity == other.arity
+    }
+}
+impl Eq for Ngram {}
+
+impl Hash for Ngram {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.text_padded.hash(state);
+        self.arity.hash(state);
+    }
 }
 
 // TODO: When rust adds const generics
@@ -455,6 +471,7 @@ pub struct Corpus {
     pad_left: Pad,
     pad_right: Pad,
     ngrams: HashMap<String, Ngram>,
+    gram_to_words: HashMap<String, Vec<String>>,
     key_trans: Box<dyn Fn(&str) -> String + Send + Sync>,
 }
 
@@ -490,7 +507,11 @@ impl Corpus {
     /// ```
     #[allow(dead_code)]
     pub fn add_ngram(&mut self, ngram: Ngram) {
-        self.ngrams.insert(ngram.text.to_string(), ngram);
+        self.ngrams.insert(ngram.text.to_string(), ngram.clone());
+        for gram in ngram.grams.keys() {
+            let ngram_list = self.gram_to_words.entry(gram.clone()).or_insert_with(Vec::new);
+            ngram_list.push(ngram.text.to_string());
+        }
     }
 
     /// Generate an `Ngram` for the supplied `text`, and add it to the
@@ -585,9 +606,15 @@ impl Corpus {
             .pad_left(self.pad_left.clone())
             .pad_right(self.pad_right.clone())
             .finish();
-        let mut results: Vec<SearchResult> = self
-            .ngrams
-            .values()
+        let mut ngrams_to_consider: HashSet<&Ngram> = HashSet::new();
+        for gram in item.grams.keys() {
+            if let Some(words) =  self.gram_to_words.get(gram) {
+                // Fetch ngrams from raw words
+                ngrams_to_consider.extend(words.iter().filter_map(|word| self.ngrams.get(word)));
+            }
+        }
+        let mut results: Vec<SearchResult> = ngrams_to_consider
+            .iter()
             .filter_map(|n| item.matches_with_warp(n, warp, threshold))
             .collect();
 
@@ -740,6 +767,7 @@ impl CorpusBuilder {
         let mut corpus = Corpus {
             arity: self.arity,
             ngrams: HashMap::new(),
+            gram_to_words: HashMap::new(),
             pad_left: self.pad_left,
             pad_right: self.pad_right,
             key_trans: self.key_trans,
