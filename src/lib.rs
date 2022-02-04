@@ -607,8 +607,11 @@ impl Corpus {
             .pad_right(self.pad_right.clone())
             .finish();
         let mut ngrams_to_consider: HashSet<&Ngram> = HashSet::new();
-        for matching_word in item.grams.keys().filter_map(|g| self.gram_to_words.get(g)) {
-            ngrams_to_consider.extend(matching_word.iter().filter_map(|word| self.ngrams.get(word)));
+        for gram in item.grams.keys() {
+            if let Some(words) =  self.gram_to_words.get(gram) {
+                // Fetch ngrams from raw words
+                ngrams_to_consider.extend(words.iter().filter_map(|word| self.ngrams.get(word)));
+            }
         }
         let mut results: Vec<SearchResult> = ngrams_to_consider
             .iter()
