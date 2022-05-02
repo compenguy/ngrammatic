@@ -16,3 +16,5 @@ name = "ngrammatic"
 
 [dependencies]
 
+[package.metadata]
+msrv = "1.27.2"
