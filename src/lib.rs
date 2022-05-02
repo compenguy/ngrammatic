@@ -712,12 +712,12 @@ impl CorpusBuilder {
 
     /// Provide an iterator that will yield strings to be added to the
     /// `Corpus`.
-    pub fn fill<'it, It>(mut self, iterable: It) -> Self
+    pub fn fill<It>(mut self, iterable: It) -> Self
     where
-        It: IntoIterator<Item = &'it str>,
+        It: IntoIterator,
+        It::Item: Into<String>,
     {
-        self.texts
-            .extend(iterable.into_iter().map(|x| x.to_string()));
+        self.texts.extend(iterable.into_iter().map(<_>::into));
         self
     }
 
@@ -1014,5 +1014,23 @@ mod tests {
             .case_insensitive()
             .finish();
         assert!(corpus.search("", 0.).is_empty());
+    }
+
+    #[test]
+    fn accept_iterator_of_strings() {
+        let provider = Vec::<String>::new().into_iter();
+        // The test is only meant to verify that `fill` accepts an iterator that
+        // yields `String`s.
+        let _ = CorpusBuilder::new().fill(provider);
+    }
+
+    #[test]
+    fn accept_iterator_of_string_slices() {
+        let provider = Vec::<String>::new();
+        // The test is only meant to verify that `fill` accepts an iterator that
+        // yields `&str`s or `&String`s.
+        let _ = CorpusBuilder::new()
+            .fill(&provider)
+            .fill(provider.iter().map(String::as_str));
     }
 }
