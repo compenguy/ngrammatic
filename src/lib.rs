@@ -80,10 +80,7 @@ impl PartialEq for SearchResult {
 impl SearchResult {
     /// Trivial constructor used internally to build search results
     pub(crate) fn new(text: String, similarity: f32) -> Self {
-        SearchResult {
-            text: text,
-            similarity: similarity,
-        }
+        SearchResult { text, similarity }
     }
 }
 
@@ -114,9 +111,7 @@ impl Pad {
     /// Render this `Pad` instance as a string
     pub(crate) fn to_string(&self, autopad_width: usize) -> String {
         match *self {
-            Pad::Auto => std::iter::repeat(" ")
-                .take(autopad_width)
-                .collect::<String>(),
+            Pad::Auto => " ".repeat(autopad_width),
             Pad::Pad(ref p) => p.to_string(),
             Pad::None => "".to_string(),
         }
@@ -151,8 +146,7 @@ pub struct Ngram {
 
 impl PartialEq for Ngram {
     fn eq(&self, other: &Self) -> bool {
-        self.text_padded == other.text_padded &&
-            self.arity == other.arity
+        self.text_padded == other.text_padded && self.arity == other.arity
     }
 }
 impl Eq for Ngram {}
@@ -480,12 +474,12 @@ impl std::fmt::Debug for Corpus {
     /// `key_trans` field, as there's no meaningful representation we could
     /// give.
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Corpus {{\n")?;
-        write!(f, "  arity: {:?},\n", self.arity)?;
-        write!(f, "  pad_left: {:?},\n", self.pad_left)?;
-        write!(f, "  pad_right: {:?},\n", self.pad_right)?;
-        write!(f, "  ngrams: {:?},\n", self.ngrams)?;
-        write!(f, "}}\n")
+        writeln!(f, "Corpus {{")?;
+        writeln!(f, "  arity: {:?},", self.arity)?;
+        writeln!(f, "  pad_left: {:?},", self.pad_left)?;
+        writeln!(f, "  pad_right: {:?},", self.pad_right)?;
+        writeln!(f, "  ngrams: {:?},", self.ngrams)?;
+        writeln!(f, "}}")
     }
 }
 
@@ -509,7 +503,10 @@ impl Corpus {
     pub fn add_ngram(&mut self, ngram: Ngram) {
         self.ngrams.insert(ngram.text.to_string(), ngram.clone());
         for gram in ngram.grams.keys() {
-            let ngram_list = self.gram_to_words.entry(gram.clone()).or_insert_with(Vec::new);
+            let ngram_list = self
+                .gram_to_words
+                .entry(gram.clone())
+                .or_insert_with(Vec::new);
             ngram_list.push(ngram.text.to_string());
         }
     }
@@ -608,7 +605,7 @@ impl Corpus {
             .finish();
         let mut ngrams_to_consider: HashSet<&Ngram> = HashSet::new();
         for gram in item.grams.keys() {
-            if let Some(words) =  self.gram_to_words.get(gram) {
+            if let Some(words) = self.gram_to_words.get(gram) {
                 // Fetch ngrams from raw words
                 ngrams_to_consider.extend(words.iter().filter_map(|word| self.ngrams.get(word)));
             }
@@ -642,12 +639,12 @@ impl std::fmt::Debug for CorpusBuilder {
     /// `key_trans` field, as there's no meaningful representation we could
     /// give.
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "CorpusBuilder {{\n")?;
-        write!(f, "  arity: {:?},\n", self.arity)?;
-        write!(f, "  pad_left: {:?},\n", self.pad_left)?;
-        write!(f, "  pad_right: {:?},\n", self.pad_right)?;
-        write!(f, "  texts: {:?},\n", self.texts)?;
-        write!(f, "}}\n")
+        writeln!(f, "CorpusBuilder {{")?;
+        writeln!(f, "  arity: {:?},", self.arity)?;
+        writeln!(f, "  pad_left: {:?},", self.pad_left)?;
+        writeln!(f, "  pad_right: {:?},", self.pad_right)?;
+        writeln!(f, "  texts: {:?},", self.texts)?;
+        writeln!(f, "}}")
     }
 }
 
