@@ -2,11 +2,15 @@ use std::collections::HashMap;
 use std::f32;
 use std::hash::{Hash, Hasher};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{Pad, SearchResult};
 
 /// Stores a "word", with all its n-grams. The "arity" member determines the
 /// value of "n" used in generating the n-grams.
 #[derive(Debug, Clone, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Ngram {
     /// The "symbol size" for the ngrams
     pub arity: usize,
@@ -226,6 +230,7 @@ impl Ngram {
 // performed in the correct order, without requiring an extensive parameter list
 // to a constructor method, and allowing default values by omission.
 #[derive(Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NgramBuilder {
     arity: usize,
     pad_left: Pad,

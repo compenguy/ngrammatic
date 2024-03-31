@@ -16,6 +16,7 @@ rust-version = "1.61"
 [features]
 default = []
 rayon = ["dep:rayon"]
+serde = ["dep:serde"]
 
 [lib]
 name = "ngrammatic"
@@ -23,6 +24,7 @@ name = "ngrammatic"
 [dependencies]
 string-interner = "0.19"
 rayon = { version = "1.11", optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
 criterion = "0.7"

@@ -5,8 +5,14 @@ use std::f32;
 
 use string_interner::{DefaultBackend, DefaultSymbol, StringInterner};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::ngram::{Ngram, NgramBuilder};
-use crate::{Pad, SearchResult};
+use crate::{
+    IdentityKeyTransformer, KeyTransformer, LinkedKeyTransformer, LowerKeyTransformer, Pad,
+    SearchResult,
+};
 
 // Import traits for rayon parallelization
 #[cfg(feature = "rayon")]
@@ -17,17 +23,24 @@ use rayon::{
 
 /// Holds a corpus of words and their ngrams, allowing fuzzy matches of
 /// candidate strings against known strings in the corpus.
-pub struct Corpus {
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Corpus<KT>
+where
+    KT: KeyTransformer,
+{
     arity: usize,
     pad_left: Pad,
     pad_right: Pad,
     strings: StringInterner<DefaultBackend>,
     ngrams: HashMap<DefaultSymbol, Ngram>,
     gram_to_words: HashMap<DefaultSymbol, Vec<DefaultSymbol>>,
-    key_trans: Box<dyn Fn(&str) -> String + Send + Sync>,
+    key_transformer: KT,
 }
 
-impl std::fmt::Debug for Corpus {
+impl<KT> std::fmt::Debug for Corpus<KT>
+where
+    KT: KeyTransformer,
+{
     /// Debug format for a `Corpus`. Omits any representation of the
     /// `key_trans` field, as there's no meaningful representation we could
     /// give.
@@ -41,13 +54,16 @@ impl std::fmt::Debug for Corpus {
     }
 }
 
-impl Corpus {
+impl<KT> Corpus<KT>
+where
+    KT: KeyTransformer + std::marker::Sync,
+{
     /// Add the supplied `ngram` to the `Corpus`.
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # use ngrammatic::NgramBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::new().finish();
+    /// let mut corpus = CorpusBuilder::default().finish();
     /// corpus.add_ngram(NgramBuilder::new("tomato").finish());
     /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -76,7 +92,7 @@ impl Corpus {
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::new().finish();
+    /// let mut corpus = CorpusBuilder::default().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -91,9 +107,9 @@ impl Corpus {
         let arity = self.arity;
         let pad_left = self.pad_left.clone();
         let pad_right = self.pad_right.clone();
-        let new_key = &(self.key_trans)(text);
+        let new_key = self.key_transformer.transform(text);
         self.add_ngram(
-            NgramBuilder::new(new_key)
+            NgramBuilder::new(&new_key)
                 .arity(arity)
                 .pad_left(pad_left)
                 .pad_right(pad_right)
@@ -112,7 +128,7 @@ impl Corpus {
     /// function.
     #[allow(dead_code)]
     pub fn key(&self, text: &str) -> Option<String> {
-        let transformed = (self.key_trans)(text);
+        let transformed = self.key_transformer.transform(text);
         self.strings
             .get(transformed.as_str())
             .and_then(|sym| self.ngrams.get(&sym))
@@ -125,7 +141,7 @@ impl Corpus {
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::new().finish();
+    /// let mut corpus = CorpusBuilder::default().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -146,7 +162,7 @@ impl Corpus {
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::new().finish();
+    /// let mut corpus = CorpusBuilder::default().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search_par("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -168,7 +184,7 @@ impl Corpus {
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::new().finish();
+    /// let mut corpus = CorpusBuilder::default().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search_with_warp("tomacco", 2.0, 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -186,7 +202,7 @@ impl Corpus {
         threshold: f32,
         limit: usize,
     ) -> Vec<SearchResult> {
-        let item = NgramBuilder::new(&(self.key_trans)(text))
+        let item = NgramBuilder::new(&self.key_transformer.transform(text))
             .arity(self.arity)
             .pad_left(self.pad_left.clone())
             .pad_right(self.pad_right.clone())
@@ -216,7 +232,7 @@ impl Corpus {
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::new().finish();
+    /// let mut corpus = CorpusBuilder::default().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search_with_warp_par("tomacco", 2.0, 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -235,7 +251,7 @@ impl Corpus {
         threshold: f32,
         limit: usize,
     ) -> Vec<SearchResult> {
-        let item = NgramBuilder::new(&(self.key_trans)(text))
+        let item = NgramBuilder::new(&self.key_transformer.transform(text))
             .arity(self.arity)
             .pad_left(self.pad_left.clone())
             .pad_right(self.pad_right.clone())
@@ -265,16 +281,22 @@ impl Corpus {
 // We provide a builder for Corpus to ensure initialization operations are
 // performed in the correct order, without requiring an extensive parameter list
 // to a constructor method, and allowing default values by omission.
-pub struct CorpusBuilder {
+pub struct CorpusBuilder<KT = IdentityKeyTransformer>
+where
+    KT: KeyTransformer,
+{
     arity: usize,
     pad_left: Pad,
     pad_right: Pad,
     strings: StringInterner<DefaultBackend>,
     texts: Vec<DefaultSymbol>,
-    key_trans: Box<dyn Fn(&str) -> String + Send + Sync>,
+    key_transformer: KT,
 }
 
-impl std::fmt::Debug for CorpusBuilder {
+impl<KT> std::fmt::Debug for CorpusBuilder<KT>
+where
+    KT: KeyTransformer,
+{
     /// Debug format for a `CorpusBuilder`. Omits any representation of the
     /// `key_trans` field, as there's no meaningful representation we could
     /// give.
@@ -289,20 +311,13 @@ impl std::fmt::Debug for CorpusBuilder {
 }
 
 impl Default for CorpusBuilder {
-    /// Fowards to `CorpusBuilder`'s `new` method.
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl CorpusBuilder {
     /// Initialize a new instance of an `CorpusBuilder`, with a default `arity`
     /// of 2, padding set to `Auto`, for the given `texts`. The default key_trans
     /// function is a pass-through, leaving the keys unmodified.
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::new().finish();
+    /// let mut corpus = CorpusBuilder::default().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -312,17 +327,22 @@ impl CorpusBuilder {
     /// }
     /// # }
     /// ```
-    pub fn new() -> Self {
+    fn default() -> Self {
         CorpusBuilder {
             arity: 2,
             pad_left: Pad::Auto,
             pad_right: Pad::Auto,
-            strings: StringInterner::default(),
             texts: Vec::new(),
-            key_trans: Box::new(|x| x.into()),
+            strings: StringInterner::default(),
+            key_transformer: IdentityKeyTransformer,
         }
     }
+}
 
+impl<KT> CorpusBuilder<KT>
+where
+    KT: KeyTransformer + std::marker::Sync,
+{
     /// Set the left padding to build into the `Corpus`.
     pub fn pad_left(mut self, pad_left: Pad) -> Self {
         self.pad_left = pad_left;
@@ -383,8 +403,9 @@ impl CorpusBuilder {
     /// transformed.
     /// ```rust
     /// use ngrammatic::CorpusBuilder;
+    /// use ngrammatic::LowerKeyTransformer;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::new().key_trans(Box::new(|x| x.to_lowercase())).finish();
+    /// let mut corpus = CorpusBuilder::default().link_key_transformer(LowerKeyTransformer::default()).finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search("ToMaTo", 0.90, 10);
     /// if let Some(result) = results.first() {
@@ -394,17 +415,29 @@ impl CorpusBuilder {
     /// }
     /// # }
     /// ```
-    pub fn key_trans(mut self, key_trans: Box<dyn Fn(&str) -> String + Send + Sync>) -> Self {
-        self.key_trans = key_trans;
-        self
+    pub fn link_key_transformer<KT2>(
+        self,
+        key_trans: KT2,
+    ) -> CorpusBuilder<LinkedKeyTransformer<KT, KT2>>
+    where
+        KT2: KeyTransformer,
+    {
+        CorpusBuilder {
+            arity: self.arity,
+            pad_left: self.pad_left,
+            pad_right: self.pad_right,
+            texts: self.texts,
+            strings: self.strings,
+            key_transformer: self.key_transformer.link(key_trans),
+        }
     }
 
-    /// Convenience function that calls `key_trans` with a closure that
-    /// lowercases all keys added to the `Corpus`.
+    /// Convenience function that calls `link_key_transformer` with a
+    /// transformer that lowercases all keys added to the `Corpus`.
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::new().case_insensitive().finish();
+    /// let mut corpus = CorpusBuilder::default().case_insensitive().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search("ToMaTo", 0.90, 10);
     /// if let Some(result) = results.first() {
@@ -414,12 +447,12 @@ impl CorpusBuilder {
     /// }
     /// # }
     /// ```
-    pub fn case_insensitive(self) -> Self {
-        self.key_trans(Box::new(|x| x.to_lowercase()))
+    pub fn case_insensitive(self) -> CorpusBuilder<LinkedKeyTransformer<KT, LowerKeyTransformer>> {
+        self.link_key_transformer(LowerKeyTransformer)
     }
 
     /// Yield a `Corpus` instance with all the properties set with this builder.
-    pub fn finish(self) -> Corpus {
+    pub fn finish(self) -> Corpus<KT> {
         let mut corpus = Corpus {
             arity: self.arity,
             ngrams: HashMap::new(),
@@ -427,7 +460,7 @@ impl CorpusBuilder {
             strings: self.strings,
             pad_left: self.pad_left,
             pad_right: self.pad_right,
-            key_trans: self.key_trans,
+            key_transformer: self.key_transformer,
         };
         for sym in self.texts {
             if let Some(owned) = corpus.strings.resolve(sym).map(str::to_owned) {
@@ -444,13 +477,13 @@ mod tests {
 
     #[test]
     fn corpus_add_text_before_setting_arity() {
-        let corpus = CorpusBuilder::new().fill(vec!["ab", "ba"]).finish();
+        let corpus = CorpusBuilder::default().fill(vec!["ab", "ba"]).finish();
         println!("{:?}", corpus);
     }
 
     #[test]
     fn corpus_set_arity_after_adding_text() {
-        let corpus = CorpusBuilder::new()
+        let corpus = CorpusBuilder::default()
             .arity(2)
             .fill(vec!["ab", "ba"])
             .arity(3)
@@ -460,7 +493,7 @@ mod tests {
 
     #[test]
     fn corpus_set_padding_after_adding_text() {
-        let corpus = CorpusBuilder::new()
+        let corpus = CorpusBuilder::default()
             .arity(2)
             .fill(vec!["ab", "ba"])
             .pad_full(Pad::None)
@@ -470,7 +503,7 @@ mod tests {
 
     #[test]
     fn corpus_add_multiple() {
-        let corpus = CorpusBuilder::new()
+        let corpus = CorpusBuilder::default()
             .arity(2)
             .pad_full(Pad::Auto)
             .fill(vec!["ab", "ba"])
@@ -483,7 +516,7 @@ mod tests {
 
     #[test]
     fn corpus_search() {
-        let corpus = CorpusBuilder::new()
+        let corpus = CorpusBuilder::default()
             .arity(1)
             .pad_full(Pad::None)
             .fill(vec!["ab", "ba", "cd"])
@@ -495,7 +528,7 @@ mod tests {
 
     #[test]
     fn corpus_case_insensitive_corpus_search() {
-        let corpus = CorpusBuilder::new()
+        let corpus = CorpusBuilder::default()
             .arity(1)
             .pad_full(Pad::None)
             .fill(vec!["Ab", "Ba", "Cd"])
@@ -508,7 +541,7 @@ mod tests {
 
     #[test]
     fn corpus_case_insensitive_corpus_search_terms() {
-        let corpus = CorpusBuilder::new()
+        let corpus = CorpusBuilder::default()
             .arity(1)
             .pad_full(Pad::None)
             .fill(vec!["Ab", "Ba", "Cd"])
@@ -521,7 +554,7 @@ mod tests {
 
     #[test]
     fn corpus_search_emoji() {
-        let corpus = CorpusBuilder::new()
+        let corpus = CorpusBuilder::default()
             .arity(1)
             .pad_full(Pad::None)
             .fill(vec!["\u{1f60f}\u{1f346}", "ba", "cd"])
@@ -533,7 +566,7 @@ mod tests {
 
     #[test]
     fn corpus_search_small_word() {
-        let corpus = CorpusBuilder::new()
+        let corpus = CorpusBuilder::default()
             .arity(5)
             .pad_full(Pad::Pad(" ".to_string()))
             .fill(vec!["ab"])
@@ -544,7 +577,7 @@ mod tests {
 
     #[test]
     fn corpus_search_empty_string() {
-        let corpus = CorpusBuilder::new()
+        let corpus = CorpusBuilder::default()
             .arity(3)
             .pad_full(Pad::Pad(" ".to_string()))
             .fill(vec!["a"])
@@ -558,7 +591,7 @@ mod tests {
         let provider = Vec::<String>::new().into_iter();
         // The test is only meant to verify that `fill` accepts an iterator that
         // yields `String`s.
-        let _ = CorpusBuilder::new().fill(provider);
+        let _ = CorpusBuilder::default().fill(provider);
     }
 
     #[test]
@@ -566,7 +599,7 @@ mod tests {
         let provider = Vec::<String>::new();
         // The test is only meant to verify that `fill` accepts an iterator that
         // yields `&str`s or `&String`s.
-        let _ = CorpusBuilder::new()
+        let _ = CorpusBuilder::default()
             .fill(&provider)
             .fill(provider.iter().map(String::as_str));
     }
