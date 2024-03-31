@@ -90,9 +90,7 @@ impl Pad {
 /// value of "n" used in generating the n-grams.
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Ngram {
-    /// The "symbol size" for the ngrams
-    pub arity: usize,
+pub struct Ngram<const ARITY: usize> {
     /// The text for which ngrams were generated
     pub text: String,
     /// The text for which ngrams were generated, with the padding
@@ -103,17 +101,17 @@ pub struct Ngram {
     pub grams: HashMap<String, usize>,
 }
 
-impl PartialEq for Ngram {
+impl<const ARITY: usize> PartialEq for Ngram<ARITY> {
     fn eq(&self, other: &Self) -> bool {
-        self.text_padded == other.text_padded && self.arity == other.arity
+        self.text_padded == other.text_padded
     }
 }
-impl Eq for Ngram {}
+impl<const ARITY: usize> Eq for Ngram<ARITY> {}
 
-impl Hash for Ngram {
+impl<const ARITY: usize> Hash for Ngram<ARITY> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.text_padded.hash(state);
-        self.arity.hash(state);
+        ARITY.hash(state);
     }
 }
 
@@ -124,7 +122,7 @@ impl Hash for Ngram {
 // do things like Ngram::<3>::From(text) to construct
 // new ngrams
 
-impl Ngram {
+impl<const ARITY: usize> Ngram<ARITY> {
     /// Static method to calculate `Ngram` similarity based on samegram count,
     /// allgram count, and a `warp` factor.
     pub(crate) fn similarity(samegram_count: usize, allgram_count: usize, warp: f32) -> f32 {
@@ -144,17 +142,17 @@ impl Ngram {
     /// ```rust
     /// # use ngrammatic::NgramBuilder;
     /// # fn main() {
-    /// let a = NgramBuilder::new("tomato").finish();
-    /// let b = NgramBuilder::new("tomacco").finish();
+    /// let a = NgramBuilder::<2>::new("tomato").finish();
+    /// let b = NgramBuilder::<2>::new("tomacco").finish();
     /// println!("Similarity factor for {} and {}: {:.0}%", a.text, b.text, a.similarity_to(&b, 2.0) *
     /// 100.0);
     /// # }
     /// ```
-    pub fn similarity_to(&self, other: &Ngram, warp: f32) -> f32 {
+    pub fn similarity_to(&self, other: &Self, warp: f32) -> f32 {
         let warp = warp.max(1.0).min(3.0);
         let samegram_count = self.count_samegrams(other);
         let allgram_count = self.count_allgrams(other);
-        Ngram::similarity(samegram_count, allgram_count, warp)
+        Self::similarity(samegram_count, allgram_count, warp)
     }
 
     /// Determines if this `Ngram` matches a given `other` `Ngram`, for a given
@@ -163,8 +161,8 @@ impl Ngram {
     /// ```rust
     /// # use ngrammatic::NgramBuilder;
     /// # fn main() {
-    /// let a = NgramBuilder::new("tomato").finish();
-    /// let b = NgramBuilder::new("tomacco").finish();
+    /// let a = NgramBuilder::<2>::new("tomato").finish();
+    /// let b = NgramBuilder::<2>::new("tomacco").finish();
     /// if let Some(word_match) = a.matches(&b, 0.40) {
     ///     println!("{} matches {} with {:.0}% certainty", a.text, b.text, word_match.similarity *
     ///     100.0);
@@ -173,7 +171,7 @@ impl Ngram {
     /// }
     /// # }
     /// ```
-    pub fn matches(&self, other: &Ngram, threshold: f32) -> Option<SearchResult> {
+    pub fn matches(&self, other: &Self, threshold: f32) -> Option<SearchResult> {
         self.matches_with_warp(other, 2.0, threshold)
     }
 
@@ -182,8 +180,8 @@ impl Ngram {
     /// ```rust
     /// # use ngrammatic::NgramBuilder;
     /// # fn main() {
-    /// let a = NgramBuilder::new("tomato").finish();
-    /// let b = NgramBuilder::new("tomacco").finish();
+    /// let a = NgramBuilder::<2>::new("tomato").finish();
+    /// let b = NgramBuilder::<2>::new("tomacco").finish();
     /// if let Some(word_match) = a.matches_with_warp(&b, 2.0, 0.40) {
     ///     println!("{} matches {} with {:.0}% certainty", a.text, b.text, word_match.similarity *
     ///     100.0);
@@ -194,7 +192,7 @@ impl Ngram {
     /// ```
     pub fn matches_with_warp(
         &self,
-        other: &Ngram,
+        other: &Self,
         warp: f32,
         threshold: f32,
     ) -> Option<SearchResult> {
@@ -209,27 +207,27 @@ impl Ngram {
     /// Returns the count of symmetrically differing grams between this
     /// `Ngram` and the `other` `Ngram`.
     #[allow(dead_code)]
-    pub(crate) fn count_diffgrams(&self, other: &Ngram) -> usize {
+    pub(crate) fn count_diffgrams(&self, other: &Self) -> usize {
         self.count_allgrams(other) - self.count_samegrams(other)
     }
 
     /// Returns the total number of unique grams between this
     /// `Ngram` and the `other` `Ngram`.
-    pub(crate) fn count_allgrams(&self, other: &Ngram) -> usize {
+    pub(crate) fn count_allgrams(&self, other: &Self) -> usize {
         // This is a shortcut that counts all grams between both ngrams
         // Then subtracts out one instance of the grams that are in common
         let self_length = self.text_padded.chars().count();
         let other_length = other.text_padded.chars().count();
-        if self_length < self.arity || other_length < self.arity {
+        if self_length < ARITY || other_length < ARITY {
             0 // if either ngram is too small, they can't share a common gram
         } else {
-            self_length + other_length - (2 * self.arity) + 2 - self.count_samegrams(other)
+            self_length + other_length - (2 * ARITY) + 2 - self.count_samegrams(other)
         }
     }
 
     /// Returns a count of grams that are common between this
     /// `Ngram` and the `other` `Ngram`.
-    pub(crate) fn count_samegrams(&self, other: &Ngram) -> usize {
+    pub(crate) fn count_samegrams(&self, other: &Self) -> usize {
         let mut sames: usize = 0;
         for key in self.grams.keys() {
             let selfcount = self.count_gram(key.as_ref());
@@ -244,7 +242,7 @@ impl Ngram {
     /// ```rust
     /// # use ngrammatic::NgramBuilder;
     /// # fn main() {
-    /// let a = NgramBuilder::new("tomato").arity(2).finish();
+    /// let a = NgramBuilder::<2>::new("tomato").finish();
     /// println!("Number of times the 'to' bigram appears in {}: {}", a.text, a.count_gram("to"));
     /// # }
     /// ```
@@ -270,7 +268,7 @@ impl Ngram {
     /// ```rust
     /// # use ngrammatic::NgramBuilder;
     /// # fn main() {
-    /// let a = NgramBuilder::new("tomato").arity(2).finish();
+    /// let a = NgramBuilder::<2>::new("tomato").finish();
     /// if a.contains("to") {
     ///     println!("{} contains the bigram 'to'!", a.text);
     /// }
@@ -284,11 +282,11 @@ impl Ngram {
     /// Private method that initializes an `Ngram` by calculating all of its
     /// grams.
     fn init(&mut self) {
-        if self.arity > self.text_padded.len() {
+        if ARITY > self.text_padded.len() {
             return;
         }
         let chars_padded: Vec<char> = self.text_padded.chars().collect();
-        for window in chars_padded.windows(self.arity) {
+        for window in chars_padded.windows(ARITY) {
             let count = self.grams.entry(window.iter().collect()).or_insert(0);
             *count += 1;
         }
@@ -301,20 +299,19 @@ impl Ngram {
 // to a constructor method, and allowing default values by omission.
 #[derive(Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct NgramBuilder {
-    arity: usize,
+pub struct NgramBuilder<const ARITY: usize> {
     pad_left: Pad,
     pad_right: Pad,
     text: String,
 }
 
-impl NgramBuilder {
+impl<const ARITY: usize> NgramBuilder<ARITY> {
     /// Initialize a new instance of an `NgramBuilder`, with a default `arity`
     /// of 2, padding set to `Auto`, for the given `text`.
     /// ```rust
     /// # use ngrammatic::NgramBuilder;
     /// # fn main() {
-    /// let a = NgramBuilder::new("tomato").arity(2).finish();
+    /// let a = NgramBuilder::<2>::new("tomato").finish();
     /// if a.contains("to") {
     ///     println!("{} contains the bigram 'to'!", a.text);
     /// }
@@ -322,7 +319,6 @@ impl NgramBuilder {
     /// ```
     pub fn new(text: &str) -> Self {
         NgramBuilder {
-            arity: 2,
             pad_left: Pad::Auto,
             pad_right: Pad::Auto,
             text: text.to_string(),
@@ -334,7 +330,7 @@ impl NgramBuilder {
     /// # use ngrammatic::NgramBuilder;
     /// # use ngrammatic::Pad;
     /// # fn main() {
-    /// let a = NgramBuilder::new("tomato").arity(2).pad_left(Pad::Pad(" ".to_string())).finish();
+    /// let a = NgramBuilder::<2>::new("tomato").pad_left(Pad::Pad(" ".to_string())).finish();
     /// if a.contains(" t") {
     ///     println!("{}, when padded, contains the bigram ' t'!", a.text);
     /// }
@@ -350,7 +346,7 @@ impl NgramBuilder {
     /// # use ngrammatic::NgramBuilder;
     /// # use ngrammatic::Pad;
     /// # fn main() {
-    /// let a = NgramBuilder::new("tomato").arity(2).pad_right(Pad::Pad(" ".to_string())).finish();
+    /// let a = NgramBuilder::<2>::new("tomato").pad_right(Pad::Pad(" ".to_string())).finish();
     /// if a.contains("o ") {
     ///     println!("{}, when padded, contains the bigram 'o '!", a.text);
     /// }
@@ -366,7 +362,7 @@ impl NgramBuilder {
     /// # use ngrammatic::NgramBuilder;
     /// # use ngrammatic::Pad;
     /// # fn main() {
-    /// let a = NgramBuilder::new("tomato").arity(2).pad_full(Pad::Pad(" ".to_string())).finish();
+    /// let a = NgramBuilder::<2>::new("tomato").pad_full(Pad::Pad(" ".to_string())).finish();
     /// if a.contains(" t") {
     ///     println!("{}, when padded, contains the bigram ' t'!", a.text);
     /// }
@@ -381,36 +377,20 @@ impl NgramBuilder {
         self
     }
 
-    /// Set `arity` (the _n_ in _ngram_) to use for the resulting `Ngram`.
-    /// ```rust
-    /// # use ngrammatic::NgramBuilder;
-    /// # fn main() {
-    /// let a = NgramBuilder::new("tomato").arity(3).finish();
-    /// if a.contains("tom") {
-    ///     println!("{} contains the trigram 'tom'!", a.text);
-    /// }
-    /// # }
-    /// ```
-    pub fn arity(mut self, arity: usize) -> Self {
-        self.arity = arity.max(1);
-        self
-    }
-
     /// Yield an `Ngram` instance with all the properties set with this builder.
     /// ```rust
     /// # use ngrammatic::NgramBuilder;
     /// # fn main() {
-    /// let a = NgramBuilder::new("tomato").arity(3).finish();
+    /// let a = NgramBuilder::<3>::new("tomato").finish();
     /// if a.contains("tom") {
     ///     println!("{} contains the trigram 'tom'!", a.text);
     /// }
     /// # }
     /// ```
-    pub fn finish(self) -> Ngram {
+    pub fn finish(self) -> Ngram<ARITY> {
         let mut ngram = Ngram {
-            arity: self.arity,
             text: self.text.clone(),
-            text_padded: Pad::pad_text(&self.text, self.pad_left, self.pad_right, self.arity - 1),
+            text_padded: Pad::pad_text(&self.text, self.pad_left, self.pad_right, ARITY - 1),
             grams: HashMap::new(),
         };
         ngram.init();
@@ -421,19 +401,18 @@ impl NgramBuilder {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Holds a corpus of words and their ngrams, allowing fuzzy matches of
 /// candidate strings against known strings in the corpus.
-pub struct Corpus<KT>
+pub struct Corpus<KT, const ARITY: usize>
 where
     KT: KeyTransformer,
 {
-    arity: usize,
     pad_left: Pad,
     pad_right: Pad,
-    ngrams: HashMap<String, Ngram>,
+    ngrams: HashMap<String, Ngram<ARITY>>,
     gram_to_words: HashMap<String, Vec<String>>,
     key_transformer: KT,
 }
 
-impl<KT> std::fmt::Debug for Corpus<KT>
+impl<const ARITY: usize, KT> std::fmt::Debug for Corpus<KT, ARITY>
 where
     KT: KeyTransformer,
 {
@@ -441,8 +420,7 @@ where
     /// `key_trans` field, as there's no meaningful representation we could
     /// give.
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        writeln!(f, "Corpus {{")?;
-        writeln!(f, "  arity: {:?},", self.arity)?;
+        writeln!(f, "Corpus<{}> {{", ARITY)?;
         writeln!(f, "  pad_left: {:?},", self.pad_left)?;
         writeln!(f, "  pad_right: {:?},", self.pad_right)?;
         writeln!(f, "  ngrams: {:?},", self.ngrams)?;
@@ -450,7 +428,7 @@ where
     }
 }
 
-impl<KT> Corpus<KT>
+impl<const ARITY: usize, KT> Corpus<KT, ARITY>
 where
     KT: KeyTransformer,
 {
@@ -459,7 +437,7 @@ where
     /// # use ngrammatic::CorpusBuilder;
     /// # use ngrammatic::NgramBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::default().finish();
+    /// let mut corpus = CorpusBuilder::<2>::default().finish();
     /// corpus.add_ngram(NgramBuilder::new("tomato").finish());
     /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -470,7 +448,7 @@ where
     /// # }
     /// ```
     #[allow(dead_code)]
-    pub fn add_ngram(&mut self, ngram: Ngram) {
+    pub fn add_ngram(&mut self, ngram: Ngram<ARITY>) {
         self.ngrams.insert(ngram.text.to_string(), ngram.clone());
         for gram in ngram.grams.keys() {
             let ngram_list = self.gram_to_words.entry(gram.clone()).or_default();
@@ -483,7 +461,7 @@ where
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::default().finish();
+    /// let mut corpus = CorpusBuilder::<2>::default().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -495,13 +473,11 @@ where
     /// ```
     #[allow(dead_code)]
     pub fn add_text(&mut self, text: &str) {
-        let arity = self.arity;
         let pad_left = self.pad_left.clone();
         let pad_right = self.pad_right.clone();
         let new_key = self.key_transformer.transform(text);
         self.add_ngram(
-            NgramBuilder::new(&new_key)
-                .arity(arity)
+            NgramBuilder::<ARITY>::new(&new_key)
                 .pad_left(pad_left)
                 .pad_right(pad_right)
                 .finish(),
@@ -542,7 +518,7 @@ where
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::default().finish();
+    /// let mut corpus = CorpusBuilder::<2>::default().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -572,7 +548,7 @@ where
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::default().finish();
+    /// let mut corpus = CorpusBuilder::<2>::default().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search_with_warp("tomacco", 2.0, 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -591,11 +567,10 @@ where
         limit: usize,
     ) -> Vec<SearchResult> {
         let item = NgramBuilder::new(&self.key_transformer.transform(text))
-            .arity(self.arity)
             .pad_left(self.pad_left.clone())
             .pad_right(self.pad_right.clone())
             .finish();
-        let mut ngrams_to_consider: HashSet<&Ngram> = HashSet::new();
+        let mut ngrams_to_consider: HashSet<&Ngram<ARITY>> = HashSet::new();
         for gram in item.grams.keys() {
             if let Some(words) = self.gram_to_words.get(gram) {
                 // Fetch ngrams from raw words
@@ -619,18 +594,17 @@ where
 // We provide a builder for Corpus to ensure initialization operations are
 // performed in the correct order, without requiring an extensive parameter list
 // to a constructor method, and allowing default values by omission.
-pub struct CorpusBuilder<KT = IdentityKeyTransformer>
+pub struct CorpusBuilder<const ARITY: usize, KT = IdentityKeyTransformer>
 where
     KT: KeyTransformer,
 {
-    arity: usize,
     pad_left: Pad,
     pad_right: Pad,
     texts: Vec<String>,
     key_transformer: KT,
 }
 
-impl<KT> std::fmt::Debug for CorpusBuilder<KT>
+impl<const ARITY: usize, KT> std::fmt::Debug for CorpusBuilder<ARITY, KT>
 where
     KT: KeyTransformer,
 {
@@ -638,8 +612,7 @@ where
     /// `key_trans` field, as there's no meaningful representation we could
     /// give.
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        writeln!(f, "CorpusBuilder {{")?;
-        writeln!(f, "  arity: {:?},", self.arity)?;
+        writeln!(f, "CorpusBuilder<{}> {{", ARITY)?;
         writeln!(f, "  pad_left: {:?},", self.pad_left)?;
         writeln!(f, "  pad_right: {:?},", self.pad_right)?;
         writeln!(f, "  texts: {:?},", self.texts)?;
@@ -647,14 +620,14 @@ where
     }
 }
 
-impl Default for CorpusBuilder {
+impl<const ARITY: usize> Default for CorpusBuilder<ARITY> {
     /// Initialize a new instance of an `CorpusBuilder`, with a default `arity`
     /// of 2, padding set to `Auto`, for the given `texts`. The default key_trans
     /// function is a pass-through, leaving the keys unmodified.
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::default().finish();
+    /// let mut corpus = CorpusBuilder::<2>::default().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
@@ -666,7 +639,6 @@ impl Default for CorpusBuilder {
     /// ```
     fn default() -> Self {
         CorpusBuilder {
-            arity: 2,
             pad_left: Pad::Auto,
             pad_right: Pad::Auto,
             texts: Vec::new(),
@@ -675,7 +647,7 @@ impl Default for CorpusBuilder {
     }
 }
 
-impl<KT> CorpusBuilder<KT>
+impl<const ARITY: usize, KT> CorpusBuilder<ARITY, KT>
 where
     KT: KeyTransformer,
 {
@@ -698,12 +670,6 @@ where
         self
     }
 
-    /// Set `arity` (the _n_ in _ngram_) to use for the resulting `Corpus`.
-    pub fn arity(mut self, arity: usize) -> Self {
-        self.arity = arity.max(1);
-        self
-    }
-
     /// Provide an iterator that will yield strings to be added to the
     /// `Corpus`.
     pub fn fill<It>(mut self, iterable: It) -> Self
@@ -723,7 +689,7 @@ where
     /// use ngrammatic::CorpusBuilder;
     /// use ngrammatic::key_transformer::LowerKeyTransformer;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::default().link_key_transformer(LowerKeyTransformer::default()).finish();
+    /// let mut corpus = CorpusBuilder::<2>::default().link_key_transformer(LowerKeyTransformer::default()).finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search("ToMaTo", 0.90, 10);
     /// if let Some(result) = results.first() {
@@ -736,12 +702,11 @@ where
     pub fn link_key_transformer<KT2>(
         self,
         key_trans: KT2,
-    ) -> CorpusBuilder<LinkedKeyTransformer<KT, KT2>>
+    ) -> CorpusBuilder<ARITY, LinkedKeyTransformer<KT, KT2>>
     where
         KT2: KeyTransformer,
     {
         CorpusBuilder {
-            arity: self.arity,
             pad_left: self.pad_left,
             pad_right: self.pad_right,
             texts: self.texts,
@@ -754,7 +719,7 @@ where
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
-    /// let mut corpus = CorpusBuilder::default().case_insensitive().finish();
+    /// let mut corpus = CorpusBuilder::<2>::default().case_insensitive().finish();
     /// corpus.add_text("tomato");
     /// let results = corpus.search("ToMaTo", 0.90, 10);
     /// if let Some(result) = results.first() {
@@ -764,14 +729,15 @@ where
     /// }
     /// # }
     /// ```
-    pub fn case_insensitive(self) -> CorpusBuilder<LinkedKeyTransformer<KT, LowerKeyTransformer>> {
+    pub fn case_insensitive(
+        self,
+    ) -> CorpusBuilder<ARITY, LinkedKeyTransformer<KT, LowerKeyTransformer>> {
         self.link_key_transformer(LowerKeyTransformer::default())
     }
 
     /// Yield a `Corpus` instance with all the properties set with this builder.
-    pub fn finish(self) -> Corpus<KT> {
+    pub fn finish(self) -> Corpus<KT, ARITY> {
         let mut corpus = Corpus {
-            arity: self.arity,
             ngrams: HashMap::new(),
             gram_to_words: HashMap::new(),
             pad_left: self.pad_left,
@@ -809,14 +775,13 @@ mod tests {
 
     #[test]
     fn arity_clamp_empty_string_nopad() {
-        let ngram = NgramBuilder::new("").arity(1).pad_full(Pad::None).finish();
+        let ngram = NgramBuilder::<1>::new("").pad_full(Pad::None).finish();
         assert!(ngram.is_empty());
     }
 
     #[test]
     fn arity_clamp_empty_string_padded() {
-        let ngram = NgramBuilder::new("")
-            .arity(2)
+        let ngram = NgramBuilder::<2>::new("")
             .pad_left(Pad::Pad("--".to_string()))
             .pad_right(Pad::Pad("++".to_string()))
             .finish();
@@ -827,20 +792,19 @@ mod tests {
 
     #[test]
     fn empty_string_nopad() {
-        let ngram = NgramBuilder::new("").arity(2).pad_full(Pad::None).finish();
+        let ngram = NgramBuilder::<2>::new("").pad_full(Pad::None).finish();
         assert!(ngram.is_empty());
     }
 
     #[test]
     fn empty_string_autopad() {
-        let ngram = NgramBuilder::new("").arity(2).finish();
+        let ngram = NgramBuilder::<2>::new("").finish();
         assert!(ngram.contains("  "));
     }
 
     #[test]
     fn empty_string_strpad() {
-        let ngram = NgramBuilder::new("")
-            .arity(2)
+        let ngram = NgramBuilder::<2>::new("")
             .pad_left(Pad::Pad("--".to_string()))
             .pad_right(Pad::Pad("++".to_string()))
             .finish();
@@ -851,16 +815,13 @@ mod tests {
 
     #[test]
     fn short_string_nopad() {
-        let ngram = NgramBuilder::new("ab")
-            .arity(2)
-            .pad_full(Pad::None)
-            .finish();
+        let ngram = NgramBuilder::<2>::new("ab").pad_full(Pad::None).finish();
         assert!(ngram.contains("ab"));
     }
 
     #[test]
     fn short_string_autopad() {
-        let ngram = NgramBuilder::new("ab").arity(2).finish();
+        let ngram = NgramBuilder::<2>::new("ab").finish();
         assert!(ngram.contains(" a"));
         assert!(ngram.contains("ab"));
         assert!(ngram.contains("b "));
@@ -868,8 +829,7 @@ mod tests {
 
     #[test]
     fn short_string_strpad() {
-        let ngram = NgramBuilder::new("ab")
-            .arity(2)
+        let ngram = NgramBuilder::<2>::new("ab")
             .pad_left(Pad::Pad("--".to_string()))
             .pad_right(Pad::Pad("++".to_string()))
             .finish();
@@ -882,17 +842,37 @@ mod tests {
 
     #[test]
     fn ngram_similarity_raw() {
-        assert!(float_approx_eq(Ngram::similarity(5, 10, 1.0), 0.5, None));
-        assert!(float_approx_eq(Ngram::similarity(5, 10, 2.0), 0.75, None));
-        assert!(float_approx_eq(Ngram::similarity(5, 10, 3.0), 0.875, None));
-        assert!(float_approx_eq(Ngram::similarity(2, 4, 2.0), 0.75, None));
-        assert!(float_approx_eq(Ngram::similarity(3, 4, 1.0), 0.75, None));
+        assert!(float_approx_eq(
+            Ngram::<2>::similarity(5, 10, 1.0),
+            0.5,
+            None
+        ));
+        assert!(float_approx_eq(
+            Ngram::<2>::similarity(5, 10, 2.0),
+            0.75,
+            None
+        ));
+        assert!(float_approx_eq(
+            Ngram::<2>::similarity(5, 10, 3.0),
+            0.875,
+            None
+        ));
+        assert!(float_approx_eq(
+            Ngram::<2>::similarity(2, 4, 2.0),
+            0.75,
+            None
+        ));
+        assert!(float_approx_eq(
+            Ngram::<2>::similarity(3, 4, 1.0),
+            0.75,
+            None
+        ));
     }
 
     #[test]
     fn similarity_identical() {
-        let ngram0 = NgramBuilder::new("ab").arity(2).finish();
-        let ngram1 = NgramBuilder::new("ab").arity(2).finish();
+        let ngram0 = NgramBuilder::<2>::new("ab").finish();
+        let ngram1 = NgramBuilder::<2>::new("ab").finish();
         assert!(float_approx_eq(
             ngram0.similarity_to(&ngram1, 3.0),
             1.0,
@@ -902,8 +882,8 @@ mod tests {
 
     #[test]
     fn similarity_completelydifferent() {
-        let ngram0 = NgramBuilder::new("ab").arity(2).finish();
-        let ngram1 = NgramBuilder::new("cd").arity(2).finish();
+        let ngram0 = NgramBuilder::<2>::new("ab").finish();
+        let ngram1 = NgramBuilder::<2>::new("cd").finish();
         assert!(float_approx_eq(
             ngram0.similarity_to(&ngram1, 3.0),
             0.0,
@@ -913,24 +893,15 @@ mod tests {
 
     #[test]
     fn corpus_add_text_before_setting_arity() {
-        let corpus = CorpusBuilder::default().fill(vec!["ab", "ba"]).finish();
-        println!("{:?}", corpus);
-    }
-
-    #[test]
-    fn corpus_set_arity_after_adding_text() {
-        let corpus = CorpusBuilder::default()
-            .arity(2)
+        let corpus = CorpusBuilder::<2>::default()
             .fill(vec!["ab", "ba"])
-            .arity(3)
             .finish();
         println!("{:?}", corpus);
     }
 
     #[test]
     fn corpus_set_padding_after_adding_text() {
-        let corpus = CorpusBuilder::default()
-            .arity(2)
+        let corpus = CorpusBuilder::<2>::default()
             .fill(vec!["ab", "ba"])
             .pad_full(Pad::None)
             .finish();
@@ -939,8 +910,7 @@ mod tests {
 
     #[test]
     fn corpus_add_multiple() {
-        let corpus = CorpusBuilder::default()
-            .arity(2)
+        let corpus = CorpusBuilder::<2>::default()
             .pad_full(Pad::Auto)
             .fill(vec!["ab", "ba"])
             .finish();
@@ -952,8 +922,7 @@ mod tests {
 
     #[test]
     fn corpus_search() {
-        let corpus = CorpusBuilder::default()
-            .arity(1)
+        let corpus = CorpusBuilder::<1>::default()
             .pad_full(Pad::None)
             .fill(vec!["ab", "ba", "cd"])
             .finish();
@@ -964,8 +933,7 @@ mod tests {
 
     #[test]
     fn corpus_case_insensitive_corpus_search() {
-        let corpus = CorpusBuilder::default()
-            .arity(1)
+        let corpus = CorpusBuilder::<1>::default()
             .pad_full(Pad::None)
             .fill(vec!["Ab", "Ba", "Cd"])
             .case_insensitive()
@@ -977,8 +945,7 @@ mod tests {
 
     #[test]
     fn corpus_case_insensitive_corpus_search_terms() {
-        let corpus = CorpusBuilder::default()
-            .arity(1)
+        let corpus = CorpusBuilder::<1>::default()
             .pad_full(Pad::None)
             .fill(vec!["Ab", "Ba", "Cd"])
             .case_insensitive()
@@ -990,8 +957,7 @@ mod tests {
 
     #[test]
     fn corpus_search_emoji() {
-        let corpus = CorpusBuilder::default()
-            .arity(1)
+        let corpus = CorpusBuilder::<1>::default()
             .pad_full(Pad::None)
             .fill(vec!["\u{1f60f}\u{1f346}", "ba", "cd"])
             .finish();
@@ -1002,8 +968,7 @@ mod tests {
 
     #[test]
     fn corpus_search_small_word() {
-        let corpus = CorpusBuilder::default()
-            .arity(5)
+        let corpus = CorpusBuilder::<5>::default()
             .pad_full(Pad::Pad(" ".to_string()))
             .fill(vec!["ab"])
             .case_insensitive()
@@ -1013,8 +978,7 @@ mod tests {
 
     #[test]
     fn corpus_search_empty_string() {
-        let corpus = CorpusBuilder::default()
-            .arity(3)
+        let corpus = CorpusBuilder::<3>::default()
             .pad_full(Pad::Pad(" ".to_string()))
             .fill(vec!["a"])
             .case_insensitive()
@@ -1027,7 +991,7 @@ mod tests {
         let provider = Vec::<String>::new().into_iter();
         // The test is only meant to verify that `fill` accepts an iterator that
         // yields `String`s.
-        let _ = CorpusBuilder::default().fill(provider);
+        let _ = CorpusBuilder::<2>::default().fill(provider);
     }
 
     #[test]
@@ -1035,7 +999,7 @@ mod tests {
         let provider = Vec::<String>::new();
         // The test is only meant to verify that `fill` accepts an iterator that
         // yields `&str`s or `&String`s.
-        let _ = CorpusBuilder::default()
+        let _ = CorpusBuilder::<2>::default()
             .fill(&provider)
             .fill(provider.iter().map(String::as_str));
     }

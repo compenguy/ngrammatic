@@ -40,8 +40,7 @@ To do fuzzy matching, build up your corpus of valid symbols like this:
 ```rust
 use ngrammatic::{CorpusBuilder, Pad};
 
-let mut corpus = CorpusBuilder::default()
-    .arity(2)
+let mut corpus = CorpusBuilder::<2>::default()
     .pad_full(Pad::Auto)
     .finish();
 
