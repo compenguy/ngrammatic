@@ -31,7 +31,7 @@ To use it, add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-ngrammatic = "0.3.4"
+ngrammatic = "0.4.0"
 ```
 
 ## Usage example
