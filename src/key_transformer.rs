@@ -3,18 +3,18 @@
 use serde::{Deserialize, Serialize};
 
 /// Trait for key transformers.
-/// 
+///
 /// Key transformers are used to transform keys before they are used in a map,
 /// and are designed to be chained together.
 pub trait KeyTransformer {
     /// Transform a key.
-    /// 
+    ///
     /// # Arguments
     /// * `key` - The key to transform.
     fn transform(&self, key: &str) -> String;
 
     /// Link this key transformer to another.
-    /// 
+    ///
     /// # Arguments
     /// * `dst` - The key transformer to link to itself.
     fn link<Dst>(self, dst: Dst) -> LinkedKeyTransformer<Self, Dst>
@@ -65,7 +65,7 @@ pub struct LinkedKeyTransformer<Src, Dst> {
 
 impl<Src, Dst> LinkedKeyTransformer<Src, Dst> {
     /// Create a new linked key transformer.
-    /// 
+    ///
     /// # Arguments
     /// * `src` - The source key transformer.
     /// * `dst` - The destination key transformer.
