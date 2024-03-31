@@ -22,51 +22,61 @@ fn get_domains() -> Vec<&'static str> {
     TOP_MILLION.split(|c: char| c.is_whitespace()).collect()
 }
 
-fn build_corpus<It>(words: It) -> ngrammatic::Corpus
+fn build_corpus<It>(words: It) -> ngrammatic::Corpus<ngrammatic::IdentityKeyTransformer>
 where
     It: IntoIterator,
     It::Item: AsRef<str>,
 {
-    ngrammatic::CorpusBuilder::new()
-        .arity(2)
+    ngrammatic::CorpusBuilder::default()
         .pad_full(ngrammatic::Pad::Auto)
         .fill(words)
         .finish()
 }
 
-fn build_corpus_insensitive<It>(words: It) -> ngrammatic::Corpus
+fn build_corpus_insensitive<It>(
+    words: It,
+) -> ngrammatic::Corpus<
+    ngrammatic::LinkedKeyTransformer<
+        ngrammatic::IdentityKeyTransformer,
+        ngrammatic::LowerKeyTransformer,
+    >,
+>
 where
     It: IntoIterator,
     It::Item: AsRef<str>,
 {
-    ngrammatic::CorpusBuilder::new()
-        .arity(2)
-        .key_trans(Box::new(|x| x.to_lowercase()))
+    ngrammatic::CorpusBuilder::default()
+        .case_insensitive()
         .pad_full(ngrammatic::Pad::Auto)
         .fill(words)
         .finish()
 }
 
-fn build_corpus_par<It>(words: It) -> ngrammatic::Corpus
+fn build_corpus_par<It>(words: It) -> ngrammatic::Corpus<ngrammatic::IdentityKeyTransformer>
 where
     It: IntoIterator + rayon::iter::IntoParallelIterator,
     String: From<<It as rayon::iter::IntoParallelIterator>::Item>,
 {
-    ngrammatic::CorpusBuilder::new()
-        .arity(2)
+    ngrammatic::CorpusBuilder::default()
         .pad_full(ngrammatic::Pad::Auto)
         .fill_par(words)
         .finish()
 }
 
-fn build_corpus_insensitive_par<It>(words: It) -> ngrammatic::Corpus
+fn build_corpus_insensitive_par<It>(
+    words: It,
+) -> ngrammatic::Corpus<
+    ngrammatic::LinkedKeyTransformer<
+        ngrammatic::IdentityKeyTransformer,
+        ngrammatic::LowerKeyTransformer,
+    >,
+>
 where
     It: IntoIterator + rayon::iter::IntoParallelIterator,
     String: From<<It as rayon::iter::IntoParallelIterator>::Item>,
 {
-    ngrammatic::CorpusBuilder::new()
-        .arity(2)
-        .key_trans(Box::new(|x| x.to_lowercase()))
+    ngrammatic::CorpusBuilder::default()
+        .case_insensitive()
         .pad_full(ngrammatic::Pad::Auto)
         .fill_par(words)
         .finish()
