@@ -36,7 +36,7 @@ corpus.add_text("carbon");
 
 // Now we can try an unknown/misspelled word, and find a similar match
 // in the corpus
-let results = corpus.search("tomacco", 0.25);
+let results = corpus.search("tomacco", 0.25, 10);
 let top_match = results.first();
 
 assert!(top_match.is_some());
@@ -491,7 +491,7 @@ impl Corpus {
     /// # fn main() {
     /// let mut corpus = CorpusBuilder::new().finish();
     /// corpus.add_ngram(NgramBuilder::new("tomato").finish());
-    /// let results = corpus.search("tomacco", 0.40);
+    /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
     ///     println!("Closest match to 'tomacco' in the corpus was {}", result.text);
     /// } else {
@@ -506,7 +506,7 @@ impl Corpus {
             let ngram_list = self
                 .gram_to_words
                 .entry(gram.clone())
-                .or_insert_with(Vec::new);
+                .or_default();
             ngram_list.push(ngram.text.to_string());
         }
     }
@@ -518,7 +518,7 @@ impl Corpus {
     /// # fn main() {
     /// let mut corpus = CorpusBuilder::new().finish();
     /// corpus.add_text("tomato");
-    /// let results = corpus.search("tomacco", 0.40);
+    /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
     ///     println!("Closest match to 'tomacco' in the corpus was {}", result.text);
     /// } else {
@@ -560,14 +560,21 @@ impl Corpus {
     }
 
     /// Perform a fuzzy search of the `Corpus` for `Ngrams` above some
-    /// `threshold` of similarity to the supplied `text`.  Returns up to 10
+    /// `threshold` of similarity to the supplied `text`.  Returns up to `limit`
     /// results, sorted by highest similarity to lowest.
+    /// 
+    /// # Arguments
+    /// * `text` - The text to search for in the corpus
+    /// * `threshold` - The minimum similarity value for a result to be included in the
+    /// output. This value should be in the range 0.0 to 1.0.
+    /// * `limit` - The maximum number of results to return.
+    /// 
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
     /// let mut corpus = CorpusBuilder::new().finish();
     /// corpus.add_text("tomato");
-    /// let results = corpus.search("tomacco", 0.40);
+    /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
     ///     println!("Closest match to 'tomacco' in the corpus was {}", result.text);
     /// } else {
@@ -576,19 +583,28 @@ impl Corpus {
     /// # }
     /// ```
     #[allow(dead_code)]
-    pub fn search(&self, text: &str, threshold: f32) -> Vec<SearchResult> {
-        self.search_with_warp(text, 2.0, threshold)
+    pub fn search(&self, text: &str, threshold: f32, limit: usize) -> Vec<SearchResult> {
+        self.search_with_warp(text, 2.0, threshold, limit)
     }
 
     /// Perform a fuzzy search of the `Corpus` for `Ngrams` with a custom `warp` for
     /// results above some `threshold` of similarity to the supplied `text`.  Returns
-    /// up to 10 results, sorted by highest similarity to lowest.
+    /// up to `limit` results, sorted by highest similarity to lowest.
+    ///
+    /// # Arguments
+    /// * `text` - The text to search for in the corpus
+    /// * `warp` - The warp factor to use in the similarity calculation. This value
+    ///  should be in the range 1.0 to 3.0, with 2.0 being the default.
+    /// * `threshold` - The minimum similarity value for a result to be included in the
+    /// output. This value should be in the range 0.0 to 1.0.
+    /// * `limit` - The maximum number of results to return.
+    ///
     /// ```rust
     /// # use ngrammatic::CorpusBuilder;
     /// # fn main() {
     /// let mut corpus = CorpusBuilder::new().finish();
     /// corpus.add_text("tomato");
-    /// let results = corpus.search_with_warp("tomacco", 2.0, 0.40);
+    /// let results = corpus.search_with_warp("tomacco", 2.0, 0.40, 10);
     /// if let Some(result) = results.first() {
     ///     println!("Closest match to 'tomacco' in the corpus was {}", result.text);
     /// } else {
@@ -597,7 +613,13 @@ impl Corpus {
     /// # }
     /// ```
     #[allow(dead_code)]
-    pub fn search_with_warp(&self, text: &str, warp: f32, threshold: f32) -> Vec<SearchResult> {
+    pub fn search_with_warp(
+        &self,
+        text: &str,
+        warp: f32,
+        threshold: f32,
+        limit: usize,
+    ) -> Vec<SearchResult> {
         let item = NgramBuilder::new(&(self.key_trans)(text))
             .arity(self.arity)
             .pad_left(self.pad_left.clone())
@@ -617,7 +639,7 @@ impl Corpus {
 
         // Sort highest similarity to lowest
         results.sort_by(|a, b| b.partial_cmp(a).unwrap());
-        results.truncate(10);
+        results.truncate(limit);
         results
     }
 }
@@ -664,7 +686,7 @@ impl CorpusBuilder {
     /// # fn main() {
     /// let mut corpus = CorpusBuilder::new().finish();
     /// corpus.add_text("tomato");
-    /// let results = corpus.search("tomacco", 0.40);
+    /// let results = corpus.search("tomacco", 0.40, 10);
     /// if let Some(result) = results.first() {
     ///     println!("Closest match to 'tomacco' in the corpus was {}", result.text);
     /// } else {
@@ -727,7 +749,7 @@ impl CorpusBuilder {
     /// # fn main() {
     /// let mut corpus = CorpusBuilder::new().key_trans(Box::new(|x| x.to_lowercase())).finish();
     /// corpus.add_text("tomato");
-    /// let results = corpus.search("ToMaTo", 0.90);
+    /// let results = corpus.search("ToMaTo", 0.90, 10);
     /// if let Some(result) = results.first() {
     ///     println!("Closest match to 'ToMaTo' in the corpus was {}", result.text);
     /// } else {
@@ -747,7 +769,7 @@ impl CorpusBuilder {
     /// # fn main() {
     /// let mut corpus = CorpusBuilder::new().case_insensitive().finish();
     /// corpus.add_text("tomato");
-    /// let results = corpus.search("ToMaTo", 0.90);
+    /// let results = corpus.search("ToMaTo", 0.90, 10);
     /// if let Some(result) = results.first() {
     ///     println!("Closest match to 'ToMaTo' in the corpus was {}", result.text);
     /// } else {
@@ -948,9 +970,9 @@ mod tests {
             .pad_full(Pad::None)
             .fill(vec!["ab", "ba", "cd"])
             .finish();
-        assert_eq!(corpus.search("ce", 0.3).len(), 1);
-        assert_eq!(corpus.search("ec", 0.3).len(), 1);
-        assert_eq!(corpus.search("b", 0.5).len(), 2);
+        assert_eq!(corpus.search("ce", 0.3, 10).len(), 1);
+        assert_eq!(corpus.search("ec", 0.3, 10).len(), 1);
+        assert_eq!(corpus.search("b", 0.5, 10).len(), 2);
     }
 
     #[test]
@@ -961,9 +983,9 @@ mod tests {
             .fill(vec!["Ab", "Ba", "Cd"])
             .case_insensitive()
             .finish();
-        assert_eq!(corpus.search("ce", 0.3).len(), 1);
-        assert_eq!(corpus.search("ec", 0.3).len(), 1);
-        assert_eq!(corpus.search("b", 0.5).len(), 2);
+        assert_eq!(corpus.search("ce", 0.3, 10).len(), 1);
+        assert_eq!(corpus.search("ec", 0.3, 10).len(), 1);
+        assert_eq!(corpus.search("b", 0.5, 10).len(), 2);
     }
 
     #[test]
@@ -974,9 +996,9 @@ mod tests {
             .fill(vec!["Ab", "Ba", "Cd"])
             .case_insensitive()
             .finish();
-        assert_eq!(corpus.search("cE", 0.3).len(), 1);
-        assert_eq!(corpus.search("eC", 0.3).len(), 1);
-        assert_eq!(corpus.search("b", 0.5).len(), 2);
+        assert_eq!(corpus.search("cE", 0.3, 10).len(), 1);
+        assert_eq!(corpus.search("eC", 0.3, 10).len(), 1);
+        assert_eq!(corpus.search("b", 0.5, 10).len(), 2);
     }
 
     #[test]
@@ -987,8 +1009,8 @@ mod tests {
             .fill(vec!["\u{1f60f}\u{1f346}", "ba", "cd"])
             .finish();
 
-        assert_eq!(corpus.search("ac", 0.3).len(), 2);
-        assert_eq!(corpus.search("\u{1f346}d", 0.3).len(), 2);
+        assert_eq!(corpus.search("ac", 0.3, 10).len(), 2);
+        assert_eq!(corpus.search("\u{1f346}d", 0.3, 10).len(), 2);
     }
 
     #[test]
@@ -999,7 +1021,7 @@ mod tests {
             .fill(vec!["ab"])
             .case_insensitive()
             .finish();
-        assert!(corpus.search("a", 0.).is_empty());
+        assert!(corpus.search("a", 0., 10).is_empty());
     }
 
     #[test]
@@ -1010,7 +1032,7 @@ mod tests {
             .fill(vec!["a"])
             .case_insensitive()
             .finish();
-        assert!(corpus.search("", 0.).is_empty());
+        assert!(corpus.search("", 0., 10).is_empty());
     }
 
     #[test]
