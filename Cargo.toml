@@ -16,6 +16,7 @@ license = "MIT"
 name = "ngrammatic"
 
 [dependencies]
+serde = { version = "1.0", features = ["derive"], optional = true }
 
 [package.metadata]
 msrv = "1.27.2"
