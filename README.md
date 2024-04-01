@@ -18,7 +18,7 @@ word and a similarity measure in the range of 0.0 to 1.0.
 The general usage pattern is to construct a `Corpus`, `.add()` your
 list of valid symbols to it, and then perform `.search()`es of valid,
 unknown, misspelled, etc symbols on the `Corpus`. The results come
-back as a vector of up to 10 results, sorted from highest similarity
+back as a vector of up to `limit` results, sorted from highest similarity
 to lowest.
 
 Licensed under the MIT license.
