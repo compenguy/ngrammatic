@@ -1,0 +1,16 @@
+[package]
+name = "benchmarks"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+flate2 = "1.0.28"
+indicatif = "0.17.8"
+mem_dbg = "0.1.4"
+ngrammatic = { path = "../../ngrammatic", features = ["mem_dbg"] }
+
+[profile.release]
+overflow-checks = false   # Disable integer overflow checks.
+debug = false            # Include debug info.
+debug-assertions = false  # Enables debug assertions.
+opt-level = 3

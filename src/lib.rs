@@ -121,13 +121,6 @@ impl<const ARITY: usize> Hash for Ngram<ARITY> {
     }
 }
 
-// TODO: When rust adds const generics
-// (see https://github.com/rust-lang/rust/issues/44580)
-// switch Ngram's "arity" member to be a const generic
-// on Ngram, and implement From(String) so that we can
-// do things like Ngram::<3>::From(text) to construct
-// new ngrams
-
 impl<const ARITY: usize> Ngram<ARITY> {
     /// Static method to calculate `Ngram` similarity based on samegram count,
     /// allgram count, and a `warp` factor.
@@ -406,6 +399,7 @@ impl<const ARITY: usize> NgramBuilder<ARITY> {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
 /// Holds a corpus of words and their ngrams, allowing fuzzy matches of
 /// candidate strings against known strings in the corpus.
 pub struct Corpus<KT, const ARITY: usize>
@@ -456,11 +450,11 @@ where
     /// ```
     #[allow(dead_code)]
     pub fn add_ngram(&mut self, ngram: Ngram<ARITY>) {
-        self.ngrams.insert(ngram.text.to_string(), ngram.clone());
         for gram in ngram.grams.keys() {
             let ngram_list = self.gram_to_words.entry(gram.clone()).or_default();
             ngram_list.push(ngram.text.to_string());
         }
+        self.ngrams.insert(ngram.text.to_string(), ngram);
     }
 
     /// Generate an `Ngram` for the supplied `text`, and add it to the
@@ -490,7 +484,7 @@ where
                 .finish(),
         );
     }
-
+    
     /// If the corpus is empty.
     #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
@@ -710,7 +704,7 @@ where
     pub fn link_key_transformer<KT2>(
         self,
         key_trans: KT2,
-    ) -> CorpusBuilder<ARITY, LinkedKeyTransformer<KT, KT2>>
+    ) -> CorpusBuilder<ARITY, <KT as key_transformer::KeyTransformer>::Linked<KT2>>
     where
         KT2: KeyTransformer,
     {
@@ -739,7 +733,7 @@ where
     /// ```
     pub fn case_insensitive(
         self,
-    ) -> CorpusBuilder<ARITY, LinkedKeyTransformer<KT, LowerKeyTransformer>> {
+    ) -> CorpusBuilder<ARITY, <KT as key_transformer::KeyTransformer>::Linked<LowerKeyTransformer>> {
         self.link_key_transformer(LowerKeyTransformer::default())
     }
 
