@@ -11,10 +11,14 @@ pub use key_transformer::*;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "mem_dbg")]
+use mem_dbg::{MemDbg, MemSize, DbgFlags};
+
 /// Holds a fuzzy match search result string, and its associated similarity
 /// to the query text.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
 pub struct SearchResult {
     /// The text of a fuzzy match
     pub text: String,
@@ -47,6 +51,7 @@ impl SearchResult {
 /// [Read more about the effect of ngram padding](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0107510)
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
 pub enum Pad {
     /// No padding should be added before generating ngrams.
     None,
@@ -90,6 +95,7 @@ impl Pad {
 /// value of "n" used in generating the n-grams.
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
 pub struct Ngram<const ARITY: usize> {
     /// The text for which ngrams were generated
     pub text: String,
@@ -299,6 +305,7 @@ impl<const ARITY: usize> Ngram<ARITY> {
 // to a constructor method, and allowing default values by omission.
 #[derive(Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
 pub struct NgramBuilder<const ARITY: usize> {
     pad_left: Pad,
     pad_right: Pad,
@@ -590,6 +597,7 @@ where
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
 /// Build an Ngram Corpus, one setting at a time.
 // We provide a builder for Corpus to ensure initialization operations are
 // performed in the correct order, without requiring an extensive parameter list
