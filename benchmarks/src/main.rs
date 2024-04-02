@@ -41,9 +41,14 @@ fn main() {
 
     loading_bar.set_style(progress_style);
 
+    let start_time = std::time::Instant::now();
     for taxon in iter_taxons().progress_with(loading_bar) {
         corpus.add_text(&taxon)
     }
+    let end_time = std::time::Instant::now();
+    let duration = end_time - start_time;
+    
+    println!("Time taken to load corpus: {:?}", duration);
 
     corpus.mem_dbg(DbgFlags::HUMANIZE | DbgFlags::PERCENTAGE | DbgFlags::TYPE_NAME | DbgFlags::FOLLOW_REFS).unwrap();
 }
