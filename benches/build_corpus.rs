@@ -15,10 +15,10 @@ fn iter_taxons() -> impl Iterator<Item = String> {
     reader.lines().map(|line| line.unwrap())
 }
 
-fn load_corpus() -> Corpus<LowerKeyTransformer, 2> {
-    let mut corpus = CorpusBuilder::<2>::default()
-        .pad_full(Pad::Auto)
-        .case_insensitive()
+fn load_corpus() -> Corpus<'static, ArityTwo, Lower, String, usize> {
+    let mut corpus = CorpusBuilder::<ArityTwo>::default()
+        // .pad_full(Pad::Auto)
+        .lower()
         .finish();
 
     let number_of_taxons = 5_000;
@@ -33,7 +33,7 @@ fn load_corpus() -> Corpus<LowerKeyTransformer, 2> {
     loading_bar.set_style(progress_style);
 
     for taxon in iter_taxons().progress_with(loading_bar).take(number_of_taxons) {
-        corpus.add_text(&taxon)
+        corpus.push(taxon)
     }
 
     corpus

@@ -9,6 +9,18 @@ To run the time benchmarks, run from the root of the repository the following co
 cargo bench
 ```
 
+## Benchmarks 2 April 2024, 10:00 PM
+The second benchmark was run on a 6-core machine with 32 GBs of RAM. We loaded the first `5_000` taxons from the dataset into memory.
+
+```text
+running 1 test
+test build_corpus_2 ... bench:  34,727,715 ns/iter (+/- 14,040,255)
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 1 measured; 0 filtered out; finished in 10.89s
+```
+
+The improvement is significant, and the library is now 3.38 times faster than before.
+
 ## Benchmarks 2 April 2024, 09:00 AM
 The first benchmark was run on a 6-core machine with 32 GBs of RAM. We loaded the first `5_000` taxons from the dataset into memory.
 

@@ -8,7 +8,7 @@
 //! of the taxons as provided by NCBI Taxonomy.
 use indicatif::ProgressIterator;
 use mem_dbg::*;
-use ngrammatic::{CorpusBuilder, Pad};
+use ngrammatic::{ArityTwo, Corpus, CorpusBuilder};
 
 /// Returns an iterator over the taxons in the corpus.
 fn iter_taxons() -> impl Iterator<Item = String> {
@@ -22,33 +22,35 @@ fn iter_taxons() -> impl Iterator<Item = String> {
 }
 
 /// Returns human readable size.
-/// 
-/// 
+///
+///
 
 fn main() {
-    let mut corpus = CorpusBuilder::<2>::default()
-        .pad_full(Pad::Auto)
-        .case_insensitive()
-        .finish();
+    let mut corpus: Corpus<ArityTwo, _, _, u16> = CorpusBuilder::default().lower().finish();
 
     let number_of_taxons = 2_571_000;
 
     let loading_bar = indicatif::ProgressBar::new(number_of_taxons as u64);
 
-    let progress_style  = indicatif::ProgressStyle::default_bar()
-        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})").unwrap()
+    let progress_style = indicatif::ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})")
+        .unwrap()
         .progress_chars("#>-");
 
     loading_bar.set_style(progress_style);
 
     let start_time = std::time::Instant::now();
     for taxon in iter_taxons().progress_with(loading_bar) {
-        corpus.add_text(&taxon)
+        corpus.push(taxon)
     }
     let end_time = std::time::Instant::now();
     let duration = end_time - start_time;
-    
+
     println!("Time taken to load corpus: {:?}", duration);
 
-    corpus.mem_dbg(DbgFlags::HUMANIZE | DbgFlags::PERCENTAGE | DbgFlags::TYPE_NAME | DbgFlags::FOLLOW_REFS).unwrap();
+    corpus
+        .mem_dbg(
+            DbgFlags::HUMANIZE | DbgFlags::PERCENTAGE | DbgFlags::TYPE_NAME,
+        )
+        .unwrap();
 }
