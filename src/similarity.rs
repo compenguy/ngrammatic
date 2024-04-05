@@ -5,10 +5,12 @@ use std::{
 
 use crate::{corpus::Corpus, traits::*};
 
-impl<K, NG> Corpus<K, NG>
+impl<KS, NG, K> Corpus<KS, NG, K>
 where
     NG: Ngram,
-    K: Keys<NG::G>,
+    KS: Keys<NG>,
+    KS::K: AsRef<K>,
+    K: Key<NG, NG::G> + ?Sized,
 {
     #[inline(always)]
     /// Returns whether any of the ngrams provided appear in the provided key.

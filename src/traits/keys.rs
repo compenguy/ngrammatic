@@ -2,12 +2,12 @@
 
 use std::ops::Index;
 
-use crate::{Gram, Key};
+use crate::{Key, Ngram};
 
 /// Trait defining a container of keys.
-pub trait Keys<G: Gram>: Index<usize, Output = <Self as Keys<G>>::K> {
+pub trait Keys<NG: Ngram>: Index<usize, Output = <Self as Keys<NG>>::K> {
     /// The type of the key.
-    type K: Key<G>;
+    type K: Key<NG, <NG as Ngram>::G>;
     /// The iterator to iter the keys.
     type IterKeys<'a>: Iterator<Item = &'a Self::K>
     where
@@ -26,7 +26,7 @@ pub trait Keys<G: Gram>: Index<usize, Output = <Self as Keys<G>>::K> {
     fn iter(&self) -> Self::IterKeys<'_>;
 }
 
-impl<G: Gram, K: Key<G>> Keys<G> for Vec<K> {
+impl<NG: Ngram, K: Key<NG, NG::G>> Keys<NG> for Vec<K> {
     type K = K;
     type IterKeys<'a> = std::slice::Iter<'a, K> where K: 'a, Self: 'a;
 

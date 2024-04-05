@@ -22,8 +22,9 @@ fn iter_taxons() -> impl Iterator<Item = String> {
 }
 
 /// Returns bigram corpus.
-fn load_corpus<NG: Ngram<G = u8>>()
+fn load_corpus<NG>()
 where
+    NG: PaddableNgram<G = ASCIIChar>,
     Vec<NG>: MemDbgImpl + MemSize,
 {
     let number_of_taxons = 2_571_000;
@@ -42,7 +43,7 @@ where
         .take(number_of_taxons)
         .progress_with(loading_bar)
         .collect();
-    let corpus: Corpus<Vec<String>, NG> = Corpus::from(taxons);
+    let corpus: Corpus<Vec<String>, NG, Lowercase<str>> = Corpus::from(taxons);
 
     let end_time = std::time::Instant::now();
     let duration = end_time - start_time;
@@ -56,14 +57,15 @@ where
 
 /// Returns bigram corpus.
 fn bigram_corpus() {
-    load_corpus::<BiGram<u8>>()
+    load_corpus::<BiGram<ASCIIChar>>()
 }
 
 /// Returns trigram corpus.
 fn trigram_corpus() {
-    load_corpus::<TriGram<u8>>()
+    load_corpus::<TriGram<ASCIIChar>>()
 }
 
 fn main() {
     bigram_corpus();
+    // trigram_corpus();
 }

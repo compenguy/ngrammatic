@@ -1,9 +1,47 @@
 //! Submodule providing traits to normalize iterators of char-like items.
 
+use std::mem::transmute;
+
 use crate::CharLike;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// Trait defining an iterator to lowercase.
-pub struct Lowercase<I>(I);
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(transparent)]
+pub struct Lowercase<I: ?Sized>(I);
+
+impl<I: ?Sized> AsRef<I> for Lowercase<I> {
+    fn as_ref(&self) -> &I {
+        &self.0
+    }
+}
+
+impl<E: ?Sized> AsRef<Lowercase<E>> for String
+where
+    String: AsRef<E>,
+{
+    fn as_ref(&self) -> &Lowercase<E> {
+        let reference: &E = self.as_ref();
+        unsafe { transmute(reference) }
+    }
+}
+
+impl<E: ?Sized> AsRef<Lowercase<E>> for str where str: AsRef<E> {
+    fn as_ref(&self) -> &Lowercase<E> {
+        let reference: &E = self.as_ref();
+        unsafe { transmute(reference) }
+    }
+}
+
+impl<I: ?Sized> Lowercase<I> {
+    /// Returns a reference to the inner iterator.
+    pub fn inner(&self) -> &I {
+        &self.0
+    }
+}
 
 impl<I> From<I> for Lowercase<I> {
     fn from(iter: I) -> Self {
@@ -23,29 +61,8 @@ where
     }
 }
 
-/// Trait defining an iterator to uppercase.
-pub struct Uppercase<I>(I);
-
-impl<I> From<I> for Uppercase<I> {
-    fn from(iter: I) -> Self {
-        Uppercase(iter)
-    }
-}
-
-impl<I> Iterator for Uppercase<I>
-where
-    I: Iterator,
-    <I as Iterator>::Item: CharLike,
-{
-    type Item = <I as Iterator>::Item;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(CharLike::to_uppercase)
-    }
-}
-
 /// Trait defining a char normalizer.
-pub trait CharNormalizer: DoubleEndedIterator + Sized
+pub trait CharNormalizer: Iterator + Sized
 where
     <Self as Iterator>::Item: CharLike,
 {
@@ -67,7 +84,10 @@ where
 
     #[inline(always)]
     /// Trims spaces from the right of the iterator.
-    fn trim_right(mut self) -> Self {
+    fn trim_right(mut self) -> Self
+    where
+        Self: DoubleEndedIterator,
+    {
         let mut peekable = self.by_ref().rev().peekable();
 
         while let Some(c) = peekable.peek() {
@@ -83,7 +103,10 @@ where
 
     #[inline(always)]
     /// Trims spaces from both sides of the iterator.
-    fn trim(self) -> Self {
+    fn trim(self) -> Self
+    where
+        Self: DoubleEndedIterator,
+    {
         self.trim_left().trim_right()
     }
 
@@ -105,7 +128,10 @@ where
 
     #[inline(always)]
     /// Trims null characters from the right of the iterator.
-    fn trim_null_right(mut self) -> Self {
+    fn trim_null_right(mut self) -> Self
+    where
+        Self: DoubleEndedIterator,
+    {
         let mut peekable = self.by_ref().rev().peekable();
 
         while let Some(c) = peekable.peek() {
@@ -121,7 +147,10 @@ where
 
     #[inline(always)]
     /// Trims null characters from both sides of the iterator.
-    fn trim_null(self) -> Self {
+    fn trim_null(self) -> Self
+    where
+        Self: DoubleEndedIterator,
+    {
         self.trim_null_left().trim_null_right()
     }
 
@@ -130,19 +159,12 @@ where
     fn lower(self) -> Lowercase<Self> {
         Lowercase::from(self)
     }
-
-    #[inline(always)]
-    /// Converts all characters to uppercase.
-    fn upper(self) -> Uppercase<Self> {
-        Uppercase::from(self)
-    }
 }
-
 
 /// Blanket implementation of `CharNormalizer` for all iterators yielding `CharLike` items.
 impl<I> CharNormalizer for I
 where
-    I: DoubleEndedIterator,
+    I: Iterator,
     <Self as Iterator>::Item: CharLike,
 {
 }

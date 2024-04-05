@@ -3,8 +3,6 @@
 use sux::bits::BitFieldVec;
 use sux::traits::BitFieldSliceMut;
 
-use crate::UnsignedInteger;
-
 /// Trait defining a bounded type.
 pub trait Bounded {
     /// The maximum value of the type.
@@ -148,22 +146,6 @@ impl AdaptativeVector {
         AdaptativeVector::U8(Vec::with_capacity(capacity))
     }
 
-    /// Returns the maximum value in the vector.
-    pub(crate) fn max(&self) -> AdaptativeVectorValue {
-        match self {
-            AdaptativeVector::U8(vector) => vector.iter().max().copied().unwrap_or_default().into(),
-            AdaptativeVector::U16(vector) => {
-                vector.iter().max().copied().unwrap_or_default().into()
-            }
-            AdaptativeVector::U32(vector) => {
-                vector.iter().max().copied().unwrap_or_default().into()
-            }
-            AdaptativeVector::U64(vector) => {
-                vector.iter().max().copied().unwrap_or_default().into()
-            }
-        }
-    }
-
     /// Returns the length of the vector.
     pub(crate) fn len(&self) -> usize {
         match self {
@@ -265,6 +247,40 @@ impl AdaptativeVector {
                     false
                 }
             },
+        }
+    }
+
+    /// Converts the vector into a bit field vector.
+    pub fn into_bitvec(self, maximum_value: usize) -> BitFieldVec {
+        let number_of_bits_to_represent_maximum_value = maximum_value.next_power_of_two().ilog2();
+        unsafe {
+            let mut bit_field = BitFieldVec::new_uninit(
+                number_of_bits_to_represent_maximum_value as usize,
+                self.len(),
+            );
+            match self {
+                AdaptativeVector::U8(vector) => {
+                    for (index, value) in vector.into_iter().enumerate() {
+                        bit_field.set_unchecked(index, value as usize);
+                    }
+                }
+                AdaptativeVector::U16(vector) => {
+                    for (index, value) in vector.into_iter().enumerate() {
+                        bit_field.set_unchecked(index, value as usize);
+                    }
+                }
+                AdaptativeVector::U32(vector) => {
+                    for (index, value) in vector.into_iter().enumerate() {
+                        bit_field.set_unchecked(index, value as usize);
+                    }
+                }
+                AdaptativeVector::U64(vector) => {
+                    for (index, value) in vector.into_iter().enumerate() {
+                        bit_field.set_unchecked(index, value as usize);
+                    }
+                }
+            }
+            bit_field
         }
     }
 }
@@ -449,54 +465,5 @@ impl From<u64> for AdaptativeVectorValue {
 impl From<usize> for AdaptativeVectorValue {
     fn from(value: usize) -> Self {
         AdaptativeVectorValue::U64(value as u64)
-    }
-}
-
-impl From<AdaptativeVector> for BitFieldVec {
-    fn from(vector: AdaptativeVector) -> Self {
-        let maximum_value = vector.max();
-        let number_of_bits_to_represent_maximum_value = match maximum_value {
-            AdaptativeVectorValue::U8(value) => {
-                value.as_usize().next_power_of_two().trailing_zeros()
-            }
-            AdaptativeVectorValue::U16(value) => {
-                value.as_usize().next_power_of_two().trailing_zeros()
-            }
-            AdaptativeVectorValue::U32(value) => {
-                value.as_usize().next_power_of_two().trailing_zeros()
-            }
-            AdaptativeVectorValue::U64(value) => {
-                value.as_usize().next_power_of_two().trailing_zeros()
-            }
-        };
-        unsafe {
-            let mut bit_field = BitFieldVec::new_uninit(
-                number_of_bits_to_represent_maximum_value as usize,
-                vector.len(),
-            );
-            match vector {
-                AdaptativeVector::U8(vector) => {
-                    for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set_unchecked(index, value as usize);
-                    }
-                }
-                AdaptativeVector::U16(vector) => {
-                    for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set_unchecked(index, value as usize);
-                    }
-                }
-                AdaptativeVector::U32(vector) => {
-                    for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set_unchecked(index, value as usize);
-                    }
-                }
-                AdaptativeVector::U64(vector) => {
-                    for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set_unchecked(index, value as usize);
-                    }
-                }
-            }
-            bit_field
-        }
     }
 }

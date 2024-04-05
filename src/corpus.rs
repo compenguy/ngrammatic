@@ -23,9 +23,13 @@ use crate::{traits::*, AdaptativeVector};
 /// links between keys and grams are weighted by the number of times a given
 /// gram appears in a given key: we call this vector the `cooccurrences`.
 ///
-pub struct Corpus<K: Keys<NG::G>, NG: Ngram> {
+pub struct Corpus<
+    KS: Keys<NG>,
+    NG: Ngram,
+    K: Key<NG, NG::G> + ?Sized = <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref,
+> {
     /// Vector of unique keys in the corpus.
-    keys: K,
+    keys: KS,
     /// Vector of unique ngrams in the corpus.
     ngrams: Vec<NG>,
     /// Vector containing the number of times a given gram appears in a given key.
@@ -49,23 +53,30 @@ pub struct Corpus<K: Keys<NG::G>, NG: Ngram> {
     key_to_ngram_edges: BitFieldVec,
     /// Vector containing the sources of the edges from grams to keys.
     gram_to_key_edges: BitFieldVec,
+    /// Phantom type to store the type of the keys.
+    _phantom: std::marker::PhantomData<K>,
 }
 
-impl<K, NG> From<K> for Corpus<K, NG>
+impl<KS, NG, K> From<KS> for Corpus<KS, NG, K>
 where
     NG: Ngram,
-    K: Keys<NG::G>,
+    KS: Keys<NG>,
+    KS::K: AsRef<K>,
+    K: Key<NG, NG::G> + ?Sized
 {
-    fn from(keys: K) -> Self {
+    fn from(keys: KS) -> Self {
         // Sorted vector of ngrams.
         let mut ngrams = BTreeSet::new();
         let mut cooccurrences = AdaptativeVector::with_capacity(keys.len());
-        let mut maximal_cooccurrence = 0;
+        let mut maximal_cooccurrence: usize = 0;
         let mut key_offsets = AdaptativeVector::with_capacity(keys.len());
         key_offsets.push(0_u8);
         let mut key_to_ngrams: Vec<NG> = Vec::with_capacity(keys.len());
 
         for key in keys.iter() {
+            // First, we get the reference to the inner key.
+            let key: &K = key.as_ref();
+
             // We create a hashmap to store the ngrams of the key and their counts.
             let ngram_counts: HashMap<NG, usize> = key.counts();
 
@@ -86,17 +97,20 @@ where
                 ngrams.insert(ngram);
                 // We store the count of the ngram in the current key in the cooccurrences vector.
                 cooccurrences.push(count);
+                // We save the maximal co-occurrence.
+                if count > maximal_cooccurrence {
+                    maximal_cooccurrence = count;
+                }
                 // And finally we store the index of the ngram in the key_to_ngrams vector.
                 key_to_ngrams.push(ngram);
             }
             // We store the number of edges from the current key in the key_offsets vector.
             key_offsets.push(cooccurrences.len());
-            maximal_cooccurrence = maximal_cooccurrence.max(cooccurrences.len());
         }
 
         // We can now start to compress several of the vectors into BitFieldVecs.
-        let cooccurrences = BitFieldVec::from(cooccurrences);
-        let key_offsets = BitFieldVec::from(key_offsets);
+        let key_offsets = key_offsets.into_bitvec(cooccurrences.len());
+        let cooccurrences = cooccurrences.into_bitvec(maximal_cooccurrence);
 
         // We create the ngram_offsets vector. Since we are using a btreeset, we already have the
         // ngrams sorted, so we can simply convert the btreeset into a vector.
@@ -112,7 +126,7 @@ where
         // graph from grams to keys, i.e. the total number of edges in the corpus. This value is also
         // the largest value contained in the vector.
         let mut ngram_offsets = BitFieldVec::new(
-            cooccurrences.len().next_power_of_two().trailing_zeros() as usize,
+            cooccurrences.len().next_power_of_two().ilog2() as usize,
             ngrams.len() + 1,
         );
 
@@ -122,7 +136,7 @@ where
         // vector of the same length as the current key_to_ngram_edges vector, and as maximum value the number
         // of ngrams in the corpus.
         let mut key_to_ngram_edges = BitFieldVec::new(
-            ngrams.len().next_power_of_two().trailing_zeros() as usize,
+            ngrams.len().next_power_of_two().ilog2() as usize,
             key_to_ngrams.len(),
         );
 
@@ -136,8 +150,10 @@ where
             unsafe { key_to_ngram_edges.set_unchecked(edge_id, ngram_index) };
             // We increment the inbound degree of the ngram.
             unsafe {
-                ngram_offsets
-                    .set_unchecked(ngram_index + 1, ngram_offsets.get_unchecked(ngram_index + 1) + 1)
+                ngram_offsets.set_unchecked(
+                    ngram_index + 1,
+                    ngram_offsets.get_unchecked(ngram_index + 1) + 1,
+                )
             }
         }
 
@@ -156,12 +172,12 @@ where
         // Finally, we can allocate and populate the gram_to_key_edges vector. This vector has the same length
         // as the cooccurrences vector.
         let mut gram_to_key_edges = BitFieldVec::new(
-            keys.len().next_power_of_two().trailing_zeros() as usize,
+            keys.len().next_power_of_two().ilog2() as usize,
             cooccurrences.len(),
         );
 
         let mut ngram_degrees = BitFieldVec::new(
-            cooccurrences.len().next_power_of_two().trailing_zeros() as usize,
+            cooccurrences.len().next_power_of_two().ilog2() as usize,
             ngrams.len() + 1,
         );
 
@@ -202,14 +218,16 @@ where
             ngram_offsets,
             key_to_ngram_edges,
             gram_to_key_edges,
+            _phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<K, NG> Corpus<K, NG>
+impl<KS, NG, K> Corpus<KS, NG, K>
 where
     NG: Ngram,
-    K: Keys<NG::G>,
+    KS: Keys<NG>,
+    K: Key<NG, NG::G> + ?Sized,
 {
     #[inline(always)]
     /// Returns the number of keys in the corpus.
@@ -235,7 +253,7 @@ where
     /// # Arguments
     /// * `key_id` - The id of the key to get.
     ///
-    pub fn key_from_id(&self, key_id: usize) -> &K::K {
+    pub fn key_from_id(&self, key_id: usize) -> &KS::K {
         &self.keys[key_id]
     }
 

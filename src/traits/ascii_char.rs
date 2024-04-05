@@ -118,6 +118,31 @@ where
     }
 }
 
+impl<I> ExactSizeIterator for ASCIICharIterator<I>
+where
+    I: ExactSizeIterator<Item = char>,
+{
+    fn len(&self) -> usize {
+        self.iterator.len()
+    }
+}
+
+impl<I> DoubleEndedIterator for ASCIICharIterator<I>
+where
+    I: DoubleEndedIterator<Item = char>,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iterator
+            .next_back()
+            .and_then(|character| match ASCIIChar::try_from(character) {
+                // If the character is ASCII, we return it.
+                Ok(ascii_char) => Some(ascii_char),
+                // Otherwise we proceed to the next character.
+                Err(_) => self.next_back(),
+            })
+    }
+}
+
 /// Trait to be implemented for all iterators that yield `char`
 /// so that they can be converted to `ASCIICharIterator`.
 pub trait ToASCIICharIterator: IntoIterator<Item = char> {

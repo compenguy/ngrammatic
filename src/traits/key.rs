@@ -4,20 +4,27 @@ use std::collections::HashMap;
 
 use crate::traits::ascii_char::ToASCIICharIterator;
 use crate::traits::iter_ngrams::IntoNgrams;
-use crate::{ASCIIChar, ASCIICharIterator, Gram, Ngram};
+use crate::{
+    ASCIIChar, ASCIICharIterator, BothPadding, CharLike, CharNormalizer, Gram, IntoPadder,
+    Lowercase, Ngram, PaddableNgram,
+};
 
 /// Trait defining a key.
-pub trait Key<G: Gram>: Clone + PartialEq + Eq {
+pub trait Key<NG: Ngram<G = G>, G: Gram>: AsRef<<Self as Key<NG, G>>::Ref> {
     /// The type of the grams iterator.
     type Grams<'a>: Iterator<Item = G>
     where
         Self: 'a;
 
+    /// Default reference type when no more specific type is
+    /// specified in the corpus.
+    type Ref: ?Sized;
+
     /// Returns an iterator over the grams of the key.
     fn grams(&self) -> Self::Grams<'_>;
 
     /// Returns the counts of the ngrams.
-    fn counts<NG: Ngram<G = G>>(&self) -> HashMap<NG, usize> {
+    fn counts(&self) -> HashMap<NG, usize> {
         let mut ngram_counts: HashMap<NG, usize> = HashMap::new();
 
         // We populate it with the ngrams of the key.
@@ -32,50 +39,136 @@ pub trait Key<G: Gram>: Clone + PartialEq + Eq {
     }
 }
 
-impl Key<char> for String {
-    type Grams<'a> = std::str::Chars<'a>;
+impl<NG> Key<NG, char> for String
+where
+    NG: Ngram<G = char> + PaddableNgram,
+{
+    type Grams<'a> = BothPadding<NG, std::str::Chars<'a>>;
 
+    type Ref = str;
+
+    #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.chars()
+        self.chars().trim().trim_null().both_padding::<NG>()
     }
 }
 
-impl Key<char> for &str {
-    type Grams<'a> = std::str::Chars<'a> where Self: 'a;
+impl<NG> Key<NG, char> for str
+where
+    NG: Ngram<G = char> + PaddableNgram,
+{
+    type Grams<'a> = BothPadding<NG, std::str::Chars<'a>> where Self: 'a;
+    type Ref = str;
 
+    #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.chars()
+        self.chars().trim().trim_null().both_padding::<NG>()
     }
 }
 
-impl Key<u8> for String {
-    type Grams<'a> = std::str::Bytes<'a>;
+impl<NG> Key<NG, u8> for str
+where
+    NG: Ngram<G = u8> + PaddableNgram,
+{
+    type Grams<'a> = BothPadding<NG, std::str::Bytes<'a>> where Self: 'a;
+    type Ref = str;
 
+    #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.bytes()
+        self.bytes().both_padding::<NG>()
     }
 }
 
-impl Key<u8> for &str {
-    type Grams<'a> = std::str::Bytes<'a> where Self: 'a;
+impl<NG> Key<NG, ASCIIChar> for str
+where
+    NG: Ngram<G = ASCIIChar> + PaddableNgram,
+{
+    type Grams<'a> = BothPadding<NG, ASCIICharIterator<std::str::Chars<'a>>> where Self: 'a;
+    type Ref = str;
 
+    #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.bytes()
+        self.chars().ascii().trim().trim_null().both_padding::<NG>()
     }
 }
 
-impl Key<ASCIIChar> for String {
-    type Grams<'a> = ASCIICharIterator<std::str::Chars<'a>> where Self: 'a;
+impl<NG> Key<NG, char> for &str
+where
+    NG: Ngram<G = char> + PaddableNgram,
+{
+    type Grams<'a> = BothPadding<NG, std::str::Chars<'a>> where Self: 'a;
+    type Ref = str;
 
+    #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.chars().ascii()
+        self.chars().trim().trim_null().both_padding::<NG>()
     }
 }
 
-impl Key<ASCIIChar> for &str {
-    type Grams<'a> = ASCIICharIterator<std::str::Chars<'a>> where Self: 'a;
+impl<NG> Key<NG, u8> for String
+where
+    NG: Ngram<G = u8> + PaddableNgram,
+{
+    type Grams<'a> = BothPadding<NG, std::str::Bytes<'a>>;
+    type Ref = str;
 
+    #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.chars().ascii()
+        self.bytes().both_padding::<NG>()
+    }
+}
+
+impl<NG> Key<NG, u8> for &str
+where
+    NG: Ngram<G = u8> + PaddableNgram,
+{
+    type Grams<'a> = BothPadding<NG, std::str::Bytes<'a>> where Self: 'a;
+    type Ref = str;
+
+    #[inline(always)]
+    fn grams(&self) -> Self::Grams<'_> {
+        self.bytes().both_padding::<NG>()
+    }
+}
+
+impl<NG> Key<NG, ASCIIChar> for String
+where
+    NG: Ngram<G = ASCIIChar> + PaddableNgram,
+{
+    type Grams<'a> = BothPadding<NG, ASCIICharIterator<std::str::Chars<'a>>> where Self: 'a;
+    type Ref = str;
+
+    #[inline(always)]
+    fn grams(&self) -> Self::Grams<'_> {
+        self.chars().ascii().trim().trim_null().both_padding::<NG>()
+    }
+}
+
+impl<NG> Key<NG, ASCIIChar> for &str
+where
+    NG: Ngram<G = ASCIIChar> + PaddableNgram,
+{
+    type Grams<'a> = BothPadding<NG, ASCIICharIterator<std::str::Chars<'a>>> where Self: 'a;
+    type Ref = str;
+
+    #[inline(always)]
+    fn grams(&self) -> Self::Grams<'_> {
+        self.chars().ascii().trim().trim_null().both_padding::<NG>()
+    }
+}
+
+impl<W, NG> Key<NG, NG::G> for Lowercase<W>
+where
+    NG: Ngram,
+    W: Key<NG, NG::G> + ?Sized,
+    NG::G: CharLike,
+    Self: AsRef<<W as Key<NG, <NG as Ngram>::G>>::Ref>,
+{
+    type Grams<'a> = Lowercase<W::Grams<'a>> where Self: 'a;
+    type Ref = W::Ref;
+
+    #[inline(always)]
+    fn grams(&self) -> Self::Grams<'_> {
+        self.inner().grams().lower()
     }
 }
