@@ -25,12 +25,14 @@ pub struct ASCIIChar {
 }
 
 impl From<u8> for ASCIIChar {
+    #[inline(always)]
     fn from(character: u8) -> Self {
         ASCIIChar { character }
     }
 }
 
 impl From<ASCIIChar> for u8 {
+    #[inline(always)]
     fn from(ascii_char: ASCIIChar) -> u8 {
         ascii_char.character
     }
@@ -39,6 +41,7 @@ impl From<ASCIIChar> for u8 {
 impl TryFrom<char> for ASCIIChar {
     type Error = &'static str;
 
+    #[inline(always)]
     fn try_from(character: char) -> Result<Self, Self::Error> {
         if character.is_ascii() {
             Ok(ASCIIChar {
@@ -51,6 +54,7 @@ impl TryFrom<char> for ASCIIChar {
 }
 
 impl Display for ASCIIChar {
+    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.character as char)
     }
@@ -63,6 +67,7 @@ impl ASCIIChar {
     /// The space character.
     pub const SPACE: Self = ASCIIChar { character: b' ' };
 
+    #[inline(always)]
     /// Returns the lowercase version of the character.
     pub fn to_lowercase(self) -> Self {
         ASCIIChar {
@@ -70,6 +75,7 @@ impl ASCIIChar {
         }
     }
 
+    #[inline(always)]
     /// Returns the uppercase version of the character.
     pub fn to_uppercase(self) -> Self {
         ASCIIChar {
@@ -77,6 +83,7 @@ impl ASCIIChar {
         }
     }
 
+    #[inline(always)]
     /// Returns whether the current character is a space-like.
     pub fn is_space_like(self) -> bool {
         self.character.is_ascii_whitespace()
@@ -95,6 +102,7 @@ pub struct ASCIICharIterator<I> {
 }
 
 impl<I> From<I> for ASCIICharIterator<I> {
+    #[inline(always)]
     fn from(iterator: I) -> Self {
         ASCIICharIterator { iterator }
     }
@@ -106,6 +114,7 @@ where
 {
     type Item = ASCIIChar;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         self.iterator
             .next()
@@ -122,6 +131,7 @@ impl<I> ExactSizeIterator for ASCIICharIterator<I>
 where
     I: ExactSizeIterator<Item = char>,
 {
+    #[inline(always)]
     fn len(&self) -> usize {
         self.iterator.len()
     }
@@ -131,6 +141,7 @@ impl<I> DoubleEndedIterator for ASCIICharIterator<I>
 where
     I: DoubleEndedIterator<Item = char>,
 {
+    #[inline(always)]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iterator
             .next_back()
@@ -156,6 +167,7 @@ impl<I> ToASCIICharIterator for I
 where
     I: IntoIterator<Item = char>,
 {
+    #[inline(always)]
     fn ascii(self) -> ASCIICharIterator<Self>
     where
         Self: Sized,

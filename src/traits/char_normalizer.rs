@@ -4,16 +4,13 @@ use std::mem::transmute;
 
 use crate::CharLike;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// Trait defining an iterator to lowercase.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[repr(transparent)]
 pub struct Lowercase<I: ?Sized>(I);
 
 impl<I: ?Sized> AsRef<I> for Lowercase<I> {
+    #[inline(always)]
     fn as_ref(&self) -> &I {
         &self.0
     }
@@ -23,6 +20,7 @@ impl<E: ?Sized> AsRef<Lowercase<E>> for String
 where
     String: AsRef<E>,
 {
+    #[inline(always)]
     fn as_ref(&self) -> &Lowercase<E> {
         let reference: &E = self.as_ref();
         unsafe { transmute(reference) }
@@ -30,6 +28,7 @@ where
 }
 
 impl<E: ?Sized> AsRef<Lowercase<E>> for str where str: AsRef<E> {
+    #[inline(always)]
     fn as_ref(&self) -> &Lowercase<E> {
         let reference: &E = self.as_ref();
         unsafe { transmute(reference) }
@@ -37,6 +36,7 @@ impl<E: ?Sized> AsRef<Lowercase<E>> for str where str: AsRef<E> {
 }
 
 impl<I: ?Sized> Lowercase<I> {
+    #[inline(always)]
     /// Returns a reference to the inner iterator.
     pub fn inner(&self) -> &I {
         &self.0
@@ -44,6 +44,7 @@ impl<I: ?Sized> Lowercase<I> {
 }
 
 impl<I> From<I> for Lowercase<I> {
+    #[inline(always)]
     fn from(iter: I) -> Self {
         Lowercase(iter)
     }
@@ -56,6 +57,7 @@ where
 {
     type Item = <I as Iterator>::Item;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next().map(CharLike::to_lowercase)
     }
