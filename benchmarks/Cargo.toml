@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 flate2 = "1.0.28"
 indicatif = "0.17.8"
-mem_dbg = "0.1.4"
+mem_dbg = "0.1"
 ngrammatic = { path = "../../ngrammatic", features = ["mem_dbg"] }
 
 [profile.release]

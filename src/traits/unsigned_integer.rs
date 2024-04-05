@@ -1,17 +1,12 @@
 //! Submodule providing traits to define an unsigned integer type.
-
-/// Trait defining the value one.
-pub trait One {
-    /// The value one for the type.
-    const ONE: Self;
-}
-
+use crate::{One, Zero};
 
 /// Trait defining an unsigned integer type.
 pub trait UnsignedInteger:
     Copy
     + Eq
     + One
+    + Zero
     + Ord
     + core::ops::Add
     + core::ops::Sub
@@ -35,6 +30,9 @@ pub trait UnsignedInteger:
 {   
     /// Convert the integer to a usize.
     fn as_usize(&self) -> usize;
+
+    /// Add one to the integer in a saturating manner.
+    fn saturating_add_one(&self) -> Self;
 }
 
 /// Macro to implement the UnsignedInteger trait for a given type.
@@ -45,10 +43,26 @@ macro_rules! impl_unsigned_integer {
             fn as_usize(&self) -> usize {
                 *self as usize
             }
+
+            fn saturating_add_one(&self) -> Self {
+                self.saturating_add(Self::ONE)
+            }
         }
 
         impl One for $type {
             const ONE: Self = 1;
+
+            fn is_one(&self) -> bool {
+                *self == Self::ONE
+            }
+        }
+
+        impl Zero for $type {
+            const ZERO: Self = 0;
+
+            fn is_zero(&self) -> bool {
+                *self == Self::ZERO
+            }
         }
     };
 }

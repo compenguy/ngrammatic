@@ -1,7 +1,25 @@
 //! This module contains the traits that are used in the library.
 pub mod unsigned_integer;
-pub mod arity;
 pub mod key;
 pub use key::*;
-pub use arity::*;
 pub use unsigned_integer::*;
+pub mod floats;
+pub use floats::*;
+pub mod numerical;
+pub use numerical::*;
+pub mod keys;
+pub use keys::*;
+pub mod gram;
+pub use gram::*;
+pub mod iter_ngrams;
+pub use iter_ngrams::*;
+pub mod char_normalizer;
+pub use char_normalizer::*;
+pub mod ascii_char;
+pub use ascii_char::*;
+pub mod padder;
+pub use padder::*;
+pub mod paddable;
+pub use paddable::*;
+pub mod char_like;
+pub use char_like::*;

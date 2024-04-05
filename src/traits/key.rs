@@ -1,59 +1,81 @@
 //! Trait defining a key and its hasher.
 
-use std::hash::Hash;
+use std::collections::HashMap;
 
-use crate::KeyTransformer;
-
-#[cfg(feature = "mem_dbg")]
-use mem_dbg::{MemDbg, MemSize};
+use crate::traits::ascii_char::ToASCIICharIterator;
+use crate::traits::iter_ngrams::IntoNgrams;
+use crate::{ASCIIChar, ASCIICharIterator, Gram, Ngram};
 
 /// Trait defining a key.
-pub trait Key: Clone + PartialEq + Eq {
-    /// The type of the key.
-    type Key: Hash;
+pub trait Key<G: Gram>: Clone + PartialEq + Eq {
+    /// The type of the grams iterator.
+    type Grams<'a>: Iterator<Item = G>
+    where
+        Self: 'a;
 
-    /// Returns the key.
-    fn key(&self) -> Self::Key;
-}
+    /// Returns an iterator over the grams of the key.
+    fn grams(&self) -> Self::Grams<'_>;
 
-impl Key for String {
-    type Key = String;
+    /// Returns the counts of the ngrams.
+    fn counts<NG: Ngram<G = G>>(&self) -> HashMap<NG, usize> {
+        let mut ngram_counts: HashMap<NG, usize> = HashMap::new();
 
-    fn key(&self) -> Self::Key {
-        self.clone()
-    }
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
-/// Normalizer for a key.
-pub struct Normalizer<K: Key, KT: KeyTransformer<K::Key>> {
-    key: K,
-    _phantom: std::marker::PhantomData<KT>,
-}
-
-impl<K: Key, KT: KeyTransformer<K::Key>> Normalizer<K, KT> {
-    /// Returns the inner key.
-    pub fn key(&self) -> &K {
-        &self.key
-    }
-}
-
-impl<K: Key, KT: KeyTransformer<K::Key>> From<K> for Normalizer<K, KT> {
-    fn from(key: K) -> Self {
-        Normalizer {
-            key,
-            _phantom: std::marker::PhantomData,
+        // We populate it with the ngrams of the key.
+        for ngram in self.grams().ngrams::<NG>() {
+            ngram_counts
+                .entry(ngram)
+                .and_modify(|count| *count += 1)
+                .or_insert(1);
         }
+
+        ngram_counts
     }
 }
 
-impl<K: Key, KT: KeyTransformer<K::Key>> Hash for Normalizer<K, KT> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        let key_transformer = KT::default();
-        key_transformer
-            .transform(&self.key.key())
-            .as_ref()
-            .hash(state);
+impl Key<char> for String {
+    type Grams<'a> = std::str::Chars<'a>;
+
+    fn grams(&self) -> Self::Grams<'_> {
+        self.chars()
+    }
+}
+
+impl Key<char> for &str {
+    type Grams<'a> = std::str::Chars<'a> where Self: 'a;
+
+    fn grams(&self) -> Self::Grams<'_> {
+        self.chars()
+    }
+}
+
+impl Key<u8> for String {
+    type Grams<'a> = std::str::Bytes<'a>;
+
+    fn grams(&self) -> Self::Grams<'_> {
+        self.bytes()
+    }
+}
+
+impl Key<u8> for &str {
+    type Grams<'a> = std::str::Bytes<'a> where Self: 'a;
+
+    fn grams(&self) -> Self::Grams<'_> {
+        self.bytes()
+    }
+}
+
+impl Key<ASCIIChar> for String {
+    type Grams<'a> = ASCIICharIterator<std::str::Chars<'a>> where Self: 'a;
+
+    fn grams(&self) -> Self::Grams<'_> {
+        self.chars().ascii()
+    }
+}
+
+impl Key<ASCIIChar> for &str {
+    type Grams<'a> = ASCIICharIterator<std::str::Chars<'a>> where Self: 'a;
+
+    fn grams(&self) -> Self::Grams<'_> {
+        self.chars().ascii()
     }
 }

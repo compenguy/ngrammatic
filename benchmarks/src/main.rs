@@ -8,7 +8,7 @@
 //! of the taxons as provided by NCBI Taxonomy.
 use indicatif::ProgressIterator;
 use mem_dbg::*;
-use ngrammatic::{ArityTwo, Corpus, CorpusBuilder};
+use ngrammatic::prelude::*;
 
 /// Returns an iterator over the taxons in the corpus.
 fn iter_taxons() -> impl Iterator<Item = String> {
@@ -21,13 +21,11 @@ fn iter_taxons() -> impl Iterator<Item = String> {
     reader.lines().map(|line| line.unwrap())
 }
 
-/// Returns human readable size.
-///
-///
-
-fn main() {
-    let mut corpus: Corpus<ArityTwo, _, _, u16> = CorpusBuilder::default().lower().finish();
-
+/// Returns bigram corpus.
+fn load_corpus<NG: Ngram<G = u8>>()
+where
+    Vec<NG>: MemDbgImpl + MemSize,
+{
     let number_of_taxons = 2_571_000;
 
     let loading_bar = indicatif::ProgressBar::new(number_of_taxons as u64);
@@ -40,17 +38,32 @@ fn main() {
     loading_bar.set_style(progress_style);
 
     let start_time = std::time::Instant::now();
-    for taxon in iter_taxons().progress_with(loading_bar) {
-        corpus.push(taxon)
-    }
+    let taxons: Vec<String> = iter_taxons()
+        .take(number_of_taxons)
+        .progress_with(loading_bar)
+        .collect();
+    let corpus: Corpus<Vec<String>, NG> = Corpus::from(taxons);
+
     let end_time = std::time::Instant::now();
     let duration = end_time - start_time;
 
     println!("Time taken to load corpus: {:?}", duration);
 
     corpus
-        .mem_dbg(
-            DbgFlags::HUMANIZE | DbgFlags::PERCENTAGE | DbgFlags::TYPE_NAME,
-        )
+        .mem_dbg(DbgFlags::HUMANIZE | DbgFlags::PERCENTAGE | DbgFlags::TYPE_NAME)
         .unwrap();
+}
+
+/// Returns bigram corpus.
+fn bigram_corpus() {
+    load_corpus::<BiGram<u8>>()
+}
+
+/// Returns trigram corpus.
+fn trigram_corpus() {
+    load_corpus::<TriGram<u8>>()
+}
+
+fn main() {
+    bigram_corpus();
 }
