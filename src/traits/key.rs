@@ -1,7 +1,7 @@
 //! Trait defining a key and its hasher.
 
+use fxhash::FxBuildHasher;
 use std::collections::HashMap;
-
 use crate::traits::ascii_char::ToASCIICharIterator;
 use crate::traits::iter_ngrams::IntoNgrams;
 use crate::{
@@ -24,8 +24,9 @@ pub trait Key<NG: Ngram<G = G>, G: Gram>: AsRef<<Self as Key<NG, G>>::Ref> {
     fn grams(&self) -> Self::Grams<'_>;
 
     /// Returns the counts of the ngrams.
-    fn counts(&self) -> HashMap<NG, usize> {
-        let mut ngram_counts: HashMap<NG, usize> = HashMap::new();
+    fn counts(&self) -> HashMap<NG, usize, FxBuildHasher> {
+        let mut ngram_counts: HashMap<NG, usize, FxBuildHasher> =
+            HashMap::with_hasher(FxBuildHasher::default());
 
         // We populate it with the ngrams of the key.
         for ngram in self.grams().ngrams::<NG>() {

@@ -25,7 +25,6 @@ fn iter_taxons() -> impl Iterator<Item = String> {
 fn load_corpus<NG>()
 where
     NG: PaddableNgram<G = ASCIIChar>,
-    Vec<NG>: MemDbgImpl + MemSize,
 {
     let number_of_taxons = 2_571_000;
 

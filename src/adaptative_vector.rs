@@ -1,6 +1,7 @@
 //! Module providing a vector that adaptatively grows in data type.
 
 use sux::bits::BitFieldVec;
+use sux::dict::{EliasFano, EliasFanoBuilder};
 use sux::traits::BitFieldSliceMut;
 
 /// Trait defining a bounded type.
@@ -247,6 +248,55 @@ impl AdaptativeVector {
                     false
                 }
             },
+        }
+    }
+
+    /// Converts the vector into an Elias Fano.
+    ///
+    /// # Safety
+    /// This method assumes that the vector is sorted.
+    pub(crate) unsafe fn into_elias_fano(self) -> EliasFano {
+        match self {
+            AdaptativeVector::U8(vector) => {
+                let mut builder = EliasFanoBuilder::new(
+                    vector.len(),
+                    vector.last().copied().unwrap_or(0) as usize,
+                );
+                for value in vector {
+                    builder.push_unchecked(value as usize);
+                }
+                builder.build()
+            }
+            AdaptativeVector::U16(vector) => {
+                let mut builder = EliasFanoBuilder::new(
+                    vector.len(),
+                    vector.last().copied().unwrap_or(0) as usize,
+                );
+                for value in vector {
+                    builder.push_unchecked(value as usize);
+                }
+                builder.build()
+            }
+            AdaptativeVector::U32(vector) => {
+                let mut builder = EliasFanoBuilder::new(
+                    vector.len(),
+                    vector.last().copied().unwrap_or(0) as usize,
+                );
+                for value in vector {
+                    builder.push_unchecked(value as usize);
+                }
+                builder.build()
+            }
+            AdaptativeVector::U64(vector) => {
+                let mut builder = EliasFanoBuilder::new(
+                    vector.len(),
+                    vector.last().copied().unwrap_or(0) as usize,
+                );
+                for value in vector {
+                    builder.push_unchecked(value as usize);
+                }
+                builder.build()
+            }
         }
     }
 

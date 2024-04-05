@@ -7,6 +7,8 @@ pub trait Float:
     Copy
     + One
     + Zero
+    + Send
+    + Sync
     + Three
     + PartialOrd
     + core::ops::Add<Output = Self>

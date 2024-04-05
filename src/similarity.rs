@@ -5,12 +5,13 @@ use std::{
 
 use crate::{corpus::Corpus, traits::*};
 
-impl<KS, NG, K> Corpus<KS, NG, K>
+impl<KS, NG, K, G> Corpus<KS, NG, K, G>
 where
     NG: Ngram,
     KS: Keys<NG>,
     KS::K: AsRef<K>,
     K: Key<NG, NG::G> + ?Sized,
+    G: WeightedBipartiteGraph
 {
     #[inline(always)]
     /// Returns whether any of the ngrams provided appear in the provided key.
@@ -131,6 +132,11 @@ where
 pub struct Warp<W> {
     value: W,
 }
+
+unsafe impl Send for Warp<i32> {}
+unsafe impl Sync for Warp<i32> {}
+unsafe impl Send for Warp<f64> {}
+unsafe impl Sync for Warp<f64> {}
 
 impl<W: One> One for Warp<W> {
     const ONE: Self = Warp { value: W::ONE };

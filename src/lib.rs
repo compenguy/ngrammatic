@@ -12,6 +12,13 @@ pub use similarity::*;
 pub mod search;
 pub mod adaptative_vector;
 pub use adaptative_vector::*;
+pub mod bit_field_bipartite_graph;
+
+#[cfg(feature = "webgraph")]
+pub mod bi_webgraph;
+
+#[cfg(feature = "rayon")]
+pub mod par_search;
 
 /// Re-export of the most commonly used traits and structs.
 pub mod prelude {
@@ -20,4 +27,6 @@ pub mod prelude {
     pub use crate::corpus::*;
     pub use crate::similarity::*;
     pub use crate::adaptative_vector::*;
+    #[cfg(feature = "webgraph")]
+    pub use crate::webgraph::*;
 }
