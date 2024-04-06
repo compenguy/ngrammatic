@@ -208,6 +208,35 @@ where
     }
 
     #[inline(always)]
+    /// Returns the keys associated to a given ngram id.
+    ///
+    /// # Arguments
+    /// * `ngram_id` - The id of the ngram to get the keys from.
+    ///
+    /// # Returns
+    /// An iterator over the keys associated to the ngram.
+    pub fn keys_from_ngram_id(
+        &self,
+        ngram_id: usize,
+    ) -> impl ExactSizeIterator<Item = &KS::K> + '_ {
+        self.key_ids_from_ngram_id(ngram_id)
+            .map(move |key_id| self.key_from_id(key_id))
+    }
+
+    #[inline(always)]
+    /// Returns the keys associated to a given ngram.
+    ///
+    /// # Arguments
+    /// * `ngram` - The ngram to get the keys from.
+    ///
+    /// # Returns
+    /// An iterator over the keys associated to the ngram.
+    pub fn keys_from_ngram(&self, ngram: NG) -> Option<impl ExactSizeIterator<Item = &KS::K> + '_> {
+        self.ngram_id_from_ngram(ngram)
+            .map(move |ngram_id| self.keys_from_ngram_id(ngram_id))
+    }
+
+    #[inline(always)]
     /// Returns the top k most common ngrams in the corpus.
     ///
     /// # Arguments

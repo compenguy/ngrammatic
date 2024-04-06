@@ -1,12 +1,13 @@
 //! Trait defining a key and its hasher.
 
-use fxhash::FxBuildHasher;
-use std::collections::HashMap;
 use crate::traits::ascii_char::ToASCIICharIterator;
 use crate::traits::iter_ngrams::IntoNgrams;
 use crate::{
-    ASCIIChar, ASCIICharIterator, Alphanumeric, BothPadding, CharLike, CharNormalizer, Gram, IntoPadder, Lowercase, Ngram, PaddableNgram
+    ASCIIChar, ASCIICharIterator, Alphanumeric, BothPadding, CharLike, CharNormalizer, Gram,
+    IntoPadder, Lowercase, Ngram, PaddableNgram, SpaceNormalizer,
 };
+use fxhash::FxBuildHasher;
+use std::collections::HashMap;
 
 /// Trait defining a key.
 pub trait Key<NG: Ngram<G = G>, G: Gram>: AsRef<<Self as Key<NG, G>>::Ref> {
@@ -43,13 +44,18 @@ impl<NG> Key<NG, char> for String
 where
     NG: Ngram<G = char> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, std::str::Chars<'a>>;
+    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<std::str::Chars<'a>>>>;
 
     type Ref = str;
 
     #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.chars().trim().trim_null().both_padding::<NG>()
+        self.chars()
+            .trim()
+            .trim_null()
+            .alphanumeric()
+            .dedup_spaces()
+            .both_padding::<NG>()
     }
 }
 
@@ -57,12 +63,17 @@ impl<NG> Key<NG, char> for str
 where
     NG: Ngram<G = char> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, std::str::Chars<'a>> where Self: 'a;
+    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<std::str::Chars<'a>>>> where Self: 'a;
     type Ref = str;
 
     #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.chars().trim().trim_null().both_padding::<NG>()
+        self.chars()
+            .trim()
+            .trim_null()
+            .alphanumeric()
+            .dedup_spaces()
+            .both_padding::<NG>()
     }
 }
 
@@ -83,12 +94,18 @@ impl<NG> Key<NG, ASCIIChar> for str
 where
     NG: Ngram<G = ASCIIChar> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, ASCIICharIterator<std::str::Chars<'a>>> where Self: 'a;
+    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<ASCIICharIterator<std::str::Chars<'a>>>>> where Self: 'a;
     type Ref = str;
 
     #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.chars().ascii().trim().trim_null().both_padding::<NG>()
+        self.chars()
+            .ascii()
+            .trim()
+            .trim_null()
+            .alphanumeric()
+            .dedup_spaces()
+            .both_padding::<NG>()
     }
 }
 
@@ -96,12 +113,17 @@ impl<NG> Key<NG, char> for &str
 where
     NG: Ngram<G = char> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, std::str::Chars<'a>> where Self: 'a;
+    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<std::str::Chars<'a>>>> where Self: 'a;
     type Ref = str;
 
     #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.chars().trim().trim_null().both_padding::<NG>()
+        self.chars()
+            .trim()
+            .trim_null()
+            .alphanumeric()
+            .dedup_spaces()
+            .both_padding::<NG>()
     }
 }
 
@@ -135,12 +157,18 @@ impl<NG> Key<NG, ASCIIChar> for String
 where
     NG: Ngram<G = ASCIIChar> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, ASCIICharIterator<std::str::Chars<'a>>> where Self: 'a;
+    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<ASCIICharIterator<std::str::Chars<'a>>>>> where Self: 'a;
     type Ref = str;
 
     #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.chars().ascii().trim().trim_null().both_padding::<NG>()
+        self.chars()
+            .ascii()
+            .trim()
+            .trim_null()
+            .alphanumeric()
+            .dedup_spaces()
+            .both_padding::<NG>()
     }
 }
 
@@ -148,12 +176,18 @@ impl<NG> Key<NG, ASCIIChar> for &str
 where
     NG: Ngram<G = ASCIIChar> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, ASCIICharIterator<std::str::Chars<'a>>> where Self: 'a;
+    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<ASCIICharIterator<std::str::Chars<'a>>>>> where Self: 'a;
     type Ref = str;
 
     #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.chars().ascii().trim().trim_null().both_padding::<NG>()
+        self.chars()
+            .ascii()
+            .trim()
+            .trim_null()
+            .alphanumeric()
+            .dedup_spaces()
+            .both_padding::<NG>()
     }
 }
 

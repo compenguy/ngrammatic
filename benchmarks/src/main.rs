@@ -6,10 +6,10 @@
 //! The memory benchmarks compare different support data-structures that can be used to store the n-grams.
 //! As corpus we use the `../taxons.csv.gz` file, which contains a single column with the scientific names
 //! of the taxons as provided by NCBI Taxonomy.
+use core::fmt::Debug;
 use indicatif::ProgressIterator;
 use mem_dbg::*;
 use ngrammatic::prelude::*;
-use core::fmt::Debug;
 use rayon::prelude::*;
 
 /// Returns an iterator over the taxons in the corpus.
@@ -60,8 +60,9 @@ where
 /// Returns bigram corpus.
 fn load_corpus_webgraph<NG>()
 where
-    NG: PaddableNgram<G=char> + Debug,
+    NG: PaddableNgram<G = char> + Debug,
 {
+    // let number_of_taxons = 2_571_000;
     let number_of_taxons = 2_571_000;
 
     let loading_bar = indicatif::ProgressBar::new(number_of_taxons as u64);
@@ -78,7 +79,7 @@ where
         .take(number_of_taxons)
         .progress_with(loading_bar)
         .collect();
-    let corpus: Corpus<Vec<String>, NG, Alphanumeric<Lowercase<str>>> = Corpus::par_from(taxons);
+    let corpus: Corpus<Vec<String>, NG, Lowercase<str>> = Corpus::par_from(taxons);
 
     let end_time = std::time::Instant::now();
     let duration = end_time - start_time;
@@ -88,10 +89,16 @@ where
     log::info!("\n{}", corpus.report());
 
     log::info!("The 5 most frequent ngrams are:");
-    corpus
-        .top_k_ngrams(5)
+    let top_k_ngram = corpus.top_k_ngrams(5);
+    top_k_ngram
         .iter()
-        .for_each(|(degree, ngram)| log::info!("{}: {:?}", degree, ngram));
+        .for_each(|(degree, ngram)| log::info!("{}: {:?}", degree.underscored(), ngram));
+
+    log::info!("The following are 10 keys associated to the most frequent ngram:");
+    let top_k_ngram = top_k_ngram[0].1.clone();
+    for key in corpus.keys_from_ngram(top_k_ngram).unwrap().take(10) {
+        log::info!("{}", key);
+    }
 
     // corpus
     //     .mem_dbg(DbgFlags::HUMANIZE | DbgFlags::PERCENTAGE | DbgFlags::TYPE_NAME)

@@ -188,6 +188,79 @@ where
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+/// Struct defining an iterator that removes subsequent spaces.
+pub struct SpaceNormalizer<I> {
+    iter: I,
+    last_was_space: bool,
+}
+
+impl<I> Iterator for SpaceNormalizer<I>
+where
+    I: Iterator,
+    <I as Iterator>::Item: CharLike,
+{
+    type Item = <I as Iterator>::Item;
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut next = self.iter.next();
+
+        while let Some(c) = next {
+            if c.is_space_like() {
+                if self.last_was_space {
+                    next = self.iter.next();
+                } else {
+                    self.last_was_space = true;
+                    break;
+                }
+            } else {
+                self.last_was_space = false;
+                break;
+            }
+        }
+
+        next
+    }
+}
+
+impl<I> DoubleEndedIterator for SpaceNormalizer<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let mut next = self.iter.next_back();
+
+        while let Some(c) = next {
+            if c.is_space_like() {
+                if self.last_was_space {
+                    next = self.iter.next_back();
+                } else {
+                    self.last_was_space = true;
+                    break;
+                }
+            } else {
+                self.last_was_space = false;
+                break;
+            }
+        }
+
+        next
+    }
+}
+
+impl<I> ExactSizeIterator for SpaceNormalizer<I>
+where
+    I: ExactSizeIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
 /// Trait defining a char normalizer.
 pub trait CharNormalizer: Iterator + Sized
 where
@@ -291,6 +364,15 @@ where
     /// Converts all non-alpha characters to spaces.
     fn alphanumeric(self) -> Alphanumeric<Self> {
         Alphanumeric::from(self)
+    }
+
+    #[inline(always)]
+    /// Normalizes spaces, removing subsequent spaces.
+    fn dedup_spaces(self) -> SpaceNormalizer<Self> {
+        SpaceNormalizer {
+            iter: self,
+            last_was_space: false,
+        }
     }
 }
 
