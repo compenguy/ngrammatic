@@ -53,7 +53,7 @@ pub trait WeightedBipartiteGraph {
     fn dsts_from_src(&self, src_id: usize) -> Self::Dsts<'_>;
 
     /// Type of the weights iterator.
-    type Weights<'a>: ExactSizeIterator<Item = usize>
+    type WeightsSrc<'a>: ExactSizeIterator<Item = usize>
     where
         Self: 'a;
 
@@ -61,5 +61,24 @@ pub trait WeightedBipartiteGraph {
     ///
     /// # Arguments
     /// * `src_id` - The source node id.
-    fn weights_from_src(&self, src_id: usize) -> Self::Weights<'_>;
+    fn weights_from_src(&self, src_id: usize) -> Self::WeightsSrc<'_>;
+
+    /// Type of the weights iterator.
+    type Weights<'a>: ExactSizeIterator<Item = usize>
+    where
+        Self: 'a;
+
+    /// Returns weights associated to the links between a given dst and its srcs.
+    fn weights(&self) -> Self::Weights<'_>;
+
+    /// Type of the degrees iterator.
+    type Degrees<'a>: Iterator<Item = usize>
+    where
+        Self: 'a;
+
+    /// Returns the degrees of all the nodes.
+    /// 
+    /// The first part are the degrees of the source nodes, the second part
+    /// are the degrees of the destination nodes.
+    fn degrees(&self) -> Self::Degrees<'_>;
 }

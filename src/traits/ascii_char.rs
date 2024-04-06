@@ -7,6 +7,7 @@
 //!
 
 use std::fmt::Display;
+use std::fmt::Debug;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -14,7 +15,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "mem_dbg")]
 use mem_dbg::{MemDbg, MemSize};
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
 #[repr(transparent)]
@@ -60,6 +61,13 @@ impl Display for ASCIIChar {
     }
 }
 
+impl Debug for ASCIIChar {
+    #[inline(always)]
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ASCIIChar({})", self.character as char)
+    }
+}
+
 /// Provides character operations by manipulation of the underlying `u8` value.
 impl ASCIIChar {
     /// The NUL character.
@@ -87,6 +95,12 @@ impl ASCIIChar {
     /// Returns whether the current character is a space-like.
     pub fn is_space_like(self) -> bool {
         self.character.is_ascii_whitespace()
+    }
+
+    #[inline(always)]
+    /// Returns whether the current character is alphanumeric.
+    pub fn is_alphanumeric(self) -> bool {
+        self.character.is_ascii_alphanumeric()
     }
 }
 

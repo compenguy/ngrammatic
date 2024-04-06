@@ -1,12 +1,19 @@
 //! Trait defining the unit type for an ngram.
 
 use std::{
-    hash::Hash,
-    ops::{Index, IndexMut},
+    cell::UnsafeCell, hash::Hash, iter::Copied, ops::{Index, IndexMut}
 };
 
-use sux::traits::ConvertTo;
-use sux::{dict::{EliasFano, EliasFanoBuilder}, rank_sel::SelectFixed2, traits::IndexedDict};
+use sux::{
+    bits::BitFieldVec,
+    dict::{elias_fano::EliasFanoIterator, EliasFanoConcurrentBuilder},
+    traits::ConvertTo,
+};
+use sux::{
+    dict::{EliasFano, EliasFanoBuilder},
+    rank_sel::SelectFixed2,
+    traits::IndexedDict,
+};
 
 use crate::{ASCIIChar, IntoUsize, Paddable};
 
@@ -62,6 +69,33 @@ pub trait SortedNgramStorageBuilder<NG: Ngram> {
     fn build(self) -> Self::Storage;
 }
 
+/// Trait defining a concurrent builder of a sorted storage for Ngrams.
+pub trait ConcurrentSortedNgramStorageBuilder<NG: Ngram> {
+    /// The type of the storage.
+    type Storage: SortedNgramStorage<NG> + Send + Sync;
+
+    /// Create a new builder.
+    ///
+    /// # Arguments
+    /// * `number_of_ngrams` - The number of ngrams to store.
+    /// * `maximal_ngram` - The maximal ngram to store.
+    fn new_storage_builder(number_of_ngrams: usize, maximal_ngram: NG) -> Self;
+
+    /// Set a new ngram into the storage.
+    ///
+    /// # Arguments
+    /// * `ngram` - The ngram to push.
+    /// * `index` - The index of the ngram to set.
+    ///
+    /// # Safety
+    /// This function is unsafe because it does not check if the ngram is sorted,
+    /// or that it fits within the maximal ngram or that the storage is not full.
+    unsafe fn set_unchecked(&self, ngram: NG, index: usize);
+
+    /// Build the storage.
+    fn build(self) -> Self::Storage;
+}
+
 impl<NG: Ngram> SortedNgramStorageBuilder<NG> for EliasFanoBuilder
 where
     NG: IntoUsize,
@@ -76,6 +110,30 @@ where
     #[inline(always)]
     unsafe fn push_unchecked(&mut self, ngram: NG) {
         self.push_unchecked(ngram.into_usize());
+    }
+
+    #[inline(always)]
+    fn build(self) -> Self::Storage {
+        self.build().convert_to().unwrap()
+    }
+}
+
+#[cfg(feature = "rayon")]
+impl<NG: Ngram + IntoUsize> ConcurrentSortedNgramStorageBuilder<NG> for EliasFanoConcurrentBuilder {
+    type Storage = EliasFano<SelectFixed2>;
+
+    #[inline(always)]
+    fn new_storage_builder(number_of_ngrams: usize, maximal_ngram: NG) -> Self {
+        EliasFanoConcurrentBuilder::new(number_of_ngrams, maximal_ngram.into_usize())
+    }
+
+    #[inline(always)]
+    unsafe fn set_unchecked(&self, ngram: NG, index: usize) {
+        self.set(
+            index,
+            ngram.into_usize(),
+            std::sync::atomic::Ordering::SeqCst,
+        );
     }
 
     #[inline(always)]
@@ -103,10 +161,49 @@ impl<NG: Ngram> SortedNgramStorageBuilder<NG> for Vec<NG> {
     }
 }
 
+/// A shared vector to build a concurrent storage.
+pub struct SharedVec<NG> {
+    storage: UnsafeCell<Vec<NG>>
+}
+
+unsafe impl<NG> Send for SharedVec<NG> {}
+unsafe impl<NG> Sync for SharedVec<NG> {}
+
+impl<NG: Ngram> ConcurrentSortedNgramStorageBuilder<NG> for SharedVec<NG> {
+    type Storage = Vec<NG>;
+
+    #[inline(always)]
+    fn new_storage_builder(number_of_ngrams: usize, _maximal_ngram: NG) -> Self {
+        let mut storage = Vec::with_capacity(number_of_ngrams);
+        unsafe {
+            storage.set_len(number_of_ngrams);
+        }
+        SharedVec {
+            storage: UnsafeCell::new(storage)
+        }
+    }
+
+    #[inline(always)]
+    unsafe fn set_unchecked(&self, ngram: NG, index: usize) {
+        let storage = &mut *self.storage
+            .get();
+        storage[index] = ngram;
+    }
+
+    #[inline(always)]
+    fn build(self) -> Self::Storage {
+        self.storage.into_inner()
+    }
+}
+
 /// Trait defined a sorted storage for Ngrams.
-pub trait SortedNgramStorage<NG: Ngram> {
+pub trait SortedNgramStorage<NG: Ngram>: Send + Sync {
     /// The builder to use to build this storage.
     type Builder: SortedNgramStorageBuilder<NG, Storage = Self>;
+
+    #[cfg(feature = "rayon")]
+    /// The concurrent builder to use to build this storage.
+    type ConcurrentBuilder: ConcurrentSortedNgramStorageBuilder<NG, Storage = Self> + Send + Sync;
 
     /// Returns the number of ngrams in the storage.
     fn len(&self) -> usize;
@@ -117,30 +214,38 @@ pub trait SortedNgramStorage<NG: Ngram> {
     }
 
     /// Returns the index curresponding to the provided Ngram.
-    /// 
+    ///
     /// # Arguments
     /// * `ngram` - The ngram to search for.
     fn index_of(&self, ngram: NG) -> Option<usize>;
 
     /// Returns the index curresponding to the provided Ngram without checking bounds.
-    /// 
+    ///
     /// # Arguments
     /// * `ngram` - The ngram to search for.
-    /// 
+    ///
     /// # Safety
     /// This function is unsafe because it does not check if the index is within bounds.
     /// The caller must ensure that the index is within bounds.
     unsafe fn index_of_unchecked(&self, ngram: NG) -> usize;
 
     /// Returns the i-th ngram in the storage without checking bounds.
-    /// 
+    ///
     /// # Arguments
     /// * `i` - The index of the ngram to return.
-    /// 
+    ///
     /// # Safety
     /// This function is unsafe because it does not check if the index is within bounds.
     /// The caller must ensure that the index is within bounds.
     unsafe fn get_unchecked(&self, i: usize) -> NG;
+
+    /// Iterator over the ngrams in the storage.
+    type Iter<'a>: Iterator<Item = NG>
+    where
+        Self: 'a;
+
+    /// Returns an iterator over the ngrams in the storage.
+    fn iter(&self) -> Self::Iter<'_>;
 }
 
 impl<NG: Ngram> SortedNgramStorage<NG> for EliasFano<SelectFixed2>
@@ -148,6 +253,9 @@ where
     NG: IntoUsize,
 {
     type Builder = EliasFanoBuilder;
+
+    #[cfg(feature = "rayon")]
+    type ConcurrentBuilder = EliasFanoConcurrentBuilder;
 
     #[inline(always)]
     fn len(&self) -> usize {
@@ -168,10 +276,21 @@ where
     unsafe fn get_unchecked(&self, i: usize) -> NG {
         NG::from_usize(<Self as IndexedDict>::get_unchecked(self, i))
     }
+
+    type Iter<'a> =
+        std::iter::Map<EliasFanoIterator<'a, SelectFixed2, BitFieldVec>, fn(usize) -> NG>;
+
+    #[inline(always)]
+    fn iter(&self) -> Self::Iter<'_> {
+        self.into_iter_from(0).map(NG::from_usize)
+    }
 }
 
 impl<NG: Ngram> SortedNgramStorage<NG> for Vec<NG> {
     type Builder = Self;
+
+    #[cfg(feature = "rayon")]
+    type ConcurrentBuilder = SharedVec<NG>;
 
     #[inline(always)]
     fn len(&self) -> usize {
@@ -194,6 +313,13 @@ impl<NG: Ngram> SortedNgramStorage<NG> for Vec<NG> {
     unsafe fn get_unchecked(&self, i: usize) -> NG {
         *<[NG]>::get_unchecked(self, i)
     }
+
+    type Iter<'a> = Copied<std::slice::Iter<'a, NG>> where Self: 'a;
+
+    #[inline(always)]
+    fn iter(&self) -> Self::Iter<'_> {
+        <[NG]>::iter(self).copied()
+    }
 }
 
 /// Trait defining an Ngram.
@@ -203,6 +329,8 @@ pub trait Ngram:
     + Copy
     + Ord
     + Eq
+    + Send
+    + Sync
     + PartialEq
     + Hash
     + Index<usize, Output = <Self as Ngram>::G>

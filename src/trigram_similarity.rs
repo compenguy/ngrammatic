@@ -3,7 +3,7 @@ use std::{
     fmt::{Display, Formatter},
 };
 
-use crate::{corpus::Corpus, traits::*};
+use crate::{corpus::Corpus, search::QueryHashmap, traits::*};
 
 impl<KS, NG, K, G> Corpus<KS, NG, K, G>
 where
@@ -11,7 +11,7 @@ where
     KS: Keys<NG>,
     KS::K: AsRef<K>,
     K: Key<NG, NG::G> + ?Sized,
-    G: WeightedBipartiteGraph
+    G: WeightedBipartiteGraph,
 {
     #[inline(always)]
     /// Returns whether any of the ngrams provided appear in the provided key.
@@ -25,24 +25,22 @@ where
     /// iterators at once, comparing the current ngram in each iterator. If
     /// the ngrams are equal, we return `true`. If the ngrams are not equal,
     /// we advance the iterator that has the smaller ngram.
-    pub fn contains_any_ngrams<'a, I>(&self, sorted_ngrams: I, key_id: usize) -> bool
+    pub fn contains_any_ngram_ids<I>(&self, mut right_iterator: I, key_id: usize) -> bool
     where
-        I: IntoIterator<Item = &'a NG>,
-        NG: 'a,
+        I: Iterator<Item = usize>,
     {
-        let mut ngrams_iterator = self.ngrams_from_key(key_id);
+        let mut left_iterator = self.ngram_ids_from_key(key_id);
 
-        let mut left_next = ngrams_iterator.next();
-        let mut sorted_ngrams = sorted_ngrams.into_iter();
-        let mut next_ngram = sorted_ngrams.next();
+        let mut left_next = left_iterator.next();
+        let mut right_next = right_iterator.next();
 
-        while let (Some(left_gram), Some(ngram)) = (left_next, next_ngram) {
-            match left_gram.cmp(ngram) {
+        while let (Some(left), Some(right)) = (left_next, right_next) {
+            match left.cmp(&right) {
                 Ordering::Less => {
-                    left_next = ngrams_iterator.next();
+                    left_next = left_iterator.next();
                 }
                 Ordering::Greater => {
-                    next_ngram = sorted_ngrams.next();
+                    right_next = right_iterator.next();
                 }
                 Ordering::Equal => {
                     return true;
@@ -55,16 +53,20 @@ where
 }
 
 /// Returns the number of shared ngrams between two iterators.
-fn number_of_shared_items<I, J, Item>(mut left: I, mut right: J) -> usize
+fn number_of_shared_items<I, J>(mut left: I, mut right: J) -> (usize, usize)
 where
-    I: Iterator<Item = (Item, usize)>,
-    J: Iterator<Item = (Item, usize)>,
-    (Item, usize): Eq,
-    Item: Ord,
+    I: Iterator<Item = (usize, usize)>,
+    J: Iterator<Item = (usize, usize)>,
 {
     let mut count = 0;
+    let mut right_number_of_right_ngrams = 0;
     let mut left_next = left.next();
     let mut right_next = right.next();
+
+    if let Some((_, right_count)) = &right_next {
+        right_number_of_right_ngrams += *right_count;
+    }
+
     while let (Some((left_gram, left_count)), Some((right_gram, right_count))) =
         (&left_next, &right_next)
     {
@@ -74,15 +76,24 @@ where
             }
             Ordering::Greater => {
                 right_next = right.next();
+                if let Some((_, right_count)) = &right_next {
+                    right_number_of_right_ngrams += *right_count;
+                }
             }
             Ordering::Equal => {
-                count += left_count.min(right_count).as_usize();
+                count += left_count.min(right_count);
                 left_next = left.next();
                 right_next = right.next();
+                if let Some((_, right_count)) = &right_next {
+                    right_number_of_right_ngrams += *right_count;
+                }
             }
         }
     }
-    count
+
+    right.for_each(|(_, count)| right_number_of_right_ngrams += count);
+
+    (count, right_number_of_right_ngrams)
 }
 
 #[inline(always)]
@@ -90,40 +101,39 @@ where
 ///
 /// # Arguments
 /// * `warp` - The warp factor to use in the similarity calculation.
-/// * `left` - The first iterator of ngrams.
-/// * `right` - The second iterator of ngrams.
-///
-pub(crate) fn similarity<I, J, W, F, NG>(warp: Warp<W>, left: I, right: J) -> F
+/// * `query` - The query hashmap.
+/// * `ngrams` - The iterator of ngrams.
+/// * `arity` - The arity of the ngrams.
+pub(crate) fn trigram_similarity<I, W, F>(
+    warp: Warp<W>,
+    query: &QueryHashmap,
+    ngrams: I,
+    arity: usize,
+) -> F
 where
-    I: ExactSizeIterator<Item = (NG, usize)>,
-    J: ExactSizeIterator<Item = (NG, usize)>,
-    NG: Ngram,
+    I: ExactSizeIterator<Item = (usize, usize)>,
     F: Float,
-    Warp<W>: Similarity + One + Zero + Three + PartialOrd
+    Warp<W>: TrigramSimilarity + One + Zero + Three + PartialOrd,
 {
     debug_assert!(
         warp.is_between_one_and_three(),
         "Warp factor must be in the range 1 to 3"
     );
 
-    // This is a shortcut that counts all grams between both ngrams
-    // Then subtracts out one instance of the grams that are in common
-    let left_number_of_ngrams = left.len();
-    let right_number_of_ngrams = right.len();
-
-    let number_of_shared_ngrams = number_of_shared_items(left, right) as f64;
-    let number_of_unique_shared_grams = (left_number_of_ngrams + right_number_of_ngrams + 2
-        - 2 * NG::ARITY) as f64
+    let (number_of_shared_ngrams, right_number_of_right_ngrams) =
+        number_of_shared_items(query.ngram_ids_and_counts(), ngrams);
+    let number_of_unique_shared_grams = query.total_count() + right_number_of_right_ngrams + 2
+        - 2 * arity
         - number_of_shared_ngrams;
 
-    debug_assert!(number_of_unique_shared_grams >= 1.0);
+    debug_assert!(number_of_unique_shared_grams >= 1);
 
     F::from_f64(if warp.is_one() {
-        number_of_shared_ngrams / number_of_unique_shared_grams
+        number_of_shared_ngrams as f64 / number_of_unique_shared_grams as f64
     } else {
-        let diffgrams = number_of_unique_shared_grams - number_of_shared_ngrams;
-        (warp.pow(number_of_unique_shared_grams) - warp.pow(diffgrams))
-            / warp.pow(number_of_unique_shared_grams)
+        let diffgrams = number_of_unique_shared_grams as f64 - number_of_shared_ngrams as f64;
+        (warp.pow(number_of_unique_shared_grams as f64) - warp.pow(diffgrams))
+            / warp.pow(number_of_unique_shared_grams as f64)
     })
 }
 
@@ -165,52 +175,46 @@ impl<W: Display> Display for Warp<W> {
 }
 
 /// Trait defining the similarity calculation.
-pub trait Similarity {
+pub trait TrigramSimilarity {
     /// Calculate the power of a value.
     fn pow(&self, value: f64) -> f64;
 
     /// Calculate the similarity between two iterators of ngrams.
-    fn similarity<I, J, F, NG>(self, left: I, right: J) -> F
+    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I, arity: usize) -> F
     where
-        I: ExactSizeIterator<Item = (NG, usize)>,
-        J: ExactSizeIterator<Item = (NG, usize)>,
-        NG: Ngram,
+        I: ExactSizeIterator<Item = (usize, usize)>,
         F: Float;
 }
 
-impl Similarity for Warp<i32> {
+impl TrigramSimilarity for Warp<i32> {
     #[inline(always)]
     fn pow(&self, value: f64) -> f64 {
         value.powi(self.value)
     }
 
     #[inline(always)]
-    fn similarity<I, J, F, NG>(self, left: I, right: J) -> F
+    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I, arity: usize) -> F
     where
-        I: ExactSizeIterator<Item = (NG, usize)>,
-        J: ExactSizeIterator<Item = (NG, usize)>,
-        NG: Ngram,
+        I: ExactSizeIterator<Item = (usize, usize)>,
         F: Float,
     {
-        similarity(self, left, right)
+        trigram_similarity(self, query, ngrams, arity)
     }
 }
 
-impl Similarity for Warp<f64> {
+impl TrigramSimilarity for Warp<f64> {
     #[inline(always)]
     fn pow(&self, value: f64) -> f64 {
         value.powf(self.value)
     }
 
     #[inline(always)]
-    fn similarity<I, J, F, NG>(self, left: I, right: J) -> F
+    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I, arity: usize) -> F
     where
-        I: ExactSizeIterator<Item = (NG, usize)>,
-        J: ExactSizeIterator<Item = (NG, usize)>,
-        NG: Ngram,
+        I: ExactSizeIterator<Item = (usize, usize)>,
         F: Float,
     {
-        similarity(self, left, right)
+        trigram_similarity(self, query, ngrams, arity)
     }
 }
 
@@ -288,7 +292,9 @@ impl TryFrom<f32> for Warp<f64> {
             return Err("Warp factor must be in the range 1 to 3");
         }
 
-        Ok(Warp { value: value as f64})
+        Ok(Warp {
+            value: value as f64,
+        })
     }
 }
 

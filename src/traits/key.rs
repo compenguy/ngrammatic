@@ -5,8 +5,7 @@ use std::collections::HashMap;
 use crate::traits::ascii_char::ToASCIICharIterator;
 use crate::traits::iter_ngrams::IntoNgrams;
 use crate::{
-    ASCIIChar, ASCIICharIterator, BothPadding, CharLike, CharNormalizer, Gram, IntoPadder,
-    Lowercase, Ngram, PaddableNgram,
+    ASCIIChar, ASCIICharIterator, Alphanumeric, BothPadding, CharLike, CharNormalizer, Gram, IntoPadder, Lowercase, Ngram, PaddableNgram
 };
 
 /// Trait defining a key.
@@ -171,5 +170,21 @@ where
     #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
         self.inner().grams().lower()
+    }
+}
+
+impl<W, NG> Key<NG, NG::G> for Alphanumeric<W>
+where
+    NG: Ngram,
+    W: Key<NG, NG::G> + ?Sized,
+    NG::G: CharLike,
+    Self: AsRef<<W as Key<NG, <NG as Ngram>::G>>::Ref>,
+{
+    type Grams<'a> = Alphanumeric<W::Grams<'a>> where Self: 'a;
+    type Ref = W::Ref;
+
+    #[inline(always)]
+    fn grams(&self) -> Self::Grams<'_> {
+        self.inner().grams().alphanumeric()
     }
 }

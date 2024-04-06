@@ -29,6 +29,9 @@ pub trait CharLike:
     /// Returns whether the current character is a space-like.
     fn is_space_like(self) -> bool;
 
+    /// Returns whether the current character is alphanumeric.
+    fn is_alphanumeric(self) -> bool;
+
     #[inline(always)]
     /// Returns whether the current character is a NUL.
     fn is_nul(self) -> bool {
@@ -54,6 +57,11 @@ impl CharLike for char {
     fn is_space_like(self) -> bool {
         self.is_whitespace()
     }
+
+    #[inline(always)]
+    fn is_alphanumeric(self) -> bool {
+        self.is_alphanumeric()
+    }
 }
 
 impl CharLike for u8 {
@@ -74,6 +82,11 @@ impl CharLike for u8 {
     fn is_space_like(self) -> bool {
         self.is_ascii_whitespace()
     }
+
+    #[inline(always)]
+    fn is_alphanumeric(self) -> bool {
+        self.is_ascii_alphanumeric()
+    }
 }
 
 impl CharLike for ASCIIChar {
@@ -93,5 +106,10 @@ impl CharLike for ASCIIChar {
     #[inline(always)]
     fn is_space_like(self) -> bool {
         self.is_space_like()
+    }
+
+    #[inline(always)]
+    fn is_alphanumeric(self) -> bool {
+        self.is_alphanumeric()
     }
 }

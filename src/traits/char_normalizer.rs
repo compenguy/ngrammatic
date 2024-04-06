@@ -4,15 +4,18 @@ use std::mem::transmute;
 
 use crate::CharLike;
 
-/// Trait defining an iterator to lowercase.
+/// Struct defining an iterator to lowercase.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(transparent)]
 pub struct Lowercase<I: ?Sized>(I);
 
-impl<I: ?Sized> AsRef<I> for Lowercase<I> {
+impl<E: ?Sized, I: ?Sized> AsRef<I> for Lowercase<E>
+where
+    E: AsRef<I>,
+{
     #[inline(always)]
     fn as_ref(&self) -> &I {
-        &self.0
+        &self.0.as_ref()
     }
 }
 
@@ -27,7 +30,10 @@ where
     }
 }
 
-impl<E: ?Sized> AsRef<Lowercase<E>> for str where str: AsRef<E> {
+impl<E: ?Sized> AsRef<Lowercase<E>> for str
+where
+    str: AsRef<E>,
+{
     #[inline(always)]
     fn as_ref(&self) -> &Lowercase<E> {
         let reference: &E = self.as_ref();
@@ -60,6 +66,125 @@ where
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next().map(CharLike::to_lowercase)
+    }
+}
+
+impl<I> DoubleEndedIterator for Lowercase<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.0.next_back().map(CharLike::to_lowercase)
+    }
+}
+
+impl<I> ExactSizeIterator for Lowercase<I>
+where
+    I: ExactSizeIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
+/// Struct defining an iterator that replaces characters that are not alphanumeric with spaces.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[repr(transparent)]
+pub struct Alphanumeric<I: ?Sized>(I);
+
+impl<E: ?Sized, I: ?Sized> AsRef<I> for Alphanumeric<E>
+where
+    E: AsRef<I>,
+{
+    #[inline(always)]
+    fn as_ref(&self) -> &I {
+        &self.0.as_ref()
+    }
+}
+
+impl<E: ?Sized> AsRef<Alphanumeric<E>> for String
+where
+    String: AsRef<E>,
+{
+    #[inline(always)]
+    fn as_ref(&self) -> &Alphanumeric<E> {
+        let reference: &E = self.as_ref();
+        unsafe { transmute(reference) }
+    }
+}
+
+impl<E: ?Sized> AsRef<Alphanumeric<E>> for str
+where
+    str: AsRef<E>,
+{
+    #[inline(always)]
+    fn as_ref(&self) -> &Alphanumeric<E> {
+        let reference: &E = self.as_ref();
+        unsafe { transmute(reference) }
+    }
+}
+
+impl<I: ?Sized> Alphanumeric<I> {
+    #[inline(always)]
+    /// Returns a reference to the inner iterator.
+    pub fn inner(&self) -> &I {
+        &self.0
+    }
+}
+
+impl<I> From<I> for Alphanumeric<I> {
+    #[inline(always)]
+    fn from(iter: I) -> Self {
+        Alphanumeric(iter)
+    }
+}
+
+impl<I> Iterator for Alphanumeric<I>
+where
+    I: Iterator,
+    <I as Iterator>::Item: CharLike,
+{
+    type Item = <I as Iterator>::Item;
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(|c| {
+            if c.is_alphanumeric() {
+                c
+            } else {
+                <I as Iterator>::Item::SPACE
+            }
+        })
+    }
+}
+
+impl<I> DoubleEndedIterator for Alphanumeric<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.0.next_back().map(|c| {
+            if c.is_alphanumeric() {
+                c
+            } else {
+                <I as Iterator>::Item::SPACE
+            }
+        })
+    }
+}
+
+impl<I> ExactSizeIterator for Alphanumeric<I>
+where
+    I: ExactSizeIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    fn len(&self) -> usize {
+        self.0.len()
     }
 }
 
@@ -160,6 +285,12 @@ where
     /// Converts all characters to lowercase.
     fn lower(self) -> Lowercase<Self> {
         Lowercase::from(self)
+    }
+
+    #[inline(always)]
+    /// Converts all non-alpha characters to spaces.
+    fn alphanumeric(self) -> Alphanumeric<Self> {
+        Alphanumeric::from(self)
     }
 }
 

@@ -4,10 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+csv = "1.3.0"
+env_logger = "0.11.3"
 flate2 = "1.0.28"
 indicatif = "0.17.8"
+log = "0.4.21"
 mem_dbg = "0.1"
-ngrammatic = { path = "../../ngrammatic", features = ["mem_dbg"] }
+ngrammatic = { path = "../../ngrammatic", features = ["mem_dbg", "rayon"] }
+rayon = "1.10.0"
 
 [profile.release]
 overflow-checks = false   # Disable integer overflow checks.

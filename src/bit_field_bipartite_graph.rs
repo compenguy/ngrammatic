@@ -1,20 +1,22 @@
 //! Submodule providing a bitfield bipartite graph which provides a structure
 //! storing a bipartite graph into two CSR-like structures composed of bitfields.
 
-use std::iter::Skip;
-use std::iter::Take;
+use std::iter::Chain;
+use std::iter::Map;
 use std::iter::Zip;
 
 #[cfg(feature = "mem_dbg")]
 use mem_dbg::{MemDbg, MemSize};
 use sux::bits::BitFieldVec;
+use sux::dict::elias_fano::EliasFanoIterator;
 use sux::dict::EliasFano;
 use sux::prelude::BitFieldVecIterator;
 use sux::rank_sel::SelectFixed2;
-use sux::traits::IndexedDict;
 use sux::traits::BitFieldSliceCore;
+use sux::traits::IndexedDict;
 use sux::traits::Pred;
 
+use crate::iter_bit_field_bipartite_graph::EdgesIterator;
 use crate::WeightedBipartiteGraph;
 
 #[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
@@ -23,7 +25,7 @@ use crate::WeightedBipartiteGraph;
 pub struct WeightedBitFieldBipartiteGraph {
     /// Vector containing the number of times a given gram appears in a given key.
     /// This is a descriptor of an edge from a Key to a Gram.
-    srcs_to_dsts_weights: BitFieldVec,
+    pub(crate) srcs_to_dsts_weights: BitFieldVec,
     /// Vector containing the comulative outbound degree from a given key to grams.
     /// This is a vector with the same length as the keys vector PLUS ONE, and the value at
     /// index `i` is the sum of the oubound degrees before index `i`. The last element of this
@@ -53,7 +55,6 @@ impl WeightedBitFieldBipartiteGraph {
     /// * `dsts_offsets` - The comulative inbound degree from a given gram to keys.
     /// * `srcs_to_dsts` - The destinations of the edges from keys to grams.
     /// * `dsts_to_srcs` - The sources of the edges from grams to keys.
-    ///
     pub fn new(
         srcs_to_dsts_weights: BitFieldVec,
         srcs_offsets: EliasFano<SelectFixed2>,
@@ -71,6 +72,11 @@ impl WeightedBitFieldBipartiteGraph {
             srcs_to_dsts,
             dsts_to_srcs,
         }
+    }
+
+    /// Iterate across all of the edges of the graph.
+    pub fn edges(&self) -> EdgesIterator<'_> {
+        EdgesIterator::from(self)
     }
 
     /// Returns the comulative outbound degree from a source id.
@@ -148,338 +154,72 @@ impl WeightedBipartiteGraph for WeightedBitFieldBipartiteGraph {
         end - start
     }
 
-    type Srcs<'a> = Take<BitFieldVecIterator<'a, usize, Vec<usize>>>;
+    type Srcs<'a> = BitFieldVecIterator<'a, usize, Vec<usize>>;
 
     #[inline(always)]
     fn srcs_from_dst(&self, dst_id: usize) -> Self::Srcs<'_> {
         let start = self.dsts_offsets.get(dst_id);
         let end = self.dsts_offsets.get(dst_id + 1);
-        self.srcs_to_dsts.iter_from(start).take(end - start)
+        self.srcs_to_dsts.iter_range(start, end)
     }
 
-    type Dsts<'a> = Take<BitFieldVecIterator<'a, usize, Vec<usize>>>;
+    type Dsts<'a> = BitFieldVecIterator<'a, usize, Vec<usize>>;
 
     #[inline(always)]
     fn dsts_from_src(&self, src_id: usize) -> Self::Dsts<'_> {
         let start = self.srcs_offsets.get(src_id);
         let end = self.srcs_offsets.get(src_id + 1);
-        self.dsts_to_srcs.iter_from(start).take(end - start)
+        self.dsts_to_srcs.iter_range(start, end)
     }
 
-    type Weights<'a> = Take<BitFieldVecIterator<'a, usize, Vec<usize>>>;
+    type WeightsSrc<'a> = BitFieldVecIterator<'a, usize, Vec<usize>>;
 
     #[inline(always)]
-    fn weights_from_src(&self, src_id: usize) -> Self::Weights<'_> {
+    fn weights_from_src(&self, src_id: usize) -> Self::WeightsSrc<'_> {
         let start = self.srcs_offsets.get(src_id);
         let end = self.srcs_offsets.get(src_id + 1);
-        self.srcs_to_dsts_weights
-            .iter_from(start)
-            .take(end - start)
-    }
-}
-
-type SrcIterator<'a> = (
-    usize,
-    Zip<
-        Skip<Take<BitFieldVecIterator<'a, usize, Vec<usize>>>>,
-        Skip<Take<BitFieldVecIterator<'a, usize, Vec<usize>>>>,
-    >,
-);
-
-type DstIterator<'a> = (
-    usize,
-    Skip<Take<BitFieldVecIterator<'a, usize, Vec<usize>>>>,
-);
-
-/// An iterator over the edges of a `WeightedBitFieldBipartiteGraph`.
-///
-/// # Implementative details
-/// This iterator iterates across all edges of the graph, including both the
-/// edges from keys to grams and the edges from grams to keys. The edges are
-/// returned in the order they are stored in the graph, which is not necessarily
-/// the order in which they were added to the graph.
-pub struct EdgesIterator<'a> {
-    graph: &'a WeightedBitFieldBipartiteGraph,
-    src_iterator: Option<SrcIterator<'a>>,
-    dst_iterator: Option<DstIterator<'a>>,
-    start: usize,
-    end: usize,
-}
-
-impl<'a> EdgesIterator<'a> {
-    /// Returns whether a provided edge id refers to a key-to-gram edge.
-    ///
-    /// # Arguments
-    /// * `edge_id` - The edge id to check.
-    fn is_key_to_gram_edge(&self, edge_id: usize) -> bool {
-        edge_id < self.graph.number_of_edges()
+        self.srcs_to_dsts_weights.iter_range(start, end)
     }
 
-    #[cfg(any(feature = "rayon", feature = "webgraph"))]
-    /// Splits the iterator into two at the given index.
-    ///
-    /// # Arguments
-    /// * `index` - The index at which to split the iterator.
-    fn split_at(self, index: usize) -> (Self, Self) {
-        let mid = self.start + index;
-        let (start, end) = (self.start, self.end);
-        let (left_start, left_end) = (start, mid);
-        let (right_start, right_end) = (mid, end);
-        (
-            EdgesIterator {
-                graph: self.graph,
-                src_iterator: None,
-                dst_iterator: None,
-                start: left_start,
-                end: left_end,
-            },
-            EdgesIterator {
-                graph: self.graph,
-                src_iterator: None,
-                dst_iterator: None,
-                start: right_start,
-                end: right_end,
-            },
-        )
+    type Weights<'a> = BitFieldVecIterator<'a, usize, Vec<usize>>;
+
+    #[inline(always)]
+    fn weights(&self) -> Self::Weights<'_> {
+        self.srcs_to_dsts_weights.iter()
     }
-}
 
-/// An edge in a `WeightedBitFieldBipartiteGraph`.
-#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct Edge {
-    /// The source of the edge.
-    src: usize,
-    /// The destination of the edge.
-    dst: usize,
-    /// The weight of the edge, when available. When the edge
-    /// goes from a key to a gram, this value is the number of
-    /// times the gram appears in the key. When the edge goes
-    /// from a gram to a key, this value is None.
-    weight: Option<usize>,
-}
+    type Degrees<'a> = Chain<
+        Map<
+            Zip<
+                EliasFanoIterator<'a, SelectFixed2, BitFieldVec>,
+                EliasFanoIterator<'a, SelectFixed2, BitFieldVec>,
+            >,
+            fn((usize, usize)) -> usize,
+        >,
+        Map<
+            Zip<
+                EliasFanoIterator<'a, SelectFixed2, BitFieldVec>,
+                EliasFanoIterator<'a, SelectFixed2, BitFieldVec>,
+            >,
+            fn((usize, usize)) -> usize,
+        >,
+    >;
 
-impl<'a> From<&'a WeightedBitFieldBipartiteGraph> for EdgesIterator<'a> {
-    fn from(graph: &'a WeightedBitFieldBipartiteGraph) -> Self {
-        EdgesIterator {
-            graph,
-            src_iterator: None,
-            dst_iterator: None,
-            start: 0,
-            end: graph.number_of_edges() * 2,
-        }
-    }
-}
-
-impl<'a> Iterator for EdgesIterator<'a> {
-    type Item = Edge;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.start >= self.end {
-            return None;
+    #[inline(always)]
+    fn degrees(&self) -> Self::Degrees<'_> {
+        fn delta((a, b): (usize, usize)) -> usize {
+            b - a
         }
 
-        // We check whether we are iterating over the edges from keys to grams or from grams to keys.
-        if self.is_key_to_gram_edge(self.start) {
-            let src = self.graph.src_id_from_edge_id(self.start);
-            let src_offset = self.graph.src_comulative_outbound_degree(src);
-
-            // The start value may not be exactly equal to the start of the offset, as for instance
-            // during a parallel iteration, the start value may be greater than the offset. In this
-            // case, we need to adjust the start value to the offset.
-            let number_of_edges_to_skip = self.start - src_offset;
-
-            let dsts = self.graph.dsts_from_src(src).skip(number_of_edges_to_skip);
-            let weights = self
-                .graph
-                .weights_from_src(src)
-                .skip(number_of_edges_to_skip);
-            self.src_iterator = Some((src, dsts.zip(weights)));
-            if let Some((src, ref mut dsts)) = self.src_iterator {
-                if let Some((dst, weight)) = dsts.next() {
-                    self.start += 1;
-                    return Some(Edge {
-                        src,
-                        // We offset the destination by the number of source nodes, so that while the
-                        // bipartite graph is stored in two CSR-like structures, we can return the edges
-                        // in a single iterator.
-                        dst: dst + self.graph.number_of_source_nodes(),
-                        weight: Some(weight),
-                    });
-                }
-            }
-        } else {
-            let adjusted_start = self.start - self.graph.number_of_edges();
-            let dst = self.graph.dst_id_from_edge_id(adjusted_start);
-            let dst_offset = self.graph.dst_comulative_inbound_degree(dst);
-
-            // The start value may not be exactly equal to the start of the offset, as for instance
-            // during a parallel iteration, the start value may be greater than the offset. In this
-            // case, we need to adjust the start value to the offset.
-            let number_of_edges_to_skip = adjusted_start - dst_offset;
-
-            let srcs = self.graph.srcs_from_dst(dst).skip(number_of_edges_to_skip);
-            self.dst_iterator = Some((dst, srcs));
-
-            if let Some((dst, ref mut srcs)) = self.dst_iterator {
-                if let Some(src) = srcs.next() {
-                    self.start += 1;
-                    return Some(Edge {
-                        // We offset the source by the number of source nodes, so that while the
-                        // bipartite graph is stored in two CSR-like structures, we can return the edges
-                        // in a single iterator.
-                        src: dst + self.graph.number_of_source_nodes(),
-                        dst: src,
-                        weight: None,
-                    });
-                }
-            }
-        }
-
-        // If we reach this point, it means that we have iterated over all edges.
-        assert_eq!(
-            self.start, self.end,
-            concat!(
-                "The start value ({}) is not equal to the end value ({}) ",
-                "after iterating over all edges."
-            ),
-            self.start, self.end
-        );
-
-        None
-    }
-}
-
-impl<'a> DoubleEndedIterator for EdgesIterator<'a> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        if self.start >= self.end {
-            return None;
-        }
-
-        // We check whether we are iterating over the edges from keys to grams or from grams to keys.
-        if self.is_key_to_gram_edge(self.end - 1) {
-            let src = self.graph.src_id_from_edge_id(self.end - 1);
-            let src_offset = self.graph.src_comulative_outbound_degree(src);
-
-            // The start value may not be exactly equal to the start of the offset, as for instance
-            // during a parallel iteration, the start value may be greater than the offset. In this
-            // case, we need to adjust the start value to the offset.
-            let number_of_edges_to_skip = self.end - src_offset;
-
-            let dsts = self.graph.dsts_from_src(src).skip(number_of_edges_to_skip);
-            let weights = self
-                .graph
-                .weights_from_src(src)
-                .skip(number_of_edges_to_skip);
-            self.src_iterator = Some((src, dsts.zip(weights)));
-
-            if let Some((src, ref mut dsts)) = self.src_iterator {
-                if let Some((dst, weight)) = dsts.next_back() {
-                    self.end -= 1;
-                    return Some(Edge {
-                        src,
-                        // We offset the destination by the number of source nodes, so that while the
-                        // bipartite graph is stored in two CSR-like structures, we can return the edges
-                        // in a single iterator.
-                        dst: dst + self.graph.number_of_source_nodes(),
-                        weight: Some(weight),
-                    });
-                }
-            }
-        } else {
-            let adjusted_end = self.end - 1 - self.graph.number_of_edges();
-            let dst = self.graph.dst_id_from_edge_id(adjusted_end);
-            let dst_offset = self.graph.dst_comulative_inbound_degree(dst);
-
-            // The start value may not be exactly equal to the start of the offset, as for instance
-            // during a parallel iteration, the start value may be greater than the offset. In this
-            // case, we need to adjust the start value to the offset.
-            let number_of_edges_to_skip = adjusted_end - dst_offset;
-
-            let srcs = self.graph.srcs_from_dst(dst).skip(number_of_edges_to_skip);
-            self.dst_iterator = Some((dst, srcs));
-
-            if let Some((dst, ref mut srcs)) = self.dst_iterator {
-                if let Some(src) = srcs.next_back() {
-                    self.end -= 1;
-                    return Some(Edge {
-                        // We offset the source by the number of source nodes, so that while the
-                        // bipartite graph is stored in two CSR-like structures, we can return the edges
-                        // in a single iterator.
-                        src: dst + self.graph.number_of_source_nodes(),
-                        dst: src,
-                        weight: None,
-                    });
-                }
-            }
-        }
-
-        // If we reach this point, it means that we have iterated over all edges.
-        assert_eq!(
-            self.start, self.end,
-            concat!(
-                "The start value ({}) is not equal to the end value ({}) ",
-                "after iterating over all edges."
-            ),
-            self.start, self.end
-        );
-
-        None
-    }
-}
-
-impl<'a> ExactSizeIterator for EdgesIterator<'a> {
-    fn len(&self) -> usize {
-        self.end - self.start
-    }
-}
-
-#[cfg(feature = "rayon")]
-/// Implementation of the Producer trait for the EdgesIterator.
-impl<'a> rayon::iter::plumbing::Producer for EdgesIterator<'a> {
-    type Item = Edge;
-    type IntoIter = Self;
-
-    fn into_iter(self) -> Self {
-        self
-    }
-
-    fn split_at(self, index: usize) -> (Self, Self) {
-        self.split_at(index)
-    }
-}
-
-#[cfg(feature = "rayon")]
-/// Implementation of the ParallelIterator trait for the EdgesIterator.
-impl<'a> rayon::prelude::ParallelIterator for EdgesIterator<'a> {
-    type Item = Edge;
-
-    fn drive_unindexed<C>(self, consumer: C) -> C::Result
-    where
-        C: rayon::iter::plumbing::UnindexedConsumer<Self::Item>,
-    {
-        rayon::iter::plumbing::bridge(self, consumer)
-    }
-}
-
-#[cfg(feature = "rayon")]
-/// Implementation of the IndexedParallelIterator trait for the EdgesIterator.
-impl<'a> rayon::prelude::IndexedParallelIterator for EdgesIterator<'a> {
-    fn len(&self) -> usize {
-        self.end - self.start
-    }
-
-    fn drive<C>(self, consumer: C) -> C::Result
-    where
-        C: rayon::iter::plumbing::Consumer<Self::Item>,
-    {
-        rayon::iter::plumbing::bridge(self, consumer)
-    }
-
-    fn with_producer<CB>(self, callback: CB) -> CB::Output
-    where
-        CB: rayon::iter::plumbing::ProducerCallback<Self::Item>,
-    {
-        callback.callback(self)
+        self.srcs_offsets
+            .into_iter_from(0)
+            .zip(self.srcs_offsets.into_iter_from(1))
+            .map(delta as fn((usize, usize)) -> usize)
+            .chain(
+                self.dsts_offsets
+                    .into_iter_from(0)
+                    .zip(self.dsts_offsets.into_iter_from(1))
+                    .map(delta as fn((usize, usize)) -> usize),
+            )
     }
 }

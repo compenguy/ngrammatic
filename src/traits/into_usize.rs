@@ -116,12 +116,12 @@ impl IntoUsize for BiGram<ASCIIChar> {
 impl IntoUsize for BiGram<char> {
     #[inline(always)]
     fn into_usize(self) -> usize {
-        (self[0] as usize) << 8 | self[1] as usize
+        (self[0] as usize) << 32 | self[1] as usize
     }
 
     #[inline(always)]
     fn from_usize(value: usize) -> Self {
-        [char::from_usize(value >> 8), char::from_usize(value)]
+        [char::from_usize(value >> 32), char::from_usize(value)]
     }
 }
 
