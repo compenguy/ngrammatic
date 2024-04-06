@@ -2,7 +2,8 @@
 
 use sux::bits::BitFieldVec;
 use sux::dict::{EliasFano, EliasFanoBuilder};
-use sux::traits::BitFieldSliceMut;
+use sux::prelude::SelectFixed2;
+use sux::traits::{BitFieldSliceMut, ConvertTo};
 
 /// Trait defining a bounded type.
 pub trait Bounded {
@@ -251,11 +252,76 @@ impl AdaptativeVector {
         }
     }
 
+    #[cfg(feature = "rayon")]
     /// Converts the vector into an Elias Fano.
     ///
     /// # Safety
     /// This method assumes that the vector is sorted.
-    pub(crate) unsafe fn into_elias_fano(self) -> EliasFano {
+    pub(crate) unsafe fn par_into_elias_fano(self) -> EliasFano<SelectFixed2> {
+        use rayon::prelude::*;
+        use sux::dict::EliasFanoConcurrentBuilder;
+
+        match self {
+            AdaptativeVector::U8(vector) => {
+                let builder = EliasFanoConcurrentBuilder::new(
+                    vector.len(),
+                    vector.last().copied().unwrap_or(0) as usize,
+                );
+                vector
+                    .into_par_iter()
+                    .enumerate()
+                    .for_each(|(index, value)| {
+                        builder.set(index, value as usize, std::sync::atomic::Ordering::SeqCst);
+                    });
+                builder.build().convert_to().unwrap()
+            }
+            AdaptativeVector::U16(vector) => {
+                let builder = EliasFanoConcurrentBuilder::new(
+                    vector.len(),
+                    vector.last().copied().unwrap_or(0) as usize,
+                );
+                vector
+                    .into_par_iter()
+                    .enumerate()
+                    .for_each(|(index, value)| {
+                        builder.set(index, value as usize, std::sync::atomic::Ordering::SeqCst);
+                    });
+                builder.build().convert_to().unwrap()
+            }
+            AdaptativeVector::U32(vector) => {
+                let builder = EliasFanoConcurrentBuilder::new(
+                    vector.len(),
+                    vector.last().copied().unwrap_or(0) as usize,
+                );
+                vector
+                    .into_par_iter()
+                    .enumerate()
+                    .for_each(|(index, value)| {
+                        builder.set(index, value as usize, std::sync::atomic::Ordering::SeqCst);
+                    });
+                builder.build().convert_to().unwrap()
+            }
+            AdaptativeVector::U64(vector) => {
+                let builder = EliasFanoConcurrentBuilder::new(
+                    vector.len(),
+                    vector.last().copied().unwrap_or(0) as usize,
+                );
+                vector
+                    .into_par_iter()
+                    .enumerate()
+                    .for_each(|(index, value)| {
+                        builder.set(index, value as usize, std::sync::atomic::Ordering::SeqCst);
+                    });
+                builder.build().convert_to().unwrap()
+            }
+        }
+    }
+
+    /// Converts the vector into an Elias Fano.
+    ///
+    /// # Safety
+    /// This method assumes that the vector is sorted.
+    pub(crate) unsafe fn into_elias_fano(self) -> EliasFano<SelectFixed2> {
         match self {
             AdaptativeVector::U8(vector) => {
                 let mut builder = EliasFanoBuilder::new(
@@ -265,7 +331,7 @@ impl AdaptativeVector {
                 for value in vector {
                     builder.push_unchecked(value as usize);
                 }
-                builder.build()
+                builder.build().convert_to().unwrap()
             }
             AdaptativeVector::U16(vector) => {
                 let mut builder = EliasFanoBuilder::new(
@@ -275,7 +341,7 @@ impl AdaptativeVector {
                 for value in vector {
                     builder.push_unchecked(value as usize);
                 }
-                builder.build()
+                builder.build().convert_to().unwrap()
             }
             AdaptativeVector::U32(vector) => {
                 let mut builder = EliasFanoBuilder::new(
@@ -285,7 +351,7 @@ impl AdaptativeVector {
                 for value in vector {
                     builder.push_unchecked(value as usize);
                 }
-                builder.build()
+                builder.build().convert_to().unwrap()
             }
             AdaptativeVector::U64(vector) => {
                 let mut builder = EliasFanoBuilder::new(
@@ -295,8 +361,77 @@ impl AdaptativeVector {
                 for value in vector {
                     builder.push_unchecked(value as usize);
                 }
-                builder.build()
+                builder.build().convert_to().unwrap()
             }
+        }
+    }
+
+    #[cfg(feature = "rayon")]
+    /// Converts the vector into a bit field vector.
+    pub(crate) fn par_into_bitvec(self, maximum_value: usize) -> BitFieldVec {
+        use rayon::iter::IndexedParallelIterator;
+        use rayon::iter::IntoParallelIterator;
+        use rayon::iter::ParallelIterator;
+        use sux::bits::AtomicBitFieldVec;
+        use sux::traits::bit_field_slice::AtomicHelper;
+
+        let number_of_bits_to_represent_maximum_value = maximum_value.next_power_of_two().ilog2();
+        unsafe {
+            let bit_field = AtomicBitFieldVec::new_uninit(
+                number_of_bits_to_represent_maximum_value as usize,
+                self.len(),
+            );
+            match self {
+                AdaptativeVector::U8(vector) => {
+                    vector
+                        .into_par_iter()
+                        .enumerate()
+                        .for_each(|(index, value)| {
+                            bit_field.set(
+                                index,
+                                value as usize,
+                                std::sync::atomic::Ordering::SeqCst,
+                            );
+                        });
+                }
+                AdaptativeVector::U16(vector) => {
+                    vector
+                        .into_par_iter()
+                        .enumerate()
+                        .for_each(|(index, value)| {
+                            bit_field.set(
+                                index,
+                                value as usize,
+                                std::sync::atomic::Ordering::SeqCst,
+                            );
+                        });
+                }
+                AdaptativeVector::U32(vector) => {
+                    vector
+                        .into_par_iter()
+                        .enumerate()
+                        .for_each(|(index, value)| {
+                            bit_field.set(
+                                index,
+                                value as usize,
+                                std::sync::atomic::Ordering::SeqCst,
+                            );
+                        });
+                }
+                AdaptativeVector::U64(vector) => {
+                    vector
+                        .into_par_iter()
+                        .enumerate()
+                        .for_each(|(index, value)| {
+                            bit_field.set(
+                                index,
+                                value as usize,
+                                std::sync::atomic::Ordering::SeqCst,
+                            );
+                        });
+                }
+            }
+            bit_field.into()
         }
     }
 

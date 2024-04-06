@@ -27,14 +27,14 @@ where
 
         // We can now start to compress several of the vectors into BitFieldVecs.
         log::info!("Compressing key offsets into Elias-Fano.");
-        let key_offsets = unsafe { key_offsets.into_elias_fano().convert_to().unwrap() };
+        let key_offsets = unsafe { key_offsets.par_into_elias_fano() };
         log::info!("Compressing cooccurrence vector into BitFieldVec.");
-        let cooccurrences = cooccurrences.into_bitvec(maximal_cooccurrence);
+        let cooccurrences = cooccurrences.par_into_bitvec(maximal_cooccurrence);
 
         // We create the ngrams vector. Since we are using a btreeset, we already have the
         // ngrams sorted, so we can simply convert the btreeset into a vector.
         log::info!(
-            "Compressing ngrams into {}.",
+            "Storing ngrams into {}.",
             std::any::type_name::<NG::SortedStorage>()
         );
         let ngram_builder = <<<NG as Ngram>::SortedStorage as SortedNgramStorage<NG>>::ConcurrentBuilder>::new_storage_builder(ngrams.len(), *ngrams.last().unwrap());
