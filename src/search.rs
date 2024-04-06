@@ -23,10 +23,16 @@ pub struct QueryHashmap {
     total_identified_count: usize,
 }
 
+/// A parallel iterator over the identified ngram ids.
+pub type ParNgramIds<'a> = rayon::iter::Map<rayon::slice::Iter<'a, (usize, usize)>, fn(&(usize, usize)) -> usize>;
+
+/// A sequential iterator over the identified ngram ids.
+pub type NgramIds<'a> = Map<Iter<'a, (usize, usize)>, fn(&(usize, usize)) -> usize>;
+
 impl QueryHashmap {
     #[inline(always)]
     /// Returns the identified ngram ids.
-    pub fn ngram_ids(&self) -> Map<Iter<'_, (usize, usize)>, fn(&(usize, usize)) -> usize> {
+    pub fn ngram_ids(&self) -> NgramIds<'_> {
         self.ngram_ids.iter().map(|(ngram_id, _)| *ngram_id)
     }
 
@@ -35,7 +41,7 @@ impl QueryHashmap {
     /// Returns a parallel iterator over the identified ngram ids.
     pub fn par_ngram_ids(
         &self,
-    ) -> rayon::iter::Map<rayon::slice::Iter<'_, (usize, usize)>, fn(&(usize, usize)) -> usize>
+    ) -> ParNgramIds<'_>
     {
         use rayon::iter::IntoParallelRefIterator;
         use rayon::iter::ParallelIterator;

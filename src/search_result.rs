@@ -27,7 +27,7 @@ impl<'a, K, F: Float> Ord for SearchResult<'a, K, F> {
 
 impl<'a, K, F: Float> PartialOrd for SearchResult<'a, K, F> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.similarity.partial_cmp(&other.similarity)
+        Some(self.cmp(other))
     }
 }
 
@@ -85,18 +85,20 @@ impl<'a, K, F: Float> SearchResultsHeap<'a, K, F> {
     pub fn push(&mut self, search_result: SearchResult<'a, K, F>) {
         if self.heap.len() < self.n {
             self.heap.push(Reverse(search_result));
-        } else {
-            if let Some(min) = self.heap.peek() {
-                if search_result > min.0 {
-                    self.heap.pop();
-                    self.heap.push(Reverse(search_result));
-                }
+        } else if let Some(min) = self.heap.peek() {
+            if search_result > min.0 {
+                self.heap.pop();
+                self.heap.push(Reverse(search_result));
             }
         }
     }
 
     /// Returns the top n best search results
     pub fn into_sorted_vec(self) -> Vec<SearchResult<'a, K, F>> {
-        self.heap.into_sorted_vec().into_iter().map(|Reverse(x)| x).collect()
+        self.heap
+            .into_sorted_vec()
+            .into_iter()
+            .map(|Reverse(x)| x)
+            .collect()
     }
 }

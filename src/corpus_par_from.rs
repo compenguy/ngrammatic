@@ -3,12 +3,6 @@ use rayon::prelude::*;
 use sux::prelude::*;
 use sux::traits::bit_field_slice::AtomicHelper;
 
-// #[cfg(feature = "serde")]
-// use serde::{Deserialize, Serialize};
-
-#[cfg(feature = "mem_dbg")]
-use mem_dbg::{MemDbg, MemSize};
-
 use crate::{bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph, traits::*};
 
 use crate::Corpus;

@@ -15,7 +15,7 @@ where
 {
     #[inline(always)]
     fn as_ref(&self) -> &I {
-        &self.0.as_ref()
+        self.0.as_ref()
     }
 }
 
@@ -101,7 +101,7 @@ where
 {
     #[inline(always)]
     fn as_ref(&self) -> &I {
-        &self.0.as_ref()
+        self.0.as_ref()
     }
 }
 

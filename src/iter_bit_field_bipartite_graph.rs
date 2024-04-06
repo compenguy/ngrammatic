@@ -128,6 +128,7 @@ impl<'a> From<&'a WeightedBitFieldBipartiteGraph> for EdgesIterator<'a> {
 impl<'a> Iterator for EdgesIterator<'a> {
     type Item = Edge;
 
+    #[allow(clippy::iter_skip_zero)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start >= self.end {
             return None;
@@ -187,7 +188,7 @@ impl<'a> Iterator for EdgesIterator<'a> {
             // And we create the new iterator.
             self.src_iterator = Some((src, dsts.zip(weights)));
             // At this point, we can call the next method again, as we have a new iterator.
-            return self.next();
+            self.next()
         } else {
             // If we are in the second portion of the bipartite graph, the one dealing with the edges
             // from grams to keys, we check whether we have already started iterating over the edges
@@ -240,12 +241,13 @@ impl<'a> Iterator for EdgesIterator<'a> {
             // And we create the new iterator.
             self.dst_iterator = Some((dst, srcs));
             // At this point, we can call the next method again, as we have a new iterator.
-            return self.next();
+            self.next()
         }
     }
 }
 
 impl<'a> DoubleEndedIterator for EdgesIterator<'a> {
+    #[allow(clippy::iter_skip_zero)]
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.start >= self.end {
             return None;
@@ -253,23 +255,13 @@ impl<'a> DoubleEndedIterator for EdgesIterator<'a> {
 
         // We check whether we are iterating over the edges from keys to grams or from grams to keys.
         if self.is_key_to_gram_edge(self.end - 1) {
-            let src = self.graph.src_id_from_edge_id(self.end - 1);
-            let src_offset = self.graph.src_comulative_outbound_degree(src);
-
-            // The start value may not be exactly equal to the start of the offset, as for instance
-            // during a parallel iteration, the start value may be greater than the offset. In this
-            // case, we need to adjust the start value to the offset.
-            let number_of_edges_to_skip = self.end - src_offset;
-
-            let dsts = self.graph.dsts_from_src(src).skip(number_of_edges_to_skip);
-            let weights = self
-                .graph
-                .weights_from_src(src)
-                .skip(number_of_edges_to_skip);
-            self.src_iterator = Some((src, dsts.zip(weights)));
-
+            // If we are in the first portion of the bipartite graph, the one dealing with the edges
+            // from keys to grams, we check whether we have already started iterating over the edges
+            // from a given source node.
             if let Some((src, ref mut dsts)) = self.src_iterator {
+                // If so, we check whether this iterator has more elements to return.
                 if let Some((dst, weight)) = dsts.next_back() {
+                    // If it does, we decrease the edge counter from the right side, and return the edge.
                     self.end -= 1;
                     return Some(Edge {
                         src,
@@ -279,23 +271,51 @@ impl<'a> DoubleEndedIterator for EdgesIterator<'a> {
                         dst: dst + self.graph.number_of_source_nodes(),
                         weight: Some(weight),
                     });
+                } else {
+                    // If it does not have any more edges, it means that we have finished the edges of
+                    // this specific source node and we need to move to the next one.
+                    let src = src - 1;
+                    // We retrieve the destination nodes and weights from the next source node.
+                    let dsts = self.graph.dsts_from_src(src).skip(0);
+                    let weights = self.graph.weights_from_src(src).skip(0);
+                    // And we create the new iterator.
+                    self.src_iterator = Some((src, dsts.zip(weights)));
+                    // At this point, we can call the next method again, as we have a new iterator.
+                    return self.next_back();
                 }
             }
-        } else {
-            let adjusted_end = self.end - 1 - self.graph.number_of_edges();
-            let dst = self.graph.dst_id_from_edge_id(adjusted_end);
-            let dst_offset = self.graph.dst_comulative_inbound_degree(dst);
+            // If we got here, it means that we do not know the source node of the edge we are
+            // currently iterating over. We need to find it. To find it, we need to run a binary
+            // search on the source comulative outbound degree, to find the source node of the edge.
+            let src = self.graph.src_id_from_edge_id(self.end - 1);
+            // Since we may have gotten here from an operation such as the split_at, it may be the
+            // case that the start value is greater than the offset of the source node. In this case,
+            // we need to adjust the start value to the offset.
+            let src_offset = self.graph.src_comulative_outbound_degree(src);
 
             // The start value may not be exactly equal to the start of the offset, as for instance
             // during a parallel iteration, the start value may be greater than the offset. In this
             // case, we need to adjust the start value to the offset.
-            let number_of_edges_to_skip = adjusted_end - dst_offset;
+            let number_of_edges_to_skip = self.end - src_offset;
 
-            let srcs = self.graph.srcs_from_dst(dst).skip(number_of_edges_to_skip);
-            self.dst_iterator = Some((dst, srcs));
-
+            // We retrieve the destination nodes and weights from the source node.
+            let dsts = self.graph.dsts_from_src(src).skip(number_of_edges_to_skip);
+            let weights = self
+                .graph
+                .weights_from_src(src)
+                .skip(number_of_edges_to_skip);
+            // And we create the new iterator.
+            self.src_iterator = Some((src, dsts.zip(weights)));
+            // At this point, we can call the next method again, as we have a new iterator.
+            self.next_back()
+        } else {
+            // If we are in the second portion of the bipartite graph, the one dealing with the edges
+            // from grams to keys, we check whether we have already started iterating over the edges
+            // from a given destination node.
             if let Some((dst, ref mut srcs)) = self.dst_iterator {
+                // If so, we check whether this iterator has more elements to return.
                 if let Some(src) = srcs.next_back() {
+                    // If it does, we decrease the edge counter from the right side, and return the edge.
                     self.end -= 1;
                     return Some(Edge {
                         // We offset the source by the number of source nodes, so that while the
@@ -305,21 +325,43 @@ impl<'a> DoubleEndedIterator for EdgesIterator<'a> {
                         dst: src,
                         weight: None,
                     });
+                } else {
+                    // If it does not have any more edges, it means that we have finished the edges of
+                    // this specific destination node and we need to move to the next one.
+                    let dst = dst - 1;
+                    // We retrieve the source nodes from the next destination node.
+                    let srcs = self.graph.srcs_from_dst(dst).skip(0);
+                    // And we create the new iterator.
+                    self.dst_iterator = Some((dst, srcs));
+                    // At this point, we can call the next method again, as we have a new iterator.
+                    return self.next_back();
                 }
             }
+            // If we got here, it means that we do not know the destination node of the edge we are
+            // currently iterating over. We need to find it. To find it, we need to run a binary
+            // search on the destination comulative inbound degree, to find the destination node of the edge.
+
+            // Since we have stacked the edges from keys to grams before the edges from grams to keys,
+            // we need to adjust the start value to the correct index in the destination nodes.
+            let adjusted_start = self.end - self.graph.number_of_edges();
+            let dst = self.graph.dst_id_from_edge_id(adjusted_start);
+            // Since we may have gotten here from an operation such as the split_at, it may be the
+            // case that the start value is greater than the offset of the destination node. In this case,
+            // we need to adjust the start value to the offset.
+            let dst_offset = self.graph.dst_comulative_inbound_degree(dst);
+
+            // The start value may not be exactly equal to the start of the offset, as for instance
+            // during a parallel iteration, the start value may be greater than the offset. In this
+            // case, we need to adjust the start value to the offset.
+            let number_of_edges_to_skip = adjusted_start - dst_offset;
+
+            // We retrieve the source nodes from the destination node.
+            let srcs = self.graph.srcs_from_dst(dst).skip(number_of_edges_to_skip);
+            // And we create the new iterator.
+            self.dst_iterator = Some((dst, srcs));
+            // At this point, we can call the next method again, as we have a new iterator.
+            self.next_back()
         }
-
-        // If we reach this point, it means that we have iterated over all edges.
-        assert_eq!(
-            self.start, self.end,
-            concat!(
-                "The start value ({}) is not equal to the end value ({}) ",
-                "after iterating over all edges."
-            ),
-            self.start, self.end
-        );
-
-        None
     }
 }
 

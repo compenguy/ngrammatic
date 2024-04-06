@@ -4,11 +4,6 @@ use std::collections::HashSet;
 use fxhash::FxBuildHasher;
 use sux::prelude::*;
 
-// #[cfg(feature = "serde")]
-// use serde::{Deserialize, Serialize};
-
-#[cfg(feature = "mem_dbg")]
-use mem_dbg::{MemDbg, MemSize};
 
 use crate::{
     bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph, traits::*, AdaptativeVector,

@@ -3,7 +3,6 @@ use std::iter::Map;
 use std::iter::Take;
 
 use crate::bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph;
-use crate::iter_bit_field_bipartite_graph::Edge;
 use crate::lender_bit_field_bipartite_graph::RaggedListIter;
 use crate::traits::graph::WeightedBipartiteGraph;
 use crate::Corpus;
@@ -14,7 +13,6 @@ use dsi_bitstream::traits::BigEndian;
 use sux::bits::BitFieldVecIterator;
 use sux::traits::BitFieldSliceCore;
 use tempfile::Builder;
-use webgraph::graphs::arc_list_graph::ArcListGraph;
 use webgraph::prelude::*;
 
 // #[cfg(feature = "mem_dbg")]

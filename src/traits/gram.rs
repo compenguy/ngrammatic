@@ -173,6 +173,7 @@ impl<NG: Ngram> ConcurrentSortedNgramStorageBuilder<NG> for SharedVec<NG> {
     type Storage = Vec<NG>;
 
     #[inline(always)]
+    #[allow(clippy::uninit_vec)]
     fn new_storage_builder(number_of_ngrams: usize, _maximal_ngram: NG) -> Self {
         let mut storage = Vec::with_capacity(number_of_ngrams);
         unsafe {
