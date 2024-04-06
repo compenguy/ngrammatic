@@ -132,8 +132,60 @@ where
             key,
             threshold,
             limit,
-            move |query: &QueryHashmap,
-                  ngrams: NgramIdsAndCooccurrences<'_, G>| { F::from_f64(self.tf_idf(query, ngrams, k1, b)) },
+            move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
+                F::from_f64(self.tf_idf(query, ngrams, k1, b))
+            },
+        ))
+    }
+
+    #[inline(always)]
+    /// Returns the best matches using the combined warped ngram + TF-IDF similarity metric.
+    ///
+    /// # Arguments
+    /// * `key` - The key to search for in the corpus.
+    /// * `threshold` - The minimum similarity value for a result to be included in the output.
+    /// * `limit` - The maximum number of results to return.
+    /// * `warp` - The warp factor.
+    /// * `k1` - The K1 constant.
+    /// * `b` - The B constant.
+    pub fn warped_tf_idf_search<W, F: Float>(
+        &self,
+        key: &KS::K,
+        threshold: F,
+        limit: usize,
+        warp: W,
+        k1: F,
+        b: F,
+    ) -> Result<Vec<SearchResult<'_, KS::K, F>>, &'static str>
+    where
+        W: TryInto<Warp<W>, Error = &'static str>,
+        Warp<W>: TrigramSimilarity + Copy,
+    {
+        let k1 = k1.to_f64();
+        let b = b.to_f64();
+
+        // We check that k1 is a valid float and appears in the range 1.2 to 2.0,
+        // with extreme values being allowed.
+        if k1.is_nan() || !(1.2..=2.0).contains(&k1) {
+            return Err("The K1 constant must be a float in the range 1.2 to 2.0.");
+        }
+
+        // We check that b is a valid float and appears in the range 0.0 to 1.0,
+        // with extreme values being allowed.
+        if b.is_nan() || !(0.0..=1.0).contains(&b) {
+            return Err("The B constant must be a float in the range 0.0 to 1.0.");
+        }
+
+        let warp: Warp<W> = warp.try_into()?;
+
+        Ok(self.search(
+            key,
+            threshold,
+            limit,
+            move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
+                F::from_f64(self.tf_idf(query, ngrams.clone(), k1, b))
+                    * warp.trigram_similarity(query, ngrams, NG::ARITY)
+            },
         ))
     }
 }
@@ -158,7 +210,7 @@ where
     /// * `limit` - The maximum number of results to return.
     /// * `k1` - The K1 constant.
     /// * `b` - The B constant.
-    pub fn tf_idf_par_search<W, F: Float>(
+    pub fn tf_idf_par_search<F: Float>(
         &self,
         key: &KS::K,
         threshold: F,
@@ -185,8 +237,60 @@ where
             key,
             threshold,
             limit,
-            move |query: &QueryHashmap,
-                  ngrams: NgramIdsAndCooccurrences<'_, G>| { F::from_f64(self.tf_idf(query, ngrams, k1, b)) },
+            move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
+                F::from_f64(self.tf_idf(query, ngrams, k1, b))
+            },
+        ))
+    }
+
+    #[inline(always)]
+    /// Returns the best matches using the combined warped ngram + TF-IDF similarity metric in parallel.
+    ///
+    /// # Arguments
+    /// * `key` - The key to search for in the corpus.
+    /// * `threshold` - The minimum similarity value for a result to be included in the output.
+    /// * `limit` - The maximum number of results to return.
+    /// * `warp` - The warp factor.
+    /// * `k1` - The K1 constant.
+    /// * `b` - The B constant.
+    pub fn warped_tf_idf_par_search<W, F: Float>(
+        &self,
+        key: &KS::K,
+        threshold: F,
+        limit: usize,
+        warp: W,
+        k1: F,
+        b: F,
+    ) -> Result<Vec<SearchResult<'_, KS::K, F>>, &'static str>
+    where
+        W: TryInto<Warp<W>, Error = &'static str>,
+        Warp<W>: TrigramSimilarity + Copy + Send + Sync,
+    {
+        let k1 = k1.to_f64();
+        let b = b.to_f64();
+
+        // We check that k1 is a valid float and appears in the range 1.2 to 2.0,
+        // with extreme values being allowed.
+        if k1.is_nan() || !(1.2..=2.0).contains(&k1) {
+            return Err("The K1 constant must be a float in the range 1.2 to 2.0.");
+        }
+
+        // We check that b is a valid float and appears in the range 0.0 to 1.0,
+        // with extreme values being allowed.
+        if b.is_nan() || !(0.0..=1.0).contains(&b) {
+            return Err("The B constant must be a float in the range 0.0 to 1.0.");
+        }
+
+        let warp: Warp<W> = warp.try_into()?;
+
+        Ok(self.par_search(
+            key,
+            threshold,
+            limit,
+            move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
+                F::from_f64(self.tf_idf(query, ngrams.clone(), k1, b))
+                    * warp.trigram_similarity(query, ngrams, NG::ARITY)
+            },
         ))
     }
 }
