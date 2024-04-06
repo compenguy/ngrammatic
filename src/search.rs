@@ -1,15 +1,13 @@
 //! This module contains the search functionality for the `Corpus` struct.
+use crate::NgramIdsAndCooccurrences;
+use crate::SearchResultsHeap;
 use core::slice::Iter;
+use fxhash::FxBuildHasher;
 use std::collections::HashMap;
 use std::iter::{Copied, Map};
 
-use crate::SearchResultsHeap;
-use fxhash::FxBuildHasher;
-
 use crate::traits::key::Key;
-use crate::{
-    Corpus, Float, Keys, Ngram, SearchResult, TrigramSimilarity, Warp, WeightedBipartiteGraph,
-};
+use crate::{Corpus, Float, Keys, Ngram, SearchResult, WeightedBipartiteGraph};
 
 /// A struct representing a query hashmap, with several values precomputed.
 pub struct QueryHashmap {
@@ -17,14 +15,13 @@ pub struct QueryHashmap {
     ngram_ids: Vec<(usize, usize)>,
     /// A total count of the unknown ngrams.
     total_unknown_count: usize,
-    /// The number of total unique unknown ngrams.
-    total_unique_unknown: usize,
     /// A total count of the identified ngrams.
     total_identified_count: usize,
 }
 
 /// A parallel iterator over the identified ngram ids.
-pub type ParNgramIds<'a> = rayon::iter::Map<rayon::slice::Iter<'a, (usize, usize)>, fn(&(usize, usize)) -> usize>;
+pub type ParNgramIds<'a> =
+    rayon::iter::Map<rayon::slice::Iter<'a, (usize, usize)>, fn(&(usize, usize)) -> usize>;
 
 /// A sequential iterator over the identified ngram ids.
 pub type NgramIds<'a> = Map<Iter<'a, (usize, usize)>, fn(&(usize, usize)) -> usize>;
@@ -39,10 +36,7 @@ impl QueryHashmap {
     #[cfg(feature = "rayon")]
     #[inline(always)]
     /// Returns a parallel iterator over the identified ngram ids.
-    pub fn par_ngram_ids(
-        &self,
-    ) -> ParNgramIds<'_>
-    {
+    pub fn par_ngram_ids(&self) -> ParNgramIds<'_> {
         use rayon::iter::IntoParallelRefIterator;
         use rayon::iter::ParallelIterator;
         self.ngram_ids.par_iter().map(|(ngram_id, _)| *ngram_id)
@@ -92,7 +86,6 @@ where
     ) -> QueryHashmap {
         let number_of_ngrams = ngram_counts.len();
         let mut total_unknown_count = 0;
-        let mut total_unique_unknown = 0;
         let mut total_identified_count = 0;
         let mut ngram_ids = Vec::with_capacity(number_of_ngrams);
 
@@ -102,7 +95,6 @@ where
                 total_identified_count += count;
             } else {
                 total_unknown_count += count;
-                total_unique_unknown += 1;
             }
         }
 
@@ -112,28 +104,8 @@ where
         QueryHashmap {
             ngram_ids,
             total_unknown_count,
-            total_unique_unknown,
             total_identified_count,
         }
-    }
-
-    #[inline(always)]
-    /// Perform a fuzzy search of the `Corpus` for `Ngrams` above some
-    /// `threshold` of similarity to the supplied `key`.  Returns up to `limit`
-    /// results, sorted by highest similarity to lowest.
-    ///
-    /// # Arguments
-    /// * `key` - The key to search for in the corpus
-    /// * `threshold` - The minimum similarity value for a result to be included in the
-    /// output. This value should be in the range 0.0 to 1.0.
-    /// * `limit` - The maximum number of results to return.
-    pub fn search<F: Float>(
-        &self,
-        key: &KS::K,
-        threshold: F,
-        limit: usize,
-    ) -> Vec<SearchResult<'_, KS::K, F>> {
-        self.search_with_warp(key, 2_i32, threshold, limit).unwrap()
     }
 
     #[inline(always)]
@@ -143,23 +115,16 @@ where
     ///
     /// # Arguments
     /// * `key` - The key to search for in the corpus
-    /// * `warp` - The warp factor to use in the similarity calculation. This value
-    ///  should be in the range 1.0 to 3.0, with 2.0 being the default.
     /// * `threshold` - The minimum similarity value for a result to be included in the
     /// output. This value should be in the range 0.0 to 1.0.
     /// * `limit` - The maximum number of results to return.
-    pub fn search_with_warp<W, F: Float>(
+    pub(crate) fn search<F: Float>(
         &self,
         key: &KS::K,
-        warp: W,
         threshold: F,
         limit: usize,
-    ) -> Result<Vec<SearchResult<'_, KS::K, F>>, &'static str>
-    where
-        W: TryInto<Warp<W>, Error = &'static str>,
-        Warp<W>: TrigramSimilarity + Copy,
-    {
-        let warp = warp.try_into()?;
+        similarity: impl Fn(&QueryHashmap, NgramIdsAndCooccurrences<'_, G>) -> F,
+    ) -> Vec<SearchResult<'_, KS::K, F>> {
         let key: &K = key.as_ref();
         let query_hashmap = self.ngram_ids_from_ngram_counts(key.counts());
         let query_hashmap_ref = &query_hashmap;
@@ -182,18 +147,17 @@ where
                         return;
                     }
                     // At this point, we can compute the similarity.
-                    let similarity = warp.trigram_similarity(
+                    let score = similarity(
                         query_hashmap_ref,
                         self.ngram_ids_and_cooccurrences_from_key(key_id),
-                        NG::ARITY,
                     );
-                    if similarity >= threshold {
-                        heap.push(SearchResult::new(self.key_from_id(key_id), similarity));
+                    if score >= threshold {
+                        heap.push(SearchResult::new(self.key_from_id(key_id), score));
                     }
                 });
             });
 
         // Sort highest similarity to lowest
-        Ok(heap.into_sorted_vec())
+        heap.into_sorted_vec()
     }
 }

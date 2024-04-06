@@ -42,7 +42,7 @@ pub trait WeightedBipartiteGraph {
     fn srcs_from_dst(&self, dst_id: usize) -> Self::Srcs<'_>;
 
     /// Type of the dst iterator.
-    type Dsts<'a>: ExactSizeIterator<Item = usize>
+    type Dsts<'a>: ExactSizeIterator<Item = usize> + Clone
     where
         Self: 'a;
     
@@ -53,7 +53,7 @@ pub trait WeightedBipartiteGraph {
     fn dsts_from_src(&self, src_id: usize) -> Self::Dsts<'_>;
 
     /// Type of the weights iterator.
-    type WeightsSrc<'a>: ExactSizeIterator<Item = usize>
+    type WeightsSrc<'a>: ExactSizeIterator<Item = usize> + Clone
     where
         Self: 'a;
 

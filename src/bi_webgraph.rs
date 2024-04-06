@@ -1,4 +1,5 @@
 //! Submodule providing a bidirectional weighted bipartite graph implementation based on Webgraph.
+use std::iter::Empty;
 use std::iter::Map;
 use std::iter::Take;
 
@@ -48,8 +49,13 @@ where
     KS::K: AsRef<K>,
     K: Key<NG, NG::G> + ?Sized,
 {
-    fn from(value: Corpus<KS, NG, K, WeightedBitFieldBipartiteGraph>) -> Self {
-        Self::new(value.keys, value.ngrams, value.graph.into())
+    fn from(corpus: Corpus<KS, NG, K, WeightedBitFieldBipartiteGraph>) -> Self {
+        Self::new(
+            corpus.keys,
+            corpus.ngrams,
+            corpus.average_key_length,
+            corpus.graph.into(),
+        )
     }
 }
 
@@ -120,11 +126,13 @@ impl WeightedBipartiteGraph for BiWebgraph {
             .successors(dst_id + self.number_of_source_nodes())
     }
 
-    type Dsts<'a> = <LoadedGraph as RandomAccessLabeling>::Labels<'a>;
+    type Dsts<'a> = Empty<usize>;
+    // type Dsts<'a> = <LoadedGraph as RandomAccessLabeling>::Labels<'a>;
 
     #[inline(always)]
     fn dsts_from_src(&self, src_id: usize) -> Self::Dsts<'_> {
-        self.graph.successors(src_id)
+        todo!()
+        // self.graph.successors(src_id)
     }
 
     type WeightsSrc<'a> = Take<BitFieldVecIterator<'a, usize, Vec<usize>>>;

@@ -19,7 +19,7 @@ where
 {
     pub(crate) fn parse_keys(
         keys: &KS,
-    ) -> (Vec<NG>, AdaptativeVector, AdaptativeVector, usize, Vec<NG>) {
+    ) -> (Vec<NG>, AdaptativeVector, f64, AdaptativeVector, usize, Vec<NG>) {
         // Sorted vector of ngrams.
         let mut ngrams: HashSet<NG, FxBuildHasher> = HashSet::with_capacity_and_hasher(
             (keys.len() as f32).sqrt() as usize,
@@ -27,6 +27,7 @@ where
         );
         let mut cooccurrences = AdaptativeVector::with_capacity(keys.len());
         let mut maximal_cooccurrence: usize = 0;
+        let mut total_key_length: f64 = 0.0;
         let mut key_offsets = AdaptativeVector::with_capacity(keys.len() + 1);
         // TODO: The adaptative vector needs to be allocated in such a way it
         // can contain AT LEAST a value as large as the number of keys.
@@ -62,6 +63,7 @@ where
                 );
                 // We insert the ngram in the sorted btreeset.
                 ngrams.insert(ngram);
+                total_key_length += count as f64;
                 // We store the count of the ngram in the current key in the cooccurrences vector.
                 // Since we know that the count is at least one, we can safely subtract one from it
                 // and encode all values shifted by one. This way, we save one bit per value.
@@ -88,6 +90,7 @@ where
         (
             ngrams,
             cooccurrences,
+            total_key_length / keys.len() as f64,
             key_offsets,
             maximal_cooccurrence,
             key_to_ngrams,
@@ -105,7 +108,7 @@ where
     fn from(keys: KS) -> Self {
         // We start by parsing the keys to extract the ngrams, the cooccurrences, the key offsets,
         // and the maximal cooccurrence.
-        let (mut ngrams, cooccurrences, key_offsets, maximal_cooccurrence, key_to_ngrams) =
+        let (mut ngrams, cooccurrences, average_key_length, key_offsets, maximal_cooccurrence, key_to_ngrams) =
             Self::parse_keys(&keys);
 
         // We sort the ngrams.
@@ -262,6 +265,7 @@ where
         Corpus::new(
             keys,
             ngrams,
+            average_key_length,
             WeightedBitFieldBipartiteGraph::new(
                 cooccurrences,
                 key_offsets,

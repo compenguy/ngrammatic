@@ -29,6 +29,8 @@ pub struct Corpus<
     pub(crate) ngrams: NG::SortedStorage,
     /// Graph describing the weighted bipapartite graph from keys to grams.
     pub(crate) graph: G,
+    /// Average key length.
+    pub(crate) average_key_length: f64,
     /// Phantom type to store the type of the keys.
     _phantom: std::marker::PhantomData<K>,
 }
@@ -55,11 +57,18 @@ where
     G: WeightedBipartiteGraph,
 {
     /// Creates a new corpus from a set of keys, a set of ngrams and a weighted bipartite graph.
-    pub fn new(keys: KS, ngrams: NG::SortedStorage, graph: G) -> Self {
+    ///
+    /// # Arguments
+    /// * `keys` - The keys of the corpus.
+    /// * `ngrams` - The ngrams of the corpus.
+    /// * `average_key_length` - The average key length.
+    /// * `graph` - The weighted bipartite graph.
+    pub fn new(keys: KS, ngrams: NG::SortedStorage, average_key_length: f64, graph: G) -> Self {
         Corpus {
             keys,
             ngrams,
             graph,
+            average_key_length: average_key_length.max(1.0),
             _phantom: std::marker::PhantomData,
         }
     }
@@ -69,6 +78,12 @@ where
         &self.graph
     }
 }
+
+/// Iterator over the ngram ids and their co-occurrences.
+pub type NgramIdsAndCooccurrences<'a, G> = std::iter::Zip<
+    <G as WeightedBipartiteGraph>::Dsts<'a>,
+    Map<<G as WeightedBipartiteGraph>::WeightsSrc<'a>, fn(usize) -> usize>,
+>;
 
 impl<KS, NG, K, G> Corpus<KS, NG, K, G>
 where
@@ -179,7 +194,7 @@ where
     pub fn ngram_ids_and_cooccurrences_from_key(
         &self,
         key_id: usize,
-    ) -> impl ExactSizeIterator<Item = (usize, usize)> + '_ {
+    ) -> NgramIdsAndCooccurrences<'_, G> {
         self.ngram_ids_from_key(key_id)
             .zip(self.ngram_cooccurrences_from_key(key_id))
     }
@@ -221,6 +236,16 @@ where
     ) -> impl ExactSizeIterator<Item = &KS::K> + '_ {
         self.key_ids_from_ngram_id(ngram_id)
             .map(move |key_id| self.key_from_id(key_id))
+    }
+
+    #[inline(always)]
+    /// Returns the number of keys associated to a given ngram.
+    ///
+    /// # Arguments
+    /// * `ngram` - The ngram to get the number of keys from.
+    pub fn number_of_keys_from_ngram(&self, ngram: NG) -> Option<usize> {
+        self.ngram_id_from_ngram(ngram)
+            .map(|ngram_id| self.number_of_keys_from_ngram_id(ngram_id))
     }
 
     #[inline(always)]

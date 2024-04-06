@@ -18,8 +18,14 @@ where
     pub fn par_from(keys: KS) -> Self {
         // We start by parsing the keys to extract the ngrams, the cooccurrences, the key offsets,
         // and the maximal cooccurrence.
-        let (mut ngrams, cooccurrences, key_offsets, maximal_cooccurrence, key_to_ngrams) =
-            Self::parse_keys(&keys);
+        let (
+            mut ngrams,
+            cooccurrences,
+            average_key_length,
+            key_offsets,
+            maximal_cooccurrence,
+            key_to_ngrams,
+        ) = Self::parse_keys(&keys);
 
         // We sort the ngrams in parallel.
         log::info!("Sorting ngrams.");
@@ -85,7 +91,8 @@ where
                 let ngram_index = unsafe { ngrams.index_of_unchecked(ngram) };
                 // We store the index in the key_to_ngram_edges vector.
                 unsafe {
-                    key_to_ngram_edges.set_unchecked(
+                    <AtomicBitFieldVec as AtomicHelper<usize>>::set_unchecked(
+                        &key_to_ngram_edges,
                         edge_id,
                         ngram_index,
                         std::sync::atomic::Ordering::SeqCst,
@@ -191,6 +198,7 @@ where
         Corpus::new(
             keys,
             ngrams,
+            average_key_length,
             WeightedBitFieldBipartiteGraph::new(
                 cooccurrences,
                 key_offsets,

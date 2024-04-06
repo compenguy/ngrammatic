@@ -17,6 +17,8 @@ pub mod iter_bit_field_bipartite_graph;
 pub mod lender_bit_field_bipartite_graph;
 pub mod report;
 pub mod corpus_from;
+pub mod tfidf;
+pub mod trigram_search;
 
 #[cfg(feature = "rayon")]
 pub mod corpus_par_from;
