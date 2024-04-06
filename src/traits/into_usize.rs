@@ -497,9 +497,9 @@ mod tests {
     fn test_bigram_char() {
         let value = ['a', 'b'];
         let converted = value.into_usize();
-        let expected = 97 << 8 | 98;
+        let expected = 97 << 32 | 98;
         assert_eq!(converted, expected);
-        let value = 97 << 8 | 98;
+        let value = 97 << 32 | 98;
         let converted = BiGram::<char>::from_usize(value);
         let expected = ['a', 'b'];
         assert_eq!(converted, expected);

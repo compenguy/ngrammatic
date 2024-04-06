@@ -28,7 +28,7 @@ where
     /// let iter = vec![b'a', b'b', b'c'].into_iter();
     /// let padded_left = iter.left_padding::<BiGram<u8>>();
     /// let padded: Vec<_> = padded_left.collect();
-    /// assert_eq!(padded, vec![b' ', b'a', b'b', b'c']);
+    /// assert_eq!(padded, vec![b'\0', b'a', b'b', b'c']);
     /// ```
     fn left_padding<NG>(self) -> Chain<<<NG as PaddableNgram>::Pad as IntoIterator>::IntoIter, Self>
     where
@@ -47,7 +47,7 @@ where
     /// let iter = vec![b'a', b'b', b'c'].into_iter();
     /// let padded_right = iter.right_padding::<BiGram<u8>>();
     /// let padded: Vec<_> = padded_right.collect();
-    /// assert_eq!(padded, vec![b'a', b'b', b'c', b' ']);
+    /// assert_eq!(padded, vec![b'a', b'b', b'c', b'\0']);
     /// ```
     ///
     fn right_padding<NG>(
@@ -69,7 +69,7 @@ where
     /// let iter = vec![b'a', b'b', b'c'].into_iter();
     /// let padded_both = iter.both_padding::<BiGram<u8>>();
     /// let padded: Vec<_> = padded_both.collect();
-    /// assert_eq!(padded, vec![b' ', b'a', b'b', b'c', b' ']);
+    /// assert_eq!(padded, vec![b'\0', b'a', b'b', b'c', b'\0']);
     /// ```
     fn both_padding<NG>(self) -> BothPadding<NG, Self>
     where
