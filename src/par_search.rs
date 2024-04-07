@@ -2,8 +2,8 @@
 
 use crate::search::QueryHashmap;
 use crate::traits::key::Key;
-use crate::SearchResultsHeap;
 use crate::NgramIdsAndCooccurrences;
+use crate::SearchResultsHeap;
 use crate::{Corpus, Float, Keys, Ngram, SearchResult, WeightedBipartiteGraph};
 use rayon::prelude::*;
 

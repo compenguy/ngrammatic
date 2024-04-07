@@ -27,7 +27,7 @@ pub trait UnsignedInteger:
     + core::fmt::Display
     + core::fmt::Octal
     + core::iter::Sum
-{   
+{
     /// Convert the integer to a usize.
     fn as_usize(&self) -> usize;
 

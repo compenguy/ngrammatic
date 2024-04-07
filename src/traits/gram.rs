@@ -1,7 +1,10 @@
 //! Trait defining the unit type for an ngram.
 
 use std::{
-    cell::UnsafeCell, hash::Hash, iter::Copied, ops::{Index, IndexMut}
+    cell::UnsafeCell,
+    hash::Hash,
+    iter::Copied,
+    ops::{Index, IndexMut},
 };
 
 use sux::{
@@ -163,7 +166,7 @@ impl<NG: Ngram> SortedNgramStorageBuilder<NG> for Vec<NG> {
 
 /// A shared vector to build a concurrent storage.
 pub struct SharedVec<NG> {
-    storage: UnsafeCell<Vec<NG>>
+    storage: UnsafeCell<Vec<NG>>,
 }
 
 unsafe impl<NG> Send for SharedVec<NG> {}
@@ -180,14 +183,13 @@ impl<NG: Ngram> ConcurrentSortedNgramStorageBuilder<NG> for SharedVec<NG> {
             storage.set_len(number_of_ngrams);
         }
         SharedVec {
-            storage: UnsafeCell::new(storage)
+            storage: UnsafeCell::new(storage),
         }
     }
 
     #[inline(always)]
     unsafe fn set_unchecked(&self, ngram: NG, index: usize) {
-        let storage = &mut *self.storage
-            .get();
+        let storage = &mut *self.storage.get();
         storage[index] = ngram;
     }
 

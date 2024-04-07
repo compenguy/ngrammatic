@@ -9,7 +9,7 @@ pub trait WeightedBipartiteGraph {
     fn number_of_destination_nodes(&self) -> usize;
 
     /// Returns the number of edges.
-    /// 
+    ///
     /// # Implementation details
     /// The number of edges is the same as the number of weights,
     /// and counts the bidirectional edges only once. Note that
@@ -19,13 +19,13 @@ pub trait WeightedBipartiteGraph {
     fn number_of_edges(&self) -> usize;
 
     /// Returns the degree of a given source node id.
-    /// 
+    ///
     /// # Arguments
     /// * `src_id` - The source node id.
     fn src_degree(&self, src_id: usize) -> usize;
 
     /// Returns the degree of a given destination node id.
-    /// 
+    ///
     /// # Arguments
     /// * `dst_id` - The destination node id.
     fn dst_degree(&self, dst_id: usize) -> usize;
@@ -36,7 +36,7 @@ pub trait WeightedBipartiteGraph {
         Self: 'a;
 
     /// Returns srcs assocated to a given dst.
-    /// 
+    ///
     /// # Arguments
     /// * `dst_id` - The destination node id.
     fn srcs_from_dst(&self, dst_id: usize) -> Self::Srcs<'_>;
@@ -45,9 +45,9 @@ pub trait WeightedBipartiteGraph {
     type Dsts<'a>: ExactSizeIterator<Item = usize> + Clone
     where
         Self: 'a;
-    
+
     /// Returns dsts assocated to a given src.
-    /// 
+    ///
     /// # Arguments
     /// * `src_id` - The source node id.
     fn dsts_from_src(&self, src_id: usize) -> Self::Dsts<'_>;
@@ -77,7 +77,7 @@ pub trait WeightedBipartiteGraph {
         Self: 'a;
 
     /// Returns the degrees of all the nodes.
-    /// 
+    ///
     /// The first part are the degrees of the source nodes, the second part
     /// are the degrees of the destination nodes.
     fn degrees(&self) -> Self::Degrees<'_>;

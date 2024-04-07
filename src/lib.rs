@@ -9,14 +9,15 @@ pub mod corpus;
 pub use corpus::*;
 mod trigram_similarity;
 pub use trigram_similarity::*;
-pub mod search;
 pub mod adaptative_vector;
+pub mod search;
 pub use adaptative_vector::*;
+pub mod animals;
 pub mod bit_field_bipartite_graph;
+pub mod corpus_from;
 pub mod iter_bit_field_bipartite_graph;
 pub mod lender_bit_field_bipartite_graph;
 pub mod report;
-pub mod corpus_from;
 pub mod tfidf;
 pub mod trigram_search;
 
@@ -31,11 +32,12 @@ pub mod par_search;
 
 /// Re-export of the most commonly used traits and structs.
 pub mod prelude {
-    pub use crate::traits::*;
-    pub use crate::search_result::*;
-    pub use crate::corpus::*;
-    pub use crate::trigram_similarity::*;
     pub use crate::adaptative_vector::*;
+    pub use crate::corpus::*;
+    pub use crate::search_result::*;
+    pub use crate::traits::*;
+    pub use crate::trigram_similarity::*;
     // #[cfg(feature = "webgraph")]
     pub use crate::bi_webgraph::*;
+    pub use crate::animals::*;
 }

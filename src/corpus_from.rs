@@ -19,7 +19,14 @@ where
 {
     pub(crate) fn parse_keys(
         keys: &KS,
-    ) -> (Vec<NG>, AdaptativeVector, f64, AdaptativeVector, usize, Vec<NG>) {
+    ) -> (
+        Vec<NG>,
+        AdaptativeVector,
+        f64,
+        AdaptativeVector,
+        usize,
+        Vec<NG>,
+    ) {
         // Sorted vector of ngrams.
         let mut ngrams: HashSet<NG, FxBuildHasher> = HashSet::with_capacity_and_hasher(
             (keys.len() as f32).sqrt() as usize,
@@ -108,8 +115,14 @@ where
     fn from(keys: KS) -> Self {
         // We start by parsing the keys to extract the ngrams, the cooccurrences, the key offsets,
         // and the maximal cooccurrence.
-        let (mut ngrams, cooccurrences, average_key_length, key_offsets, maximal_cooccurrence, key_to_ngrams) =
-            Self::parse_keys(&keys);
+        let (
+            mut ngrams,
+            cooccurrences,
+            average_key_length,
+            key_offsets,
+            maximal_cooccurrence,
+            key_to_ngrams,
+        ) = Self::parse_keys(&keys);
 
         // We sort the ngrams.
         log::info!("Sorting ngrams.");
@@ -188,9 +201,10 @@ where
         let mut comulative_sum = 0;
         let mut ngram_offsets_builder =
             EliasFanoBuilder::new(ngram_degrees.len(), cooccurrences.len());
+        unsafe { ngram_offsets_builder.push_unchecked(0) };
 
         // We iterate on the ngram_degrees vector, and we compute the comulative sum of the inbound degrees.
-        for ngram_degree in ngram_degrees.iter_from(0) {
+        for ngram_degree in ngram_degrees.iter_from(1) {
             debug_assert!(
                 ngram_degree > 0,
                 "Since all ngrams appear in at least one key, the degree of a ngram should be at least one."

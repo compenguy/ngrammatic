@@ -1,6 +1,6 @@
 //! Trait definition for floating point numbers.
 
-use crate::{One, Zero, Three};
+use crate::{One, Three, Zero};
 
 /// Trait defining a floating point number.
 pub trait Float:
@@ -121,7 +121,6 @@ impl Zero for f64 {
 impl Three for f64 {
     const THREE: Self = 3.0;
 }
-
 
 #[cfg(feature = "half")]
 /// Implement the `Float` trait for the `half::f16` type.

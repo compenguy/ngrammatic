@@ -32,7 +32,10 @@ fn load_corpus() -> Corpus<'static, ArityTwo, Lower, String, usize> {
 
     loading_bar.set_style(progress_style);
 
-    for taxon in iter_taxons().progress_with(loading_bar).take(number_of_taxons) {
+    for taxon in iter_taxons()
+        .progress_with(loading_bar)
+        .take(number_of_taxons)
+    {
         corpus.push(taxon)
     }
 

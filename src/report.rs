@@ -24,8 +24,16 @@ impl Display for CorpusReport {
         writeln!(f, "# Corpus Report")?;
 
         writeln!(f, "* Number of keys: {}", self.number_of_keys.underscored())?;
-        writeln!(f, "* Number of grams: {}", self.number_of_grams.underscored())?;
-        writeln!(f, "* Number of edges: {}", self.number_of_edges.underscored())
+        writeln!(
+            f,
+            "* Number of grams: {}",
+            self.number_of_grams.underscored()
+        )?;
+        writeln!(
+            f,
+            "* Number of edges: {}",
+            self.number_of_edges.underscored()
+        )
     }
 }
 

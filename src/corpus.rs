@@ -63,7 +63,12 @@ where
     /// * `ngrams` - The ngrams of the corpus.
     /// * `average_key_length` - The average key length.
     /// * `graph` - The weighted bipartite graph.
-    pub fn new(keys: KS, ngrams: NG::SortedStorage, average_key_length: f64, graph: G) -> Self {
+    pub(crate) fn new(
+        keys: KS,
+        ngrams: NG::SortedStorage,
+        average_key_length: f64,
+        graph: G,
+    ) -> Self {
         Corpus {
             keys,
             ngrams,
@@ -74,6 +79,16 @@ where
     }
 
     /// Returns a reference to underlying graph.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let animals: Corpus<_, TriGram<ASCIIChar>> = Corpus::from(ANIMALS);
+    /// 
+    /// let graph = animals.graph();
+    /// ```
     pub fn graph(&self) -> &G {
         &self.graph
     }
@@ -94,12 +109,36 @@ where
 {
     #[inline(always)]
     /// Returns the number of keys in the corpus.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let animals: Corpus<_, TriGram<ASCIIChar>> = Corpus::from(ANIMALS);
+    /// 
+    /// let number_of_keys = animals.number_of_keys();
+    /// 
+    /// assert_eq!(number_of_keys, 699);
+    /// ```
     pub fn number_of_keys(&self) -> usize {
         self.keys.len()
     }
 
     #[inline(always)]
     /// Returns the number of ngrams in the corpus.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let animals: Corpus<_, TriGram<ASCIIChar>> = Corpus::from(ANIMALS);
+    /// 
+    /// let number_of_ngrams = animals.number_of_ngrams();
+    /// 
+    /// assert_eq!(number_of_ngrams, 1897);
+    /// ```
     pub fn number_of_ngrams(&self) -> usize {
         self.ngrams.len()
     }
@@ -109,6 +148,18 @@ where
     ///
     /// # Arguments
     /// * `key_id` - The id of the key to get.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let animals: Corpus<_, TriGram<ASCIIChar>> = Corpus::from(ANIMALS);
+    /// 
+    /// assert_eq!(animals.key_from_id(0), &"Aardvark");
+    /// assert_eq!(animals.key_from_id(1), &"Abyssinian");
+    /// assert_eq!(animals.key_from_id(20), &"Alligator");
+    /// ```
     pub fn key_from_id(&self, key_id: usize) -> &KS::K {
         &self.keys[key_id]
     }
@@ -118,6 +169,18 @@ where
     ///
     /// # Arguments
     /// * `ngram_id` - The id of the ngram to get.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let animals: Corpus<_, TriGram<char>> = Corpus::from(ANIMALS);
+    /// 
+    /// assert_eq!(animals.ngram_from_id(0), ['\0', '\0', '\0']);
+    /// assert_eq!(animals.ngram_from_id(1), ['\0', '\0', 'R']);
+    /// assert_eq!(animals.ngram_from_id(20),['\0', '\0', 't']);
+    /// ```
     pub fn ngram_from_id(&self, ngram_id: usize) -> NG {
         unsafe { self.ngrams.get_unchecked(ngram_id) }
     }

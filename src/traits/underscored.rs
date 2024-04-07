@@ -1,5 +1,5 @@
 //! Submodule providing the Underscored trait.
-//! 
+//!
 //! The Underscored trait provides a method to format integers with underscores.
 
 /// Trait providing a method to format integers with underscores.

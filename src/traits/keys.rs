@@ -38,3 +38,29 @@ impl<NG: Ngram, K: Key<NG, NG::G>> Keys<NG> for Vec<K> {
         <[K]>::iter(self)
     }
 }
+
+impl<const N: usize, NG: Ngram, K: Key<NG, NG::G>> Keys<NG> for [K; N] {
+    type K = K;
+    type IterKeys<'a> = std::slice::Iter<'a, K> where K: 'a, Self: 'a;
+
+    fn len(&self) -> usize {
+        <[K]>::len(self)
+    }
+
+    fn iter(&self) -> Self::IterKeys<'_> {
+        <[K]>::iter(self)
+    }
+}
+
+impl<NG: Ngram, K: Key<NG, NG::G>> Keys<NG> for [K] {
+    type K = K;
+    type IterKeys<'a> = std::slice::Iter<'a, K> where K: 'a, Self: 'a;
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn iter(&self) -> Self::IterKeys<'_> {
+        <[K]>::iter(self)
+    }
+}

@@ -22,6 +22,7 @@ where
     ///
     /// # Example
     ///
+    /// An example for when using an iterator of `u8`:
     /// ```rust
     /// use ngrammatic::prelude::*;
     ///
@@ -29,6 +30,26 @@ where
     /// let padded_left = iter.left_padding::<BiGram<u8>>();
     /// let padded: Vec<_> = padded_left.collect();
     /// assert_eq!(padded, vec![b'\0', b'a', b'b', b'c']);
+    /// ```
+    /// 
+    /// An example for when using an iterator of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let iter = "abc".chars();
+    /// let padded_left = iter.left_padding::<BiGram<char>>();
+    /// let padded: String = padded_left.collect();
+    /// assert_eq!(padded, "\0abc");
+    /// ```
+    /// 
+    /// An example for when using an iterator of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let iter = "ab∂Ωc".chars().filter_map(|c| ASCIIChar::try_from(c).ok());
+    /// let padded_left = iter.left_padding::<BiGram<ASCIIChar>>();
+    /// let padded: Vec<_> = padded_left.collect();
+    /// assert_eq!(padded, vec![ASCIIChar::from(b'\0'), ASCIIChar::from(b'a'), ASCIIChar::from(b'b'), ASCIIChar::from(b'c')]);
     /// ```
     fn left_padding<NG>(self) -> Chain<<<NG as PaddableNgram>::Pad as IntoIterator>::IntoIter, Self>
     where
@@ -41,6 +62,7 @@ where
     ///
     /// # Example
     ///
+    /// An example for when using an iterator of `u8`:
     /// ```rust
     /// use ngrammatic::prelude::*;
     ///
@@ -49,7 +71,26 @@ where
     /// let padded: Vec<_> = padded_right.collect();
     /// assert_eq!(padded, vec![b'a', b'b', b'c', b'\0']);
     /// ```
-    ///
+    /// 
+    /// An example for when using an iterator of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let iter = "abc".chars();
+    /// let padded_right = iter.right_padding::<BiGram<char>>();
+    /// let padded: String = padded_right.collect();
+    /// assert_eq!(padded, "abc\0");
+    /// ```
+    /// 
+    /// An example for when using an iterator of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let iter = "ab∂Ωc".chars().filter_map(|c| ASCIIChar::try_from(c).ok());
+    /// let padded_right = iter.right_padding::<BiGram<ASCIIChar>>();
+    /// let padded: Vec<_> = padded_right.collect();
+    /// assert_eq!(padded, vec![ASCIIChar::from(b'a'), ASCIIChar::from(b'b'), ASCIIChar::from(b'c'), ASCIIChar::from(b'\0')]);
+    /// ```
     fn right_padding<NG>(
         self,
     ) -> Chain<Self, <<NG as PaddableNgram>::Pad as IntoIterator>::IntoIter>
@@ -62,7 +103,7 @@ where
     /// Adds padding to both sides of the iterator.
     ///
     /// # Example
-    ///
+    /// An example for when using an iterator of `u8`:
     /// ```rust
     /// use ngrammatic::prelude::*;
     ///
@@ -70,6 +111,26 @@ where
     /// let padded_both = iter.both_padding::<BiGram<u8>>();
     /// let padded: Vec<_> = padded_both.collect();
     /// assert_eq!(padded, vec![b'\0', b'a', b'b', b'c', b'\0']);
+    /// ```
+    /// 
+    /// An example for when using an iterator of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let iter = "abc".chars();
+    /// let padded_both = iter.both_padding::<BiGram<char>>();
+    /// let padded: String = padded_both.collect();
+    /// assert_eq!(padded, "\0abc\0");
+    /// ```
+    /// 
+    /// An example for when using an iterator of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let iter = "ab∂Ωc".chars().filter_map(|c| ASCIIChar::try_from(c).ok());
+    /// let padded_both = iter.both_padding::<BiGram<ASCIIChar>>();
+    /// let padded: Vec<_> = padded_both.collect();
+    /// assert_eq!(padded, vec![ASCIIChar::from(b'\0'), ASCIIChar::from(b'a'), ASCIIChar::from(b'b'), ASCIIChar::from(b'c'), ASCIIChar::from(b'\0')]);
     /// ```
     fn both_padding<NG>(self) -> BothPadding<NG, Self>
     where

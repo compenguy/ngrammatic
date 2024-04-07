@@ -39,8 +39,9 @@ where
             key,
             threshold,
             limit,
-            move |query: &QueryHashmap,
-                  ngrams: NgramIdsAndCooccurrences<'_, G>| { warp.trigram_similarity(query, ngrams, NG::ARITY) },
+            move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
+                warp.trigram_similarity(query, ngrams, NG::ARITY)
+            },
         ))
     }
 }

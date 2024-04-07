@@ -1,6 +1,6 @@
 //! This module contains the traits that are used in the library.
-pub mod unsigned_integer;
 pub mod key;
+pub mod unsigned_integer;
 pub use key::*;
 pub use unsigned_integer::*;
 pub mod floats;
