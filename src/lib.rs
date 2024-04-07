@@ -17,9 +17,10 @@ pub mod bit_field_bipartite_graph;
 pub mod corpus_from;
 pub mod iter_bit_field_bipartite_graph;
 pub mod lender_bit_field_bipartite_graph;
+pub mod ngram_search;
 pub mod report;
 pub mod tfidf;
-pub mod ngram_search;
+pub mod weights;
 
 #[cfg(feature = "rayon")]
 pub mod corpus_par_from;
@@ -34,9 +35,9 @@ pub mod par_search;
 pub mod prelude {
     pub use crate::adaptative_vector::*;
     pub use crate::corpus::*;
+    pub use crate::ngram_similarity::*;
     pub use crate::search_result::*;
     pub use crate::traits::*;
-    pub use crate::ngram_similarity::*;
     // #[cfg(feature = "webgraph")]
     pub use crate::animals::*;
     pub use crate::bi_webgraph::*;

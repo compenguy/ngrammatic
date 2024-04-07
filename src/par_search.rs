@@ -35,7 +35,7 @@ where
         key: KR,
         config: SearchConfig<F>,
         similarity: impl Fn(&QueryHashmap, NgramIdsAndCooccurrences<'_, G>) -> F + Send + Sync,
-    ) -> SearchResults<'_, KS, NG, F>
+    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
     where
         KR: AsRef<K> + Send + Sync,
     {

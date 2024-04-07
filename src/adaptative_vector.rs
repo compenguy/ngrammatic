@@ -387,8 +387,9 @@ impl AdaptativeVector {
         use sux::bits::AtomicBitFieldVec;
         use sux::traits::bit_field_slice::AtomicHelper;
 
-        let number_of_bits_to_represent_maximum_value = (maximum_value + 1).next_power_of_two().ilog2();
-        
+        let number_of_bits_to_represent_maximum_value =
+            (maximum_value + 1).next_power_of_two().ilog2();
+
         unsafe {
             let bit_field = AtomicBitFieldVec::new_uninit(
                 number_of_bits_to_represent_maximum_value as usize,
@@ -450,8 +451,9 @@ impl AdaptativeVector {
 
     /// Converts the vector into a bit field vector.
     pub fn into_bitvec(self, maximum_value: usize) -> BitFieldVec {
-        let number_of_bits_to_represent_maximum_value = (maximum_value + 1).next_power_of_two().ilog2();
-        
+        let number_of_bits_to_represent_maximum_value =
+            (maximum_value + 1).next_power_of_two().ilog2();
+
         unsafe {
             let mut bit_field = BitFieldVec::new_uninit(
                 number_of_bits_to_represent_maximum_value as usize,

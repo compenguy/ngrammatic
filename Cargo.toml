@@ -25,7 +25,7 @@ webgraph = {git="https://github.com/vigna/webgraph-rs.git" }
 
 fxhash = "0.2.1"
 tempfile = "3.10.1"
-dsi-bitstream = "0.4.0"
+dsi-bitstream = "0.4.2"
 epserde = "0.4.0"
 log = "0.4.21"
 lender = "0.2.9"

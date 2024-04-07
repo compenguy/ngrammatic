@@ -99,12 +99,12 @@ pub trait Key<NG: Ngram<G = G>, G: Gram>: AsRef<<Self as Key<NG, G>>::Ref> {
     /// assert_eq!(counts.get(&['Z', '\0']), None);
     /// assert_eq!(counts.len(), 4);
     /// ```
-    /// 
+    ///
     /// The following example demonstrates how to get the counts of the ngrams
     /// of a more human-readable example such as the word "Cat":
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let key = "Cat";
     /// let counts = <&str as Key<BiGram<char>, char>>::counts(&key);
     /// assert_eq!(counts.get(&['\0', 'C']), Some(&1));
