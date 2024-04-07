@@ -1,8 +1,9 @@
 //! Submodule providing traits to normalize iterators of char-like items.
 
-use std::mem::transmute;
+use std::{iter::Rev, mem::transmute};
 
 use crate::CharLike;
+use std::iter::Peekable;
 
 /// Struct defining an iterator to lowercase.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -261,6 +262,356 @@ where
     }
 }
 
+/// Struct defining an iterator to trim spaces from left.
+#[derive(Clone, Debug)]
+#[repr(transparent)]
+pub struct TrimLeft<I>
+where
+    I: Iterator,
+    <I as Iterator>::Item: CharLike,
+{
+    peekable: Peekable<I>,
+}
+
+impl<I> From<I> for TrimLeft<I>
+where
+    I: Iterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn from(iter: I) -> Self {
+        let mut peekable = iter.peekable();
+        while let Some(c) = peekable.peek() {
+            if c.is_space_like() {
+                peekable.next();
+            } else {
+                break;
+            }
+        }
+        TrimLeft { peekable }
+    }
+}
+
+impl<I> Iterator for TrimLeft<I>
+where
+    I: Iterator,
+    <I as Iterator>::Item: CharLike,
+{
+    type Item = <I as Iterator>::Item;
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.peekable.next()
+    }
+}
+
+impl<I> DoubleEndedIterator for TrimLeft<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.peekable.next_back()
+    }
+}
+
+impl<I> ExactSizeIterator for TrimLeft<I>
+where
+    I: ExactSizeIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    fn len(&self) -> usize {
+        self.peekable.len()
+    }
+}
+
+/// Struct defining an iterator to trim spaces from right.
+pub struct TrimRight<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    peekable: Rev<TrimLeft<Rev<I>>>,
+}
+
+impl<I> From<I> for TrimRight<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn from(iter: I) -> Self {
+        TrimRight {
+            peekable: iter.rev().trim_left().rev(),
+        }
+    }
+}
+
+impl<I> Iterator for TrimRight<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    type Item = <I as Iterator>::Item;
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.peekable.next()
+    }
+}
+
+impl<I> DoubleEndedIterator for TrimRight<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.peekable.next_back()
+    }
+}
+
+impl<I> ExactSizeIterator for TrimRight<I>
+where
+    I: ExactSizeIterator + DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    fn len(&self) -> usize {
+        self.peekable.len()
+    }
+}
+
+/// Struct defining an iterator to trim spaces from both sides.
+pub struct Trim<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    iter: TrimRight<TrimLeft<I>>,
+}
+
+impl<I> From<I> for Trim<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn from(iter: I) -> Self {
+        Trim {
+            iter: iter.trim_left().trim_right(),
+        }
+    }
+}
+
+impl<I> Iterator for Trim<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    type Item = <I as Iterator>::Item;
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<I> DoubleEndedIterator for Trim<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back()
+    }
+}
+
+impl<I> ExactSizeIterator for Trim<I>
+where
+    I: ExactSizeIterator + DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+/// Struct defining an iterator to trim null characters from left.
+pub struct TrimNullLeft<I>
+where
+    I: Iterator,
+    <I as Iterator>::Item: CharLike,
+{
+    iter: Peekable<I>,
+}
+
+impl<I> From<I> for TrimNullLeft<I>
+where
+    I: Iterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn from(iter: I) -> Self {
+        let mut peekable = iter.peekable();
+        while let Some(c) = peekable.peek() {
+            if c.is_nul() {
+                peekable.next();
+            } else {
+                break;
+            }
+        }
+        TrimNullLeft { iter: peekable }
+    }
+}
+
+impl<I> Iterator for TrimNullLeft<I>
+where
+    I: Iterator,
+    <I as Iterator>::Item: CharLike,
+{
+    type Item = <I as Iterator>::Item;
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<I> DoubleEndedIterator for TrimNullLeft<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back()
+    }
+}
+
+impl<I> ExactSizeIterator for TrimNullLeft<I>
+where
+    I: ExactSizeIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+/// Struct defining an iterator to trim null characters from right.
+pub struct TrimNullRight<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    iter: Rev<TrimNullLeft<Rev<I>>>,
+}
+
+impl<I> From<I> for TrimNullRight<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn from(iter: I) -> Self {
+        TrimNullRight {
+            iter: iter.rev().trim_null_left().rev(),
+        }
+    }
+}
+
+impl<I> Iterator for TrimNullRight<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    type Item = <I as Iterator>::Item;
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<I> DoubleEndedIterator for TrimNullRight<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back()
+    }
+}
+
+impl<I> ExactSizeIterator for TrimNullRight<I>
+where
+    I: ExactSizeIterator + DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+/// Struct defining an iterator to trim null characters from both sides.
+pub struct TrimNull<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    iter: TrimNullRight<TrimNullLeft<I>>,
+}
+
+impl<I> From<I> for TrimNull<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn from(iter: I) -> Self {
+        TrimNull {
+            iter: iter.trim_null_left().trim_null_right(),
+        }
+    }
+}
+
+impl<I> Iterator for TrimNull<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    type Item = <I as Iterator>::Item;
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<I> DoubleEndedIterator for TrimNull<I>
+where
+    I: DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back()
+    }
+}
+
+impl<I> ExactSizeIterator for TrimNull<I>
+where
+    I: ExactSizeIterator + DoubleEndedIterator,
+    <I as Iterator>::Item: CharLike,
+{
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
 /// Trait defining a char normalizer.
 pub trait CharNormalizer: Iterator + Sized
 where
@@ -268,90 +619,266 @@ where
 {
     #[inline(always)]
     /// Trims spaces from the left of the iterator.
-    fn trim_left(mut self) -> Self {
-        let mut peekable = self.by_ref().peekable();
-
-        while let Some(c) = peekable.peek() {
-            if c.is_space_like() {
-                peekable.next();
-            } else {
-                break;
-            }
-        }
-
-        self
+    ///
+    /// # Example
+    ///
+    /// The following example demonstrates how to trim spaces from the left of a string
+    /// composed of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "  abc  ";
+    /// let trimmed: String = string.chars().trim_left().collect();
+    /// assert_eq!(trimmed, "abc  ");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim spaces from the left of a string
+    /// composed of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "  abc  ";
+    /// let trimmed: String = string
+    ///     .chars()
+    ///     .filter_map(|c| ASCIIChar::try_from(c).ok())
+    ///     .trim_left()
+    ///     .collect();
+    /// assert_eq!(trimmed, "abc  ");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim spaces from the left of a string
+    /// composed of `u8`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "  abc  ";
+    /// let trimmed: Vec<u8> = string.bytes().trim_left().collect();
+    /// assert_eq!(trimmed, vec![b'a', b'b', b'c', b' ', b' ']);
+    /// ```
+    fn trim_left(self) -> TrimLeft<Self> {
+        TrimLeft::from(self)
     }
 
     #[inline(always)]
     /// Trims spaces from the right of the iterator.
-    fn trim_right(mut self) -> Self
+    ///
+    /// # Example
+    ///
+    /// The following example demonstrates how to trim spaces from the right of a string
+    /// composed of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "  abc  ";
+    /// let trimmed: String = string.chars().trim_right().collect();
+    /// assert_eq!(trimmed, "  abc");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim spaces from the right of a string
+    /// composed of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "  abc  ";
+    /// let trimmed: String = string
+    ///     .chars()
+    ///     .filter_map(|c| ASCIIChar::try_from(c).ok())
+    ///     .trim_right()
+    ///     .collect();
+    /// assert_eq!(trimmed, "  abc");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim spaces from the right of a string
+    /// composed of `u8`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "  abc  ";
+    /// let trimmed: Vec<u8> = string.bytes().trim_right().collect();
+    /// assert_eq!(trimmed, vec![b' ', b' ', b'a', b'b', b'c']);
+    /// ```
+    fn trim_right(self) -> TrimRight<Self>
     where
         Self: DoubleEndedIterator,
     {
-        let mut peekable = self.by_ref().rev().peekable();
-
-        while let Some(c) = peekable.peek() {
-            if c.is_space_like() {
-                peekable.next();
-            } else {
-                break;
-            }
-        }
-
-        self
+        TrimRight::from(self)
     }
 
     #[inline(always)]
     /// Trims spaces from both sides of the iterator.
-    fn trim(self) -> Self
+    ///
+    /// # Example
+    ///
+    /// The following example demonstrates how to trim spaces from both sides of a string
+    /// composed of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "  abc  ";
+    /// let trimmed: String = string.chars().trim().collect();
+    /// assert_eq!(trimmed, "abc");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim spaces from both sides of a string
+    /// composed of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "  abc  ";
+    /// let trimmed: String = string
+    ///     .chars()
+    ///     .filter_map(|c| ASCIIChar::try_from(c).ok())
+    ///     .trim()
+    ///     .collect();
+    /// assert_eq!(trimmed, "abc");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim spaces from both sides of a string
+    /// composed of `u8`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "  abc  ";
+    /// let trimmed: Vec<u8> = string.bytes().trim().collect();
+    /// assert_eq!(trimmed, vec![b'a', b'b', b'c']);
+    /// ```
+    fn trim(self) -> Trim<Self>
     where
         Self: DoubleEndedIterator,
     {
-        self.trim_left().trim_right()
+        Trim::from(self)
     }
 
     #[inline(always)]
     /// Trims null characters from the left of the iterator.
-    fn trim_null_left(mut self) -> Self {
-        let mut peekable = self.by_ref().peekable();
-
-        while let Some(c) = peekable.peek() {
-            if c.is_nul() {
-                peekable.next();
-            } else {
-                break;
-            }
-        }
-
-        self
+    ///
+    /// # Example
+    ///
+    /// The following example demonstrates how to trim null characters from the left of a string
+    /// composed of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "\0\0abc\0\0";
+    /// let trimmed: String = string.chars().trim_null_left().collect();
+    /// assert_eq!(trimmed, "abc\0\0");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim null characters from the left of a string
+    /// composed of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "\0\0abc\0\0";
+    /// let trimmed: String = string
+    ///     .chars()
+    ///     .filter_map(|c| ASCIIChar::try_from(c).ok())
+    ///     .trim_null_left()
+    ///     .collect();
+    /// assert_eq!(trimmed, "abc\0\0");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim null characters from the left of a string
+    /// composed of `u8`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "\0\0abc\0\0";
+    /// let trimmed: Vec<u8> = string.bytes().trim_null_left().collect();
+    /// assert_eq!(trimmed, vec![b'a', b'b', b'c', b'\0', b'\0']);
+    /// ```
+    fn trim_null_left(self) -> TrimNullLeft<Self> {
+        TrimNullLeft::from(self)
     }
 
     #[inline(always)]
     /// Trims null characters from the right of the iterator.
-    fn trim_null_right(mut self) -> Self
+    ///
+    /// # Example
+    ///
+    /// The following example demonstrates how to trim null characters from the right of a string
+    /// composed of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "\0\0abc\0\0";
+    /// let trimmed: String = string.chars().trim_null_right().collect();
+    /// assert_eq!(trimmed, "\0\0abc");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim null characters from the right of a string
+    /// composed of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "\0\0abc\0\0";
+    /// let trimmed: String = string
+    ///     .chars()
+    ///     .filter_map(|c| ASCIIChar::try_from(c).ok())
+    ///     .trim_null_right()
+    ///     .collect();
+    /// assert_eq!(trimmed, "\0\0abc");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim null characters from the right of a string
+    /// composed of `u8`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "\0\0abc\0\0";
+    /// let trimmed: Vec<u8> = string.bytes().trim_null_right().collect();
+    /// assert_eq!(trimmed, vec![b'\0', b'\0', b'a', b'b', b'c']);
+    /// ```
+    fn trim_null_right(self) -> TrimNullRight<Self>
     where
         Self: DoubleEndedIterator,
     {
-        let mut peekable = self.by_ref().rev().peekable();
-
-        while let Some(c) = peekable.peek() {
-            if c.is_nul() {
-                peekable.next();
-            } else {
-                break;
-            }
-        }
-
-        self
+        TrimNullRight::from(self)
     }
 
     #[inline(always)]
     /// Trims null characters from both sides of the iterator.
-    fn trim_null(self) -> Self
+    ///
+    /// # Example
+    ///
+    /// The following example demonstrates how to trim null characters from both sides of a string
+    /// composed of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "\0\0abc\0\0";
+    /// let trimmed: String = string.chars().trim_null().collect();
+    /// assert_eq!(trimmed, "abc");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim null characters from both sides of a string
+    /// composed of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "\0\0abc\0\0";
+    /// let trimmed: String = string
+    ///     .chars()
+    ///     .filter_map(|c| ASCIIChar::try_from(c).ok())
+    ///     .trim_null()
+    ///     .collect();
+    /// assert_eq!(trimmed, "abc");
+    /// ```
+    ///
+    /// The following example demonstrates how to trim null characters from both sides of a string
+    /// composed of `u8`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let string = "\0\0abc\0\0";
+    /// let trimmed: Vec<u8> = string.bytes().trim_null().collect();
+    /// assert_eq!(trimmed, vec![b'a', b'b', b'c']);
+    /// ```
+    fn trim_null(self) -> TrimNull<Self>
     where
         Self: DoubleEndedIterator,
     {
-        self.trim_null_left().trim_null_right()
+        TrimNull::from(self)
     }
 
     #[inline(always)]

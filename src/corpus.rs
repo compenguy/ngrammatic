@@ -137,7 +137,7 @@ where
     /// 
     /// let number_of_ngrams = animals.number_of_ngrams();
     /// 
-    /// assert_eq!(number_of_ngrams, 1897);
+    /// assert_eq!(number_of_ngrams, 2530);
     /// ```
     pub fn number_of_ngrams(&self) -> usize {
         self.ngrams.len()
@@ -177,9 +177,9 @@ where
     /// 
     /// let animals: Corpus<_, TriGram<char>> = Corpus::from(ANIMALS);
     /// 
-    /// assert_eq!(animals.ngram_from_id(0), ['\0', '\0', '\0']);
-    /// assert_eq!(animals.ngram_from_id(1), ['\0', '\0', 'R']);
-    /// assert_eq!(animals.ngram_from_id(20),['\0', '\0', 't']);
+    /// assert_eq!(animals.ngram_from_id(0), ['\0', '\0', 'A']);
+    /// assert_eq!(animals.ngram_from_id(1), ['\0', '\0', 'B']);
+    /// assert_eq!(animals.ngram_from_id(20),['\0', '\0', 'U']);
     /// ```
     pub fn ngram_from_id(&self, ngram_id: usize) -> NG {
         unsafe { self.ngrams.get_unchecked(ngram_id) }

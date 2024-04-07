@@ -1,7 +1,7 @@
 //! A list of 699 animal names to use for reasonable examples.
 
 /// A list of animal names.
-pub const ANIMALS: [&'static str; 699] = [
+pub const ANIMALS: [&str; 699] = [
     "Aardvark",
     "Abyssinian",
     "Adelie Penguin",

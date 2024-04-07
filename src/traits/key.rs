@@ -4,7 +4,7 @@ use crate::traits::ascii_char::ToASCIICharIterator;
 use crate::traits::iter_ngrams::IntoNgrams;
 use crate::{
     ASCIIChar, ASCIICharIterator, Alphanumeric, BothPadding, CharLike, CharNormalizer, Gram,
-    IntoPadder, Lowercase, Ngram, PaddableNgram, SpaceNormalizer,
+    IntoPadder, Lowercase, Ngram, PaddableNgram, SpaceNormalizer, Trim, TrimNull,
 };
 use fxhash::FxBuildHasher;
 use std::collections::HashMap;
@@ -21,9 +21,55 @@ pub trait Key<NG: Ngram<G = G>, G: Gram>: AsRef<<Self as Key<NG, G>>::Ref> {
     type Ref: ?Sized;
 
     /// Returns an iterator over the grams of the key.
+    ///
+    /// # Example
+    ///
+    /// The following example demonstrates how to get the grams of a key
+    /// represented by a string, composed of `u8`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let key = "abc";
+    /// let grams: Vec<u8> = <&str as Key<BiGram<u8>, u8>>::grams(&key).collect();
+    /// assert_eq!(grams, vec![b'\0', b'a', b'b', b'c', b'\0',]);
+    /// ```
+    ///
+    /// The following example demonstrates how to get the grams of a key
+    /// represented by a string, composed of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let key = "abc";
+    /// let grams: Vec<char> = <&str as Key<BiGram<char>, char>>::grams(&key).collect();
+    /// assert_eq!(grams, vec!['\0', 'a', 'b', 'c', '\0']);
+    /// ```
+    ///
+    /// The following example demonstrates how to get the grams of a key
+    /// represented by a string, composed of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let key = "abc";
+    /// let grams: Vec<ASCIIChar> = <&str as Key<BiGram<ASCIIChar>, ASCIIChar>>::grams(&key).collect();
+    /// assert_eq!(
+    ///     grams,
+    ///     vec![
+    ///         ASCIIChar::from(b'\0'),
+    ///         ASCIIChar::from(b'a'),
+    ///         ASCIIChar::from(b'b'),
+    ///         ASCIIChar::from(b'c'),
+    ///         ASCIIChar::from(b'\0')
+    ///     ]
+    /// );
+    /// ```
     fn grams(&self) -> Self::Grams<'_>;
 
     /// Returns the counts of the ngrams.
+    ///
+    /// # Example
+    ///
+    /// The following example demonstrates how to get the counts of the ngrams
+    /// of a key represented by a string, composed of `u8`:
     fn counts(&self) -> HashMap<NG, usize, FxBuildHasher> {
         let mut ngram_counts: HashMap<NG, usize, FxBuildHasher> =
             HashMap::with_hasher(FxBuildHasher::default());
@@ -44,7 +90,8 @@ impl<NG> Key<NG, char> for String
 where
     NG: Ngram<G = char> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<std::str::Chars<'a>>>>;
+    type Grams<'a> =
+        BothPadding<NG, SpaceNormalizer<Alphanumeric<TrimNull<Trim<std::str::Chars<'a>>>>>>;
 
     type Ref = str;
 
@@ -63,7 +110,7 @@ impl<NG> Key<NG, char> for str
 where
     NG: Ngram<G = char> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<std::str::Chars<'a>>>> where Self: 'a;
+    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<TrimNull<Trim<std::str::Chars<'a>>>>>> where Self: 'a;
     type Ref = str;
 
     #[inline(always)]
@@ -94,7 +141,7 @@ impl<NG> Key<NG, ASCIIChar> for str
 where
     NG: Ngram<G = ASCIIChar> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<ASCIICharIterator<std::str::Chars<'a>>>>> where Self: 'a;
+    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<TrimNull<Trim<ASCIICharIterator<std::str::Chars<'a>>>>>>> where Self: 'a;
     type Ref = str;
 
     #[inline(always)]
@@ -113,7 +160,7 @@ impl<NG> Key<NG, char> for &str
 where
     NG: Ngram<G = char> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<std::str::Chars<'a>>>> where Self: 'a;
+    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<TrimNull<Trim<std::str::Chars<'a>>>>>> where Self: 'a;
     type Ref = str;
 
     #[inline(always)]
@@ -157,7 +204,7 @@ impl<NG> Key<NG, ASCIIChar> for String
 where
     NG: Ngram<G = ASCIIChar> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<ASCIICharIterator<std::str::Chars<'a>>>>> where Self: 'a;
+    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<TrimNull<Trim<ASCIICharIterator<std::str::Chars<'a>>>>>>> where Self: 'a;
     type Ref = str;
 
     #[inline(always)]
@@ -176,7 +223,7 @@ impl<NG> Key<NG, ASCIIChar> for &str
 where
     NG: Ngram<G = ASCIIChar> + PaddableNgram,
 {
-    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<ASCIICharIterator<std::str::Chars<'a>>>>> where Self: 'a;
+    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<TrimNull<Trim<ASCIICharIterator<std::str::Chars<'a>>>>>>> where Self: 'a;
     type Ref = str;
 
     #[inline(always)]

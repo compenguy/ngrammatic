@@ -240,3 +240,14 @@ where
         ASCIICharIterator::from(self)
     }
 }
+
+/// Implements the collect to string of an iterator of `ASCIIChar`.
+impl std::iter::FromIterator<ASCIIChar> for String {
+    #[inline(always)]
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = ASCIIChar>,
+    {
+        iter.into_iter().map(|ascii_char| ascii_char.character as char).collect()
+    }
+}
