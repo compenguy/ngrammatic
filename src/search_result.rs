@@ -102,3 +102,42 @@ impl<'a, K, F: Float> SearchResultsHeap<'a, K, F> {
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_search_result() {
+        let key = "key";
+        let similarity = 0.5;
+        let search_result = SearchResult::new(&key, similarity);
+
+        assert_eq!(search_result.key(), &key);
+        assert_eq!(search_result.similarity(), similarity);
+    }
+
+    #[test]
+    fn test_search_results_heap() {
+        let mut search_results_heap = SearchResultsHeap::new(3);
+
+        let search_result1 = SearchResult::new(&"key1", 0.1);
+        let search_result2 = SearchResult::new(&"key2", 0.2);
+        let search_result3 = SearchResult::new(&"key3", 0.3);
+        let search_result4 = SearchResult::new(&"key4", 0.4);
+        let search_result5 = SearchResult::new(&"key5", 0.5);
+
+        search_results_heap.push(search_result1);
+        search_results_heap.push(search_result2);
+        search_results_heap.push(search_result3);
+        search_results_heap.push(search_result4);
+        search_results_heap.push(search_result5);
+
+        let sorted_search_results = search_results_heap.into_sorted_vec();
+
+        assert_eq!(sorted_search_results.len(), 3);
+        assert_eq!(sorted_search_results[0].key(), &"key5");
+        assert_eq!(sorted_search_results[1].key(), &"key4");
+        assert_eq!(sorted_search_results[2].key(), &"key3");
+    }
+}
