@@ -70,6 +70,51 @@ pub trait Key<NG: Ngram<G = G>, G: Gram>: AsRef<<Self as Key<NG, G>>::Ref> {
     ///
     /// The following example demonstrates how to get the counts of the ngrams
     /// of a key represented by a string, composed of `u8`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let key = "abc";
+    /// let counts = <&str as Key<BiGram<u8>, u8>>::counts(&key);
+    /// assert_eq!(counts.get(&[b'\0', b'a']), Some(&1));
+    /// assert_eq!(counts.get(&[b'a', b'b']), Some(&1));
+    /// assert_eq!(counts.get(&[b'b', b'c']), Some(&1));
+    /// assert_eq!(counts.get(&[b'b', b'Z']), None);
+    /// assert_eq!(counts.get(&[b'c', b'\0']), Some(&1));
+    /// assert_eq!(counts.get(&[b'Z', b'\0']), None);
+    /// assert_eq!(counts.len(), 4);
+    /// ```
+    /// 
+    /// The following example demonstrates how to get the counts of the ngrams
+    /// of a key represented by a string, composed of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let key = "abc";
+    /// let counts = <&str as Key<BiGram<char>, char>>::counts(&key);
+    /// assert_eq!(counts.get(&['\0', 'a']), Some(&1));
+    /// assert_eq!(counts.get(&['a', 'b']), Some(&1));
+    /// assert_eq!(counts.get(&['b', 'c']), Some(&1));
+    /// assert_eq!(counts.get(&['b', 'Z']), None);
+    /// assert_eq!(counts.get(&['c', '\0']), Some(&1));
+    /// assert_eq!(counts.get(&['Z', '\0']), None);
+    /// assert_eq!(counts.len(), 4);
+    /// ```
+    /// 
+    /// The following example demonstrates how to get the counts of the ngrams
+    /// of a key represented by a string, composed of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let key = "abc";
+    /// let counts = <&str as Key<BiGram<ASCIIChar>, ASCIIChar>>::counts(&key);
+    /// assert_eq!(counts.get(&[ASCIIChar::from(b'\0'), ASCIIChar::from(b'a')]), Some(&1));
+    /// assert_eq!(counts.get(&[ASCIIChar::from(b'a'), ASCIIChar::from(b'b')]), Some(&1));
+    /// assert_eq!(counts.get(&[ASCIIChar::from(b'b'), ASCIIChar::from(b'c')]), Some(&1));
+    /// assert_eq!(counts.get(&[ASCIIChar::from(b'b'), ASCIIChar::from(b'Z')]), None);
+    /// assert_eq!(counts.get(&[ASCIIChar::from(b'c'), ASCIIChar::from(b'\0')]), Some(&1));
+    /// assert_eq!(counts.get(&[ASCIIChar::from(b'Z'), ASCIIChar::from(b'\0')]), None);
+    /// assert_eq!(counts.len(), 4);
+    /// ```
     fn counts(&self) -> HashMap<NG, usize, FxBuildHasher> {
         let mut ngram_counts: HashMap<NG, usize, FxBuildHasher> =
             HashMap::with_hasher(FxBuildHasher::default());
