@@ -88,21 +88,21 @@ where
 
     log::info!("\n{}", corpus.report());
 
-    // log::info!("The 5 most frequent ngrams are:");
-    // let top_k_ngram = corpus.top_k_ngrams(5);
-    // top_k_ngram
-    //     .iter()
-    //     .for_each(|(degree, ngram)| log::info!("{}: {:?}", degree.underscored(), ngram));
+    log::info!("The 5 most frequent ngrams are:");
+    let top_k_ngram = corpus.top_k_ngrams(5);
+    top_k_ngram
+        .iter()
+        .for_each(|(degree, ngram)| log::info!("{}: {:?}", degree.underscored(), ngram));
 
-    // log::info!("The following are 10 keys associated to the most frequent ngram:");
-    // let top_k_ngram = top_k_ngram[0].1.clone();
-    // for key in corpus.keys_from_ngram(top_k_ngram).unwrap().take(10) {
-    //     log::info!("{}", key);
-    // }
+    log::info!("The following are 10 keys associated to the most frequent ngram:");
+    let top_k_ngram = top_k_ngram[0].1.clone();
+    for key in corpus.keys_from_ngram(top_k_ngram).unwrap().take(10) {
+        log::info!("{}", key);
+    }
 
-    // corpus
-    //     .mem_dbg(DbgFlags::HUMANIZE | DbgFlags::PERCENTAGE | DbgFlags::TYPE_NAME)
-    //     .unwrap();
+    corpus
+        .mem_dbg(DbgFlags::HUMANIZE | DbgFlags::PERCENTAGE | DbgFlags::TYPE_NAME)
+        .unwrap();
 
     // We write the node degrees to a CSV file.
     let mut writer = csv::Writer::from_path("node_degrees.csv").unwrap();

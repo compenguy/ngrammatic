@@ -883,18 +883,128 @@ where
 
     #[inline(always)]
     /// Converts all characters to lowercase.
+    /// 
+    /// # Example
+    /// 
+    /// The following example demonstrates how to convert all characters to lowercase
+    /// of a string composed of `char`:
+    /// 
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let string = "AbC";
+    /// let lowercase: String = string.chars().lower().collect();
+    /// assert_eq!(lowercase, "abc");
+    /// ```
+    /// 
+    /// The following example demonstrates how to convert all characters to lowercase
+    /// of a string composed of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let string = "AbC";
+    /// let lowercase: String = string
+    ///    .chars()
+    ///    .filter_map(|c| ASCIIChar::try_from(c).ok())
+    ///    .lower()
+    ///    .collect();
+    /// assert_eq!(lowercase, "abc");
+    /// ```
+    /// 
+    /// The following example demonstrates how to convert all characters to lowercase
+    /// of a string composed of `u8`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let string = "AbC";
+    /// let lowercase: Vec<u8> = string.bytes().lower().collect();
+    /// assert_eq!(lowercase, vec![b'a', b'b', b'c']);
+    /// ```
     fn lower(self) -> Lowercase<Self> {
         Lowercase::from(self)
     }
 
     #[inline(always)]
-    /// Converts all non-alpha characters to spaces.
+    /// Converts all non-alphanumerical characters to spaces.
+    /// 
+    /// # Example
+    /// 
+    /// The following example demonstrates how to convert all non-alphanumerical characters to spaces
+    /// of a string composed of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let string = "a89???b#c";
+    /// let alphanumeric: String = string.chars().alphanumeric().collect();
+    /// assert_eq!(alphanumeric, "a89   b c");
+    /// ```
+    /// 
+    /// The following example demonstrates how to convert all non-alphanumerical characters to spaces
+    /// of a string composed of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let string = "a89???∂™b#c";
+    /// let alphanumeric: String = string
+    ///    .chars()
+    ///   .filter_map(|c| ASCIIChar::try_from(c).ok())
+    ///   .alphanumeric()
+    ///  .collect();
+    /// assert_eq!(alphanumeric, "a89   b c");
+    /// ```
+    /// 
+    /// The following example demonstrates how to convert all non-alphanumerical characters to spaces
+    /// of a string composed of `u8`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let string = "a89???b#c";
+    /// let alphanumeric: Vec<u8> = string.bytes().alphanumeric().collect();
+    /// assert_eq!(alphanumeric, vec![b'a', b'8', b'9', b' ', b' ', b' ', b'b', b' ', b'c']);
+    /// ```
+    /// 
     fn alphanumeric(self) -> Alphanumeric<Self> {
         Alphanumeric::from(self)
     }
 
     #[inline(always)]
     /// Normalizes spaces, removing subsequent spaces.
+    /// 
+    /// # Example
+    /// 
+    /// The following example demonstrates how to normalize spaces, removing subsequent spaces
+    /// of a string composed of `char`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let string = "a  b   c g g ";
+    /// let normalized: String = string.chars().dedup_spaces().collect();
+    /// assert_eq!(normalized, "a b c g g ");
+    /// ```
+    /// 
+    /// The following example demonstrates how to normalize spaces, removing subsequent spaces
+    /// of a string composed of `ASCIIChar`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let string = "a  b   c g ∞Ωg ";
+    /// let normalized: String = string
+    ///   .chars()
+    ///   .filter_map(|c| ASCIIChar::try_from(c).ok())
+    ///   .dedup_spaces()
+    ///   .collect();
+    /// assert_eq!(normalized, "a b c g g ");
+    /// ```
+    /// 
+    /// The following example demonstrates how to normalize spaces, removing subsequent spaces
+    /// of a string composed of `u8`:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let string = "a  b   c g g ";
+    /// let normalized: Vec<u8> = string.bytes().dedup_spaces().collect();
+    /// assert_eq!(normalized, vec![b'a', b' ', b'b', b' ', b'c', b' ', b'g', b' ', b'g', b' ']);
+    /// ```
     fn dedup_spaces(self) -> SpaceNormalizer<Self> {
         SpaceNormalizer {
             iter: self,
