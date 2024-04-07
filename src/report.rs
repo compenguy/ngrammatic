@@ -46,15 +46,15 @@ where
     G: WeightedBipartiteGraph,
 {
     /// Returns a report of the corpus.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let animals: Corpus<_, TriGram<char>> = Corpus::from(ANIMALS);
     /// let report = animals.report();
-    /// 
+    ///
     /// assert_eq!(report.number_of_keys, 699);
     /// assert_eq!(report.number_of_grams, 2534);
     /// assert_eq!(report.number_of_edges, 18080);

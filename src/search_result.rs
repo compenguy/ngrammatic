@@ -10,41 +10,41 @@ use mem_dbg::{MemDbg, MemSize};
 /// to the query text.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
-pub struct SearchResult<'a, K, F: Float> {
+pub struct SearchResult<'a, K: ?Sized, F: Float> {
     /// The key of a fuzzy match
     key: &'a K,
-    /// A similarity value indicating how closely the other term matched
-    similarity: F,
+    /// A similarity score value indicating how closely the other term matched
+    score: F,
 }
 
-impl<'a, K, F: Float> Eq for SearchResult<'a, K, F> {}
+impl<'a, K: ?Sized, F: Float> Eq for SearchResult<'a, K, F> {}
 
-impl<'a, K, F: Float> Ord for SearchResult<'a, K, F> {
+impl<'a, K: ?Sized, F: Float> Ord for SearchResult<'a, K, F> {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.similarity.partial_cmp(&other.similarity).unwrap()
+        self.score.partial_cmp(&other.score).unwrap()
     }
 }
 
-impl<'a, K, F: Float> PartialOrd for SearchResult<'a, K, F> {
+impl<'a, K: ?Sized, F: Float> PartialOrd for SearchResult<'a, K, F> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<'a, K, F: Float> PartialEq for SearchResult<'a, K, F> {
+impl<'a, K: ?Sized, F: Float> PartialEq for SearchResult<'a, K, F> {
     fn eq(&self, other: &Self) -> bool {
-        self.similarity == other.similarity
+        self.score == other.score
     }
 }
 
-impl<'a, K, F: Float> SearchResult<'a, K, F> {
+impl<'a, K: ?Sized, F: Float> SearchResult<'a, K, F> {
     /// Trivial constructor used internally to build search results
     ///
     /// # Arguments
     /// * `key` - The key of a fuzzy match
-    /// * `similarity` - A similarity value indicating how closely the other term matched
-    pub(crate) fn new(key: &'a K, similarity: F) -> Self {
-        Self { key, similarity }
+    /// * `score` - A similarity score value indicating how closely the other term matched
+    pub(crate) fn new(key: &'a K, score: F) -> Self {
+        Self { key, score }
     }
 
     /// Returns the key of a fuzzy match
@@ -52,21 +52,21 @@ impl<'a, K, F: Float> SearchResult<'a, K, F> {
         self.key
     }
 
-    /// Returns a similarity value indicating how closely the other term matched
-    pub fn similarity(&self) -> F {
-        self.similarity
+    /// Returns a similarity score value indicating how closely the other term matched
+    pub fn score(&self) -> F {
+        self.score
     }
 }
 
 /// Holds the top n best search results.
-pub(crate) struct SearchResultsHeap<'a, K, F: Float> {
+pub(crate) struct SearchResultsHeap<'a, K: ?Sized, F: Float> {
     /// The k best search results
     heap: std::collections::BinaryHeap<Reverse<SearchResult<'a, K, F>>>,
     /// The maximum number of results to return
     n: usize,
 }
 
-impl<'a, K, F: Float> SearchResultsHeap<'a, K, F> {
+impl<'a, K: ?Sized, F: Float> SearchResultsHeap<'a, K, F> {
     /// Creates a new `SearchResultsHeap` with a maximum number of results to return
     ///
     /// # Arguments
@@ -110,11 +110,11 @@ mod tests {
     #[test]
     fn test_search_result() {
         let key = "key";
-        let similarity = 0.5;
-        let search_result = SearchResult::new(&key, similarity);
+        let score = 0.5;
+        let search_result = SearchResult::new(&key, score);
 
         assert_eq!(search_result.key(), &key);
-        assert_eq!(search_result.similarity(), similarity);
+        assert_eq!(search_result.score(), score);
     }
 
     #[test]

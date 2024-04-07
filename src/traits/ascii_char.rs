@@ -76,12 +76,12 @@ impl ASCIIChar {
 
     #[inline(always)]
     /// Returns the lowercase version of the character.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let ascii_char = ASCIIChar::from(b'A');
     /// let lowercase = ascii_char.to_lowercase();
     /// assert_eq!(lowercase, ASCIIChar::from(b'a'));
@@ -94,12 +94,12 @@ impl ASCIIChar {
 
     #[inline(always)]
     /// Returns the uppercase version of the character.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let ascii_char = ASCIIChar::from(b'a');
     /// let uppercase = ascii_char.to_uppercase();
     /// assert_eq!(uppercase, ASCIIChar::from(b'A'));
@@ -112,12 +112,12 @@ impl ASCIIChar {
 
     #[inline(always)]
     /// Returns whether the current character is a space-like.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let ascii_char = ASCIIChar::from(b' ');
     /// assert!(ascii_char.is_space_like());
     /// let ascii_char = ASCIIChar::from(b'a');
@@ -129,12 +129,12 @@ impl ASCIIChar {
 
     #[inline(always)]
     /// Returns whether the current character is alphanumeric.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let ascii_char = ASCIIChar::from(b'a');
     /// assert!(ascii_char.is_alphanumeric());
     /// let ascii_char = ASCIIChar::from(b' ');
@@ -213,15 +213,22 @@ where
 /// so that they can be converted to `ASCIICharIterator`.
 pub trait ToASCIICharIterator: IntoIterator<Item = char> {
     /// Converts the iterator to an `ASCIICharIterator`.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let ascii = "ab∂Ωc".chars().ascii().collect::<Vec<_>>();
-    /// 
-    /// assert_eq!(ascii, vec![ASCIIChar::from(b'a'), ASCIIChar::from(b'b'), ASCIIChar::from(b'c')]);
+    ///
+    /// assert_eq!(
+    ///     ascii,
+    ///     vec![
+    ///         ASCIIChar::from(b'a'),
+    ///         ASCIIChar::from(b'b'),
+    ///         ASCIIChar::from(b'c')
+    ///     ]
+    /// );
     /// ```
     fn ascii(self) -> ASCIICharIterator<Self>
     where
@@ -248,6 +255,8 @@ impl std::iter::FromIterator<ASCIIChar> for String {
     where
         T: IntoIterator<Item = ASCIIChar>,
     {
-        iter.into_iter().map(|ascii_char| ascii_char.character as char).collect()
+        iter.into_iter()
+            .map(|ascii_char| ascii_char.character as char)
+            .collect()
     }
 }

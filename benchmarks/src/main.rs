@@ -26,7 +26,7 @@ fn iter_taxons() -> impl Iterator<Item = String> {
 /// Returns bigram corpus.
 fn load_corpus<NG>()
 where
-    NG: PaddableNgram<G = ASCIIChar>,
+    NG: Ngram<G = ASCIIChar>,
 {
     // let number_of_taxons = 2_571_000;
     let number_of_taxons = 1_00;
@@ -60,7 +60,7 @@ where
 /// Returns bigram corpus.
 fn load_corpus_webgraph<NG>()
 where
-    NG: PaddableNgram<G = ASCIIChar> + Debug,
+    NG: Ngram<G = ASCIIChar> + Debug,
 {
     // let number_of_taxons = 2_571_000;
     let number_of_taxons = 2_571_000;

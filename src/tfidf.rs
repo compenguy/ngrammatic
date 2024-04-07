@@ -1,6 +1,157 @@
 //! Submodule providing a term frequency-inverse document frequency (TF-IDF) implementation.
-use crate::{prelude::*, search::QueryHashmap};
+use crate::{
+    prelude::*,
+    search::{MaxNgramDegree, QueryHashmap, SearchConfig},
+};
 use std::cmp::Ordering;
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+/// Struct providing an tf-idf search configuration.
+pub struct TFIDFSearchConfig<W: Copy = i32, F: Float = f32> {
+    /// The trigram search configuration.
+    search_config: NgramSearchConfig<W, F>,
+    /// The K1 constant.
+    k1: F,
+    /// The B constant.
+    b: F,
+}
+
+impl<W: Copy, F: Float> From<TFIDFSearchConfig<W, F>> for SearchConfig<F> {
+    #[inline(always)]
+    /// Returns the search configuration.
+    fn from(config: TFIDFSearchConfig<W, F>) -> Self {
+        config.search_config.into()
+    }
+}
+
+impl<F: Float> Default for TFIDFSearchConfig<i32, F> {
+    #[inline(always)]
+    /// Returns the default search configuration.
+    fn default() -> Self {
+        Self {
+            search_config: NgramSearchConfig::default(),
+            k1: F::from_f64(1.2),
+            b: F::from_f64(0.75),
+        }
+    }
+}
+
+impl<W: Copy, F: Float> TFIDFSearchConfig<W, F> {
+    #[inline(always)]
+    /// Returns the minimum similarity value for a result to be included in the output.
+    pub fn minimum_similarity_score(&self) -> F {
+        self.search_config.minimum_similarity_score()
+    }
+
+    #[inline(always)]
+    /// Returns the maximum number of results to return.
+    pub fn maximum_number_of_results(&self) -> usize {
+        self.search_config.maximum_number_of_results()
+    }
+
+    #[inline(always)]
+    /// Set the minimum similarity value for a result to be included in the output.
+    ///
+    /// # Arguments
+    /// * `minimum_similarity_score` - The minimum similarity value for a result to be included in the output.
+    pub fn set_minimum_similarity_score(
+        mut self,
+        minimum_similarity_score: F,
+    ) -> Result<Self, &'static str> {
+        self.search_config = self
+            .search_config
+            .set_minimum_similarity_score(minimum_similarity_score)?;
+        Ok(self)
+    }
+
+    #[inline(always)]
+    /// Set the maximum number of results to return.
+    ///
+    /// # Arguments
+    /// * `maximum_number_of_results` - The maximum number of results to return.
+    pub fn set_maximum_number_of_results(mut self, maximum_number_of_results: usize) -> Self {
+        self.search_config = self
+            .search_config
+            .set_maximum_number_of_results(maximum_number_of_results);
+        self
+    }
+
+    #[inline(always)]
+    /// Set the maximum degree of the ngrams to consider in the search.
+    ///
+    /// # Arguments
+    /// * `max_ngram_degree` - The maximum degree of the ngrams to consider in the search.
+    pub fn set_max_ngram_degree(mut self, max_ngram_degree: MaxNgramDegree) -> Self {
+        self.search_config = self.search_config.set_max_ngram_degree(max_ngram_degree);
+        self
+    }
+
+    #[inline(always)]
+    /// Set the K1 constant.
+    ///
+    /// # Arguments
+    /// * `k1` - The K1 constant.
+    ///
+    /// # Raises
+    /// * If the K1 constant is not a valid float or is not in the range 1.2 to 2.0.
+    pub fn set_k1(mut self, k1: F) -> Result<Self, &'static str> {
+        if k1.is_nan() || !(1.2..=2.0).contains(&k1.to_f64()) {
+            return Err("The K1 constant must be a float in the range 1.2 to 2.0.");
+        }
+        self.k1 = k1;
+        Ok(self)
+    }
+
+    #[inline(always)]
+    /// Returns the K1 constant.
+    pub fn k1(&self) -> F {
+        self.k1
+    }
+
+    #[inline(always)]
+    /// Set the B constant.
+    ///
+    /// # Arguments
+    /// * `b` - The B constant.
+    ///
+    /// # Raises
+    /// * If the B constant is not a valid float or is not in the range 0.0 to 1.0.
+    pub fn set_b(mut self, b: F) -> Result<Self, &'static str> {
+        if b.is_nan() || !(0.0..=1.0).contains(&b.to_f64()) {
+            return Err("The B constant must be a float in the range 0.0 to 1.0.");
+        }
+        self.b = b;
+        Ok(self)
+    }
+
+    #[inline(always)]
+    /// Returns the B constant.
+    pub fn b(&self) -> F {
+        self.b
+    }
+
+    #[inline(always)]
+    /// Set the warp factor to use in the trigram similarity calculation.
+    ///
+    /// # Arguments
+    /// * `warp` - The warp factor to use in the trigram similarity calculation.
+    pub fn set_warp<W2: Copy>(self, warp: W2) -> Result<TFIDFSearchConfig<W2, F>, &'static str>
+    where
+        W2: TryInto<Warp<W2>, Error = &'static str>,
+    {
+        Ok(TFIDFSearchConfig {
+            search_config: self.search_config.set_warp(warp)?,
+            k1: self.k1,
+            b: self.b,
+        })
+    }
+
+    #[inline(always)]
+    /// Returns the warp factor.
+    pub fn warp(&self) -> Warp<W> {
+        self.search_config.warp()
+    }
+}
 
 /// Returns the Term Frequency (TF) of the provided ngram in the provided key.
 ///
@@ -36,7 +187,17 @@ where
 
     #[inline(always)]
     /// Returns the average document length of the corpus.
-    pub(crate) fn average_key_length(&self) -> f64 {
+    ///
+    /// # Example
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let corpus: Corpus<[&str; 699], TriGram<char>> = Corpus::from(ANIMALS);
+    /// let average_key_length = corpus.average_key_length();
+    ///
+    /// assert_eq!(average_key_length, 12.962804005722461_f64);
+    /// ```
+    pub fn average_key_length(&self) -> f64 {
         self.average_key_length
     }
 
@@ -101,44 +262,51 @@ where
     ///
     /// # Arguments
     /// * `key` - The key to search for in the corpus.
-    /// * `threshold` - The minimum similarity value for a result to be included in the output.
-    /// * `limit` - The maximum number of results to return.
-    /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
-    /// * `k1` - The K1 constant.
-    /// * `b` - The B constant.
-    pub fn tf_idf_search<F: Float>(
+    /// * `config` - The TF-IDF search configuration.
+    ///
+    /// # Example
+    /// We can use the ANIMALS dataset shipped with the library to search for similar keys using
+    /// the TF-IDF similarity metric.
+    /// We use as unit of the ngram a `char`, and we search for trigrams similar to the key "cat".
+    /// Using a `char` is an `u32`, so four times more expensive than using a `u8` or a `ASCIIChar`,
+    /// but it allows us to support any character, including emojis. In the following examples we
+    /// will also illustrate how to use `ASCIIChar` and `u8` as ngram units.
+    /// Note that the search, defined as in this example, is case-sensitive. In the next example we wil
+    /// see how to make it case-insensitive and introduce additional normalizations.
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::from(&ANIMALS);
+    ///
+    /// let results: Vec<SearchResult<'_, str, f32>> =
+    ///     corpus.tf_idf_search("Cat", TFIDFSearchConfig::default());
+    ///
+    /// assert_eq!(results[0].key(), "Cat");
+    ///
+    /// let results: Vec<SearchResult<'_, str, f32>> =
+    ///     corpus.tf_idf_search("Catt", TFIDFSearchConfig::default());
+    ///
+    /// assert_eq!(results[0].key(), "Cat");
+    /// ```
+    pub fn tf_idf_search<KR, F: Float>(
         &self,
-        key: &KS::K,
-        threshold: F,
-        limit: usize,
-        max_counts: Option<usize>,
-        k1: F,
-        b: F,
-    ) -> Result<Vec<SearchResult<'_, KS::K, F>>, &'static str> {
-        let k1 = k1.to_f64();
-        let b = b.to_f64();
+        key: KR,
+        config: TFIDFSearchConfig<i32, F>,
+    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    where
+        KR: AsRef<K>,
+    {
+        let k1 = config.k1().to_f64();
+        let b = config.b().to_f64();
 
-        // We check that k1 is a valid float and appears in the range 1.2 to 2.0,
-        // with extreme values being allowed.
-        if k1.is_nan() || !(1.2..=2.0).contains(&k1) {
-            return Err("The K1 constant must be a float in the range 1.2 to 2.0.");
-        }
-
-        // We check that b is a valid float and appears in the range 0.0 to 1.0,
-        // with extreme values being allowed.
-        if b.is_nan() || !(0.0..=1.0).contains(&b) {
-            return Err("The B constant must be a float in the range 0.0 to 1.0.");
-        }
-
-        Ok(self.search(
+        self.search(
             key,
-            threshold,
-            limit,
-            max_counts,
+            config.into(),
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
                 F::from_f64(self.tf_idf(query, ngrams, k1, b))
             },
-        ))
+        )
     }
 
     #[inline(always)]
@@ -146,53 +314,48 @@ where
     ///
     /// # Arguments
     /// * `key` - The key to search for in the corpus.
-    /// * `threshold` - The minimum similarity value for a result to be included in the output.
-    /// * `limit` - The maximum number of results to return.
-    /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
-    /// * `warp` - The warp factor.
-    /// * `k1` - The K1 constant.
-    /// * `b` - The B constant.
-    pub fn warped_tf_idf_search<W, F: Float>(
+    /// * `config` - The TF-IDF search configuration.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::par_from(&ANIMALS);
+    ///
+    /// let results: Vec<SearchResult<'_, str, f32>> =
+    ///     corpus.warped_tf_idf_search("Cat", TFIDFSearchConfig::default());
+    ///
+    /// assert_eq!(results[0].key(), "Cat");
+    ///
+    /// let results: Vec<SearchResult<'_, str, f32>> =
+    ///     corpus.warped_tf_idf_search("Catt", TFIDFSearchConfig::default());
+    ///
+    /// assert_eq!(results[0].key(), "Cat");
+    /// ```
+    pub fn warped_tf_idf_search<KR, W: Copy, F: Float>(
         &self,
-        key: &KS::K,
-        threshold: F,
-        limit: usize,
-        max_counts: Option<usize>,
-        warp: W,
-        k1: F,
-        b: F,
-    ) -> Result<Vec<SearchResult<'_, KS::K, F>>, &'static str>
+        key: KR,
+        config: TFIDFSearchConfig<W, F>,
+    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
     where
+        KR: AsRef<K>,
         W: TryInto<Warp<W>, Error = &'static str>,
         Warp<W>: TrigramSimilarity + Copy,
     {
-        let k1 = k1.to_f64();
-        let b = b.to_f64();
+        let k1 = config.k1().to_f64();
+        let b = config.b().to_f64();
 
-        // We check that k1 is a valid float and appears in the range 1.2 to 2.0,
-        // with extreme values being allowed.
-        if k1.is_nan() || !(1.2..=2.0).contains(&k1) {
-            return Err("The K1 constant must be a float in the range 1.2 to 2.0.");
-        }
+        let warp: Warp<W> = config.warp();
 
-        // We check that b is a valid float and appears in the range 0.0 to 1.0,
-        // with extreme values being allowed.
-        if b.is_nan() || !(0.0..=1.0).contains(&b) {
-            return Err("The B constant must be a float in the range 0.0 to 1.0.");
-        }
-
-        let warp: Warp<W> = warp.try_into()?;
-
-        Ok(self.search(
+        self.search(
             key,
-            threshold,
-            limit,
-            max_counts,
+            config.into(),
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
                 F::from_f64(self.tf_idf(query, ngrams.clone(), k1, b))
-                    * warp.trigram_similarity(query, ngrams, NG::ARITY)
+                    * warp.trigram_similarity(query, ngrams)
             },
-        ))
+        )
     }
 }
 
@@ -205,6 +368,7 @@ where
     KS: Keys<NG> + Send + Sync,
     KS::K: AsRef<K> + Send + Sync,
     K: Key<NG, NG::G> + ?Sized + Send + Sync,
+    <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref: Send + Sync,
     G: WeightedBipartiteGraph + Send + Sync,
 {
     #[inline(always)]
@@ -212,44 +376,45 @@ where
     ///
     /// # Arguments
     /// * `key` - The key to search for in the corpus.
-    /// * `threshold` - The minimum similarity value for a result to be included in the output.
-    /// * `limit` - The maximum number of results to return.
-    /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
-    /// * `k1` - The K1 constant.
-    /// * `b` - The B constant.
-    pub fn tf_idf_par_search<F: Float>(
+    /// * `config` - The TF-IDF search configuration.
+    ///
+    /// # Example
+    /// This is the concurrent version of the example in the `tf_idf_search` method.
+    /// If you need a more detailed version of the example, please refer to the documentation of the
+    /// sequential `tf_idf_search` method.
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::from(&ANIMALS);
+    ///
+    /// let results: Vec<SearchResult<'_, str, f32>> =
+    ///     corpus.tf_idf_par_search("Cat", TFIDFSearchConfig::default());
+    ///
+    /// assert_eq!(results[0].key(), "Cat");
+    ///
+    /// let results: Vec<SearchResult<'_, str, f32>> =
+    ///     corpus.tf_idf_par_search("Catt", TFIDFSearchConfig::default());
+    ///
+    /// assert_eq!(results[0].key(), "Cat");
+    /// ```
+    pub fn tf_idf_par_search<KR, F: Float>(
         &self,
-        key: &KS::K,
-        threshold: F,
-        limit: usize,
-        max_counts: Option<usize>,
-        k1: F,
-        b: F,
-    ) -> Result<Vec<SearchResult<'_, KS::K, F>>, &'static str> {
-        let k1 = k1.to_f64();
-        let b = b.to_f64();
-
-        // We check that k1 is a valid float and appears in the range 1.2 to 2.0,
-        // with extreme values being allowed.
-        if k1.is_nan() || !(1.2..=2.0).contains(&k1) {
-            return Err("The K1 constant must be a float in the range 1.2 to 2.0.");
-        }
-
-        // We check that b is a valid float and appears in the range 0.0 to 1.0,
-        // with extreme values being allowed.
-        if b.is_nan() || !(0.0..=1.0).contains(&b) {
-            return Err("The B constant must be a float in the range 0.0 to 1.0.");
-        }
-
-        Ok(self.par_search(
+        key: KR,
+        config: TFIDFSearchConfig<i32, F>,
+    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    where
+        KR: AsRef<K> + Send + Sync,
+    {
+        let k1 = config.k1.to_f64();
+        let b = config.b.to_f64();
+        self.par_search(
             key,
-            threshold,
-            limit,
-            max_counts,
+            config.into(),
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
                 F::from_f64(self.tf_idf(query, ngrams, k1, b))
             },
-        ))
+        )
     }
 
     #[inline(always)]
@@ -257,52 +422,45 @@ where
     ///
     /// # Arguments
     /// * `key` - The key to search for in the corpus.
-    /// * `threshold` - The minimum similarity value for a result to be included in the output.
-    /// * `limit` - The maximum number of results to return.
-    /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
-    /// * `warp` - The warp factor.
-    /// * `k1` - The K1 constant.
-    /// * `b` - The B constant.
-    pub fn warped_tf_idf_par_search<W, F: Float>(
+    /// * `config` - The TF-IDF search configuration.
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::par_from(&ANIMALS);
+    ///
+    /// let results: Vec<SearchResult<'_, str, f32>> =
+    ///     corpus.warped_tf_idf_par_search("Cat", TFIDFSearchConfig::default());
+    ///
+    /// assert_eq!(results[0].key(), "Cat");
+    ///
+    /// let results: Vec<SearchResult<'_, str, f32>> =
+    ///     corpus.warped_tf_idf_par_search("Catt", TFIDFSearchConfig::default());
+    ///
+    /// assert_eq!(results[0].key(), "Cat");
+    /// ```
+    pub fn warped_tf_idf_par_search<KR, W: Copy, F: Float>(
         &self,
-        key: &KS::K,
-        threshold: F,
-        limit: usize,
-        max_counts: Option<usize>,
-        warp: W,
-        k1: F,
-        b: F,
-    ) -> Result<Vec<SearchResult<'_, KS::K, F>>, &'static str>
+        key: KR,
+        config: TFIDFSearchConfig<W, F>,
+    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
     where
+        KR: AsRef<K> + Send + Sync,
         W: TryInto<Warp<W>, Error = &'static str>,
         Warp<W>: TrigramSimilarity + Copy + Send + Sync,
     {
-        let k1 = k1.to_f64();
-        let b = b.to_f64();
+        let k1 = config.k1().to_f64();
+        let b = config.b().to_f64();
 
-        // We check that k1 is a valid float and appears in the range 1.2 to 2.0,
-        // with extreme values being allowed.
-        if k1.is_nan() || !(1.2..=2.0).contains(&k1) {
-            return Err("The K1 constant must be a float in the range 1.2 to 2.0.");
-        }
+        let warp: Warp<W> = config.warp();
 
-        // We check that b is a valid float and appears in the range 0.0 to 1.0,
-        // with extreme values being allowed.
-        if b.is_nan() || !(0.0..=1.0).contains(&b) {
-            return Err("The B constant must be a float in the range 0.0 to 1.0.");
-        }
-
-        let warp: Warp<W> = warp.try_into()?;
-
-        Ok(self.par_search(
+        self.par_search(
             key,
-            threshold,
-            limit,
-            max_counts,
+            config.into(),
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
                 F::from_f64(self.tf_idf(query, ngrams.clone(), k1, b))
-                    * warp.trigram_similarity(query, ngrams, NG::ARITY)
+                    * warp.trigram_similarity(query, ngrams)
             },
-        ))
+        )
     }
 }

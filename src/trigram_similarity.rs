@@ -63,12 +63,12 @@ where
     J: Iterator<Item = (usize, usize)>,
 {
     let mut count = 0;
-    let mut right_number_of_right_ngrams = 0;
+    let mut other_count = 0;
     let mut left_next = left.next();
     let mut right_next = right.next();
 
     if let Some((_, right_count)) = &right_next {
-        right_number_of_right_ngrams += *right_count;
+        other_count += *right_count;
     }
 
     while let (Some((left_gram, left_count)), Some((right_gram, right_count))) =
@@ -81,7 +81,7 @@ where
             Ordering::Greater => {
                 right_next = right.next();
                 if let Some((_, right_count)) = &right_next {
-                    right_number_of_right_ngrams += *right_count;
+                    other_count += *right_count;
                 }
             }
             Ordering::Equal => {
@@ -89,15 +89,15 @@ where
                 left_next = left.next();
                 right_next = right.next();
                 if let Some((_, right_count)) = &right_next {
-                    right_number_of_right_ngrams += *right_count;
+                    other_count += *right_count;
                 }
             }
         }
     }
 
-    right.for_each(|(_, count)| right_number_of_right_ngrams += count);
+    right.for_each(|(_, count)| other_count += count);
 
-    (count, right_number_of_right_ngrams)
+    (count, other_count)
 }
 
 /// Test that number_of_shared_items works correctly.
@@ -110,29 +110,26 @@ mod test_number_of_shared_items {
         let left = vec![(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)];
         let right = vec![(1, 1), (3, 1), (5, 1), (7, 1), (9, 1)];
 
-        let (count, right_number_of_right_ngrams) =
-            number_of_shared_items(left.into_iter(), right.into_iter());
+        let (count, other_count) = number_of_shared_items(left.into_iter(), right.into_iter());
 
         assert_eq!(count, 3);
-        assert_eq!(right_number_of_right_ngrams, 5);
+        assert_eq!(other_count, 5);
 
         let left = vec![(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)];
         let right = vec![(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)];
 
-        let (count, right_number_of_right_ngrams) =
-            number_of_shared_items(left.into_iter(), right.into_iter());
+        let (count, other_count) = number_of_shared_items(left.into_iter(), right.into_iter());
 
         assert_eq!(count, 5);
-        assert_eq!(right_number_of_right_ngrams, 5);
+        assert_eq!(other_count, 5);
 
         let left = vec![(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)];
         let right = vec![(6, 1), (7, 1), (8, 1), (9, 1), (10, 1)];
 
-        let (count, right_number_of_right_ngrams) =
-            number_of_shared_items(left.into_iter(), right.into_iter());
+        let (count, other_count) = number_of_shared_items(left.into_iter(), right.into_iter());
 
         assert_eq!(count, 0);
-        assert_eq!(right_number_of_right_ngrams, 5);
+        assert_eq!(other_count, 5);
     }
 }
 
@@ -140,18 +137,13 @@ mod test_number_of_shared_items {
 /// Calculate the similarity between two iterators of ngrams.
 ///
 /// # Arguments
-/// * `warp` - The warp factor to use in the similarity calculation.
+/// * `warp` - The warp value to use in the trigram similarity calculation.
+/// Use warp greater than 1.0 to increase the similarity of shorter string pairs.
 /// * `query` - The query hashmap.
 /// * `ngrams` - The iterator of ngrams.
-/// * `arity` - The arity of the ngrams.
-pub(crate) fn trigram_similarity<I, W, F>(
-    warp: Warp<W>,
-    query: &QueryHashmap,
-    ngrams: I,
-    arity: usize,
-) -> F
+pub(crate) fn trigram_similarity<I, W, F>(warp: Warp<W>, query: &QueryHashmap, ngrams: I) -> F
 where
-    I: ExactSizeIterator<Item = (usize, usize)>,
+    I: Iterator<Item = (usize, usize)>,
     F: Float,
     Warp<W>: TrigramSimilarity + One + Zero + Three + PartialOrd,
 {
@@ -160,20 +152,27 @@ where
         "Warp factor must be in the range 1 to 3"
     );
 
-    let (number_of_shared_ngrams, right_number_of_right_ngrams) =
-        number_of_shared_items(query.ngram_ids_and_counts(), ngrams);
-    let number_of_unique_shared_grams = query.total_count() + right_number_of_right_ngrams + 2
-        - 2 * arity
-        - number_of_shared_ngrams;
+    let (sharegrams, other_count) = number_of_shared_items(query.ngram_ids_and_counts(), ngrams);
 
-    debug_assert!(number_of_unique_shared_grams >= 1);
+    debug_assert!(sharegrams <= query.total_count());
+    debug_assert!(sharegrams <= other_count);
+
+    let allgrams = query.total_count() + other_count - sharegrams;
+
+    debug_assert!(allgrams >= 1);
+    debug_assert!(
+        allgrams >= sharegrams,
+        "allgrams: {}, sharegrams: {}",
+        allgrams,
+        sharegrams
+    );
 
     F::from_f64(if warp.is_one() {
-        number_of_shared_ngrams as f64 / number_of_unique_shared_grams as f64
+        sharegrams as f64 / allgrams as f64
     } else {
-        let diffgrams = number_of_unique_shared_grams as f64 - number_of_shared_ngrams as f64;
-        (warp.pow(number_of_unique_shared_grams as f64) - warp.pow(diffgrams))
-            / warp.pow(number_of_unique_shared_grams as f64)
+        let exponentiated_allgrams = warp.pow(allgrams as f64);
+        (exponentiated_allgrams - warp.pow(allgrams as f64 - sharegrams as f64))
+            / exponentiated_allgrams
     })
 }
 
@@ -220,9 +219,9 @@ pub trait TrigramSimilarity {
     fn pow(&self, value: f64) -> f64;
 
     /// Calculate the similarity between two iterators of ngrams.
-    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I, arity: usize) -> F
+    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I) -> F
     where
-        I: ExactSizeIterator<Item = (usize, usize)>,
+        I: Iterator<Item = (usize, usize)>,
         F: Float;
 }
 
@@ -233,12 +232,12 @@ impl TrigramSimilarity for Warp<i32> {
     }
 
     #[inline(always)]
-    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I, arity: usize) -> F
+    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I) -> F
     where
-        I: ExactSizeIterator<Item = (usize, usize)>,
+        I: Iterator<Item = (usize, usize)>,
         F: Float,
     {
-        trigram_similarity(self, query, ngrams, arity)
+        trigram_similarity(self, query, ngrams)
     }
 }
 
@@ -249,12 +248,12 @@ impl TrigramSimilarity for Warp<f64> {
     }
 
     #[inline(always)]
-    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I, arity: usize) -> F
+    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I) -> F
     where
-        I: ExactSizeIterator<Item = (usize, usize)>,
+        I: Iterator<Item = (usize, usize)>,
         F: Float,
     {
-        trigram_similarity(self, query, ngrams, arity)
+        trigram_similarity(self, query, ngrams)
     }
 }
 

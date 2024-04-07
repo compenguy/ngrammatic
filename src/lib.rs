@@ -38,6 +38,8 @@ pub mod prelude {
     pub use crate::traits::*;
     pub use crate::trigram_similarity::*;
     // #[cfg(feature = "webgraph")]
-    pub use crate::bi_webgraph::*;
     pub use crate::animals::*;
+    pub use crate::bi_webgraph::*;
+    pub use crate::trigram_search::*;
+    pub use crate::tfidf::*;
 }

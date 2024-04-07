@@ -159,7 +159,7 @@ where
         // number of edges from keys to ngrams, which we already have at this time (i.e. the length
         // of the cooccurrences vector).
         let mut ngram_degrees = BitFieldVec::new(
-            keys.len().next_power_of_two().ilog2() as usize,
+            (keys.len() + 1).next_power_of_two().ilog2() as usize,
             ngrams.len() + 1,
         );
 
@@ -169,7 +169,7 @@ where
         // vector of the same length as the current key_to_ngram_edges vector, and as maximum value the number
         // of ngrams in the corpus.
         let mut key_to_ngram_edges = BitFieldVec::new(
-            ngrams.len().next_power_of_two().ilog2() as usize,
+            (ngrams.len() + 1).next_power_of_two().ilog2() as usize,
             key_to_ngrams.len(),
         );
 
@@ -229,7 +229,7 @@ where
         // Finally, we can allocate and populate the gram_to_key_edges vector. This vector has the same length
         // as the cooccurrences vector.
         let mut gram_to_key_edges = BitFieldVec::new(
-            keys.len().next_power_of_two().ilog2() as usize,
+            (keys.len() + 1).next_power_of_two().ilog2() as usize,
             cooccurrences.len(),
         );
 

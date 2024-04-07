@@ -79,14 +79,14 @@ where
     }
 
     /// Returns a reference to underlying graph.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let animals: Corpus<_, TriGram<ASCIIChar>> = Corpus::from(ANIMALS);
-    /// 
+    ///
     /// let graph = animals.graph();
     /// ```
     pub fn graph(&self) -> &G {
@@ -109,16 +109,16 @@ where
 {
     #[inline(always)]
     /// Returns the number of keys in the corpus.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let animals: Corpus<_, TriGram<ASCIIChar>> = Corpus::from(ANIMALS);
-    /// 
+    ///
     /// let number_of_keys = animals.number_of_keys();
-    /// 
+    ///
     /// assert_eq!(number_of_keys, 699);
     /// ```
     pub fn number_of_keys(&self) -> usize {
@@ -127,16 +127,16 @@ where
 
     #[inline(always)]
     /// Returns the number of ngrams in the corpus.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let animals: Corpus<_, TriGram<ASCIIChar>> = Corpus::from(ANIMALS);
-    /// 
+    ///
     /// let number_of_ngrams = animals.number_of_ngrams();
-    /// 
+    ///
     /// assert_eq!(number_of_ngrams, 2530);
     /// ```
     pub fn number_of_ngrams(&self) -> usize {
@@ -148,20 +148,23 @@ where
     ///
     /// # Arguments
     /// * `key_id` - The id of the key to get.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let animals: Corpus<_, TriGram<ASCIIChar>> = Corpus::from(ANIMALS);
-    /// 
-    /// assert_eq!(animals.key_from_id(0), &"Aardvark");
-    /// assert_eq!(animals.key_from_id(1), &"Abyssinian");
-    /// assert_eq!(animals.key_from_id(20), &"Alligator");
+    ///
+    /// assert_eq!(animals.key_from_id(0), "Aardvark");
+    /// assert_eq!(animals.key_from_id(1), "Abyssinian");
+    /// assert_eq!(animals.key_from_id(20), "Alligator");
     /// ```
-    pub fn key_from_id(&self, key_id: usize) -> &KS::K {
-        &self.keys[key_id]
+    pub fn key_from_id(
+        &self,
+        key_id: usize,
+    ) -> &<<KS as keys::Keys<NG>>::K as key::Key<NG, <NG as gram::Ngram>::G>>::Ref {
+        self.keys.get_ref(key_id)
     }
 
     #[inline(always)]
@@ -169,17 +172,17 @@ where
     ///
     /// # Arguments
     /// * `ngram_id` - The id of the ngram to get.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let animals: Corpus<_, TriGram<char>> = Corpus::from(ANIMALS);
-    /// 
+    ///
     /// assert_eq!(animals.ngram_from_id(0), ['\0', '\0', 'A']);
     /// assert_eq!(animals.ngram_from_id(1), ['\0', '\0', 'B']);
-    /// assert_eq!(animals.ngram_from_id(20),['\0', '\0', 'U']);
+    /// assert_eq!(animals.ngram_from_id(20), ['\0', '\0', 'U']);
     /// ```
     pub fn ngram_from_id(&self, ngram_id: usize) -> NG {
         unsafe { self.ngrams.get_unchecked(ngram_id) }
@@ -296,7 +299,9 @@ where
     pub fn keys_from_ngram_id(
         &self,
         ngram_id: usize,
-    ) -> impl ExactSizeIterator<Item = &KS::K> + '_ {
+    ) -> impl ExactSizeIterator<
+        Item = &<<KS as keys::Keys<NG>>::K as key::Key<NG, <NG as gram::Ngram>::G>>::Ref,
+    > + '_ {
         self.key_ids_from_ngram_id(ngram_id)
             .map(move |key_id| self.key_from_id(key_id))
     }
@@ -319,7 +324,14 @@ where
     ///
     /// # Returns
     /// An iterator over the keys associated to the ngram.
-    pub fn keys_from_ngram(&self, ngram: NG) -> Option<impl ExactSizeIterator<Item = &KS::K> + '_> {
+    pub fn keys_from_ngram(
+        &self,
+        ngram: NG,
+    ) -> Option<
+        impl ExactSizeIterator<
+                Item = &<<KS as keys::Keys<NG>>::K as key::Key<NG, <NG as gram::Ngram>::G>>::Ref,
+            > + '_,
+    > {
         self.ngram_id_from_ngram(ngram)
             .map(move |ngram_id| self.keys_from_ngram_id(ngram_id))
     }

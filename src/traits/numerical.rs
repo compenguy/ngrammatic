@@ -27,21 +27,21 @@ pub trait Three {
 /// Trait defining a value between one and three.
 pub trait BetweenOneAndThree: PartialOrd + One + Three + Sized {
     /// Check if the value is between one and three.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// The following example demonstrates how to check if a value is between one and three:
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let value = 2;
     /// assert!(value.is_between_one_and_three());
     /// ```
-    /// 
+    ///
     /// The following example demonstrates how to check if a value is not between one and three:
     /// ```rust
     /// use ngrammatic::prelude::*;
-    /// 
+    ///
     /// let value = 4;
     /// assert!(!value.is_between_one_and_three());
     /// ```

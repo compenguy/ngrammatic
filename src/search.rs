@@ -9,6 +9,11 @@ use std::iter::{Copied, Map};
 use crate::traits::key::Key;
 use crate::{Corpus, Float, Keys, Ngram, SearchResult, WeightedBipartiteGraph};
 
+#[cfg(feature = "mem_dbg")]
+use mem_dbg::{MemDbg, MemSize};
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
+#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
 /// A struct representing a query hashmap, with several values precomputed.
 pub struct QueryHashmap {
     /// The hashmap with the identified ngram ids as keys and their counts as values.
@@ -25,6 +30,32 @@ pub type ParNgramIds<'a> =
 
 /// A sequential iterator over the identified ngram ids.
 pub type NgramIds<'a> = Map<Iter<'a, (usize, usize)>, fn(&(usize, usize)) -> usize>;
+
+/// Test that trigram_similarity works correctly.
+#[cfg(test)]
+mod test_trigram_similarity {
+    use crate::{TrigramSimilarity, Warp};
+
+    use super::*;
+
+    #[test]
+    /// Test that the trigram similarity of a series with itself is 1.
+    fn test_simmetric_trigram_similarity() {
+        let ngrams = vec![(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)];
+        let total_identified_count = ngrams.iter().map(|(_, count)| count).sum();
+        let query = QueryHashmap {
+            ngram_ids: ngrams.clone(),
+            total_unknown_count: 0,
+            total_identified_count,
+        };
+
+        for warp in 1..=3 {
+            let warp = Warp::try_from(warp).unwrap();
+            let similarity: f64 = warp.trigram_similarity(&query, ngrams.iter().copied());
+            assert_eq!(similarity, 1.0);
+        }
+    }
+}
 
 impl QueryHashmap {
     #[inline(always)]
@@ -80,6 +111,129 @@ mod tests {
         );
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+/// The maximum degree of the ngrams to consider in the search.
+/// 
+/// Ngrams with a degree that is exceeding this value will be excluded from the search.
+/// The reasoning is, when an ngram is too common, it does not provide much information
+/// about the rarity of the key, while adding a significant amount of computation time
+/// since it will be present in a large number of keys.
+pub enum MaxNgramDegree {
+    /// Leave it to the default value, which is either 100 or 1/10 of the number of keys.
+    Default,
+    /// Do not exclude any ngrams, no matter how frequent they are.
+    None,
+    /// Exclude ngrams with counts above the provided value.
+    Custom(usize),
+    /// Exclude ngrams with counts above a percentage of the total number of keys.
+    Percentage(f64),
+}
+
+impl MaxNgramDegree {
+    #[inline(always)]
+    /// Returns the maximum number of ngrams to consider in the search.
+    /// 
+    /// # Arguments
+    /// * `number_of_keys` - The number of keys in the corpus.
+    fn max_ngram_degree(&self, number_of_keys: usize) -> usize {
+        match self {
+            Self::Default => {
+                if number_of_keys < 1_000 {
+                    100
+                } else {
+                    number_of_keys / 10
+                }
+            }
+            Self::None => usize::MAX,
+            Self::Custom(value) => *value,
+            Self::Percentage(percentage) => (number_of_keys as f64 * percentage) as usize,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+/// Struct providing a search configuration.
+pub(crate) struct SearchConfig<F: Float=f64> {
+    /// The maximum number of results to return.
+    maximum_number_of_results: usize,
+    /// The minimum similarity value for a result to be included in the output.
+    minimum_similarity_score: F,
+    /// The maximum number of ngrams to consider in the search.
+    max_ngram_degree: MaxNgramDegree,
+}
+
+impl<F: Float> Default for SearchConfig<F> {
+    #[inline(always)]
+    /// Returns the default search configuration.
+    fn default() -> Self {
+        Self {
+            maximum_number_of_results: 10,
+            minimum_similarity_score: F::from_f64(0.7_f64),
+            max_ngram_degree: MaxNgramDegree::Default,
+        }
+    }
+}
+
+impl<F: Float> SearchConfig<F> {
+    #[inline(always)]
+    /// Returns the maximum number of ngrams to consider in the search.
+    /// 
+    /// # Arguments
+    /// * `number_of_keys` - The number of keys in the corpus.
+    pub(crate) fn max_ngram_degree(&self, number_of_keys: usize) -> usize {
+        self.max_ngram_degree.max_ngram_degree(number_of_keys)
+    }
+
+    #[inline(always)]
+    /// Returns the minimum similarity value for a result to be included in the output.
+    pub fn minimum_similarity_score(&self) -> F {
+        self.minimum_similarity_score
+    }
+
+    #[inline(always)]
+    /// Returns the maximum number of results to return.
+    pub fn maximum_number_of_results(&self) -> usize {
+        self.maximum_number_of_results
+    }
+
+    #[inline(always)]
+    /// Set the minimum similarity value for a result to be included in the output.
+    /// 
+    /// # Arguments
+    /// * `minimum_similarity_score` - The minimum similarity value for a result to be included in the output.
+    pub fn set_minimum_similarity_score(mut self, minimum_similarity_score: F) -> Result<Self, &'static str> {
+        if minimum_similarity_score < F::from_f64(0.0) {
+            return Err("The minimum similarity score must be greater than or equal to 0.0");
+        }
+        if minimum_similarity_score.is_nan() {
+            return Err("The minimum similarity score must not be NaN");
+        }
+        self.minimum_similarity_score = minimum_similarity_score;
+        Ok(self)
+    }
+    
+    #[inline(always)]
+    /// Set the maximum number of results to return.
+    /// 
+    /// # Arguments
+    /// * `maximum_number_of_results` - The maximum number of results to return.
+    pub fn set_maximum_number_of_results(mut self, maximum_number_of_results: usize) -> Self {
+        self.maximum_number_of_results = maximum_number_of_results;
+        self
+    }
+
+    #[inline(always)]
+    /// Set the maximum degree of the ngrams to consider in the search.
+    /// 
+    /// # Arguments
+    /// * `max_ngram_degree` - The maximum degree of the ngrams to consider in the search.
+    pub fn set_max_ngram_degree(mut self, max_ngram_degree: MaxNgramDegree) -> Self {
+        self.max_ngram_degree = max_ngram_degree;
+        self
+    }
+}
+
 
 impl<KS, NG, K, G> Corpus<KS, NG, K, G>
 where
@@ -141,25 +295,23 @@ where
     ///
     /// # Arguments
     /// * `key` - The key to search for in the corpus
-    /// * `threshold` - The minimum similarity value for a result to be included in the
-    /// output. This value should be in the range 0.0 to 1.0.
-    /// * `limit` - The maximum number of results to return.
-    /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
+    /// * `config` - The configuration for the search.
     /// * `similarity` - A function that computes the similarity between the query hashmap
-    pub(crate) fn search<F: Float>(
+    pub(crate) fn search<KR, F: Float>(
         &self,
-        key: &KS::K,
-        threshold: F,
-        limit: usize,
-        max_counts: Option<usize>,
+        key: KR,
+        config: SearchConfig<F>,
         similarity: impl Fn(&QueryHashmap, NgramIdsAndCooccurrences<'_, G>) -> F,
-    ) -> Vec<SearchResult<'_, KS::K, F>> {
+    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    where
+        KR: AsRef<K>,
+    {
         let key: &K = key.as_ref();
         let query_hashmap = self.ngram_ids_from_ngram_counts(key.counts());
+
         let query_hashmap_ref = &query_hashmap;
-        let mut heap = SearchResultsHeap::new(limit);
-        let max_counts =
-            max_counts.unwrap_or_else(|| if self.keys.len() < 1_000 { 100 } else { self.keys.len() / 10 });
+        let mut heap = SearchResultsHeap::new(config.maximum_number_of_results());
+        let max_ngram_degree = config.max_ngram_degree(self.number_of_keys());
 
         // We identify all of the ngrams to be considered in the search, which
         // are the set of ngrams that contain any of the grams in the ngram
@@ -169,7 +321,7 @@ where
             .for_each(|(ngram_number, ngram_id)| {
                 // If this term is too common, we can skip it as it does not provide
                 // much information associated to the rarity of this term.
-                if self.number_of_keys_from_ngram_id(ngram_id) > max_counts {
+                if self.number_of_keys_from_ngram_id(ngram_id) > max_ngram_degree {
                     return;
                 }
                 self.key_ids_from_ngram_id(ngram_id).for_each(|key_id| {
@@ -187,7 +339,7 @@ where
                         query_hashmap_ref,
                         self.ngram_ids_and_cooccurrences_from_key(key_id),
                     );
-                    if score >= threshold {
+                    if score >= config.minimum_similarity_score() {
                         heap.push(SearchResult::new(self.key_from_id(key_id), score));
                     }
                 });

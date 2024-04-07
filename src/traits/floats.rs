@@ -26,6 +26,11 @@ pub trait Float:
 
     /// Converts a given f64 to the float type.
     fn from_f64(value: f64) -> Self;
+
+    /// Returns whether the current value is a NaN.
+    fn is_nan(self) -> bool {
+        self.to_f64().is_nan()
+    }
 }
 
 #[cfg(feature = "half")]

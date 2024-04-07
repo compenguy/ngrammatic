@@ -142,13 +142,16 @@ impl AdaptativeVector {
     /// # Arguments
     /// * `capacity` - The capacity of the vector.
     /// * `value_type` - The type of the values to store in the vector.
-    /// 
+    ///
     /// # Implementation details
     /// By default, the adaptative vector starts with the
     /// smallest possible data type, i.e. `u8`. As soon as
     /// the data type does not fit any of the provided values,
     /// the vector is converted to the next bigger data type.
-    pub(crate) fn with_capacity<A>(capacity: usize, value_type: A) -> Self where A: Into<AdaptativeVectorValue> {
+    pub(crate) fn with_capacity<A>(capacity: usize, value_type: A) -> Self
+    where
+        A: Into<AdaptativeVectorValue>,
+    {
         match AdaptativeVectorValue::smallest(value_type) {
             AdaptativeVectorValue::U8(_) => AdaptativeVector::U8(Vec::with_capacity(capacity)),
             AdaptativeVectorValue::U16(_) => AdaptativeVector::U16(Vec::with_capacity(capacity)),
@@ -384,7 +387,8 @@ impl AdaptativeVector {
         use sux::bits::AtomicBitFieldVec;
         use sux::traits::bit_field_slice::AtomicHelper;
 
-        let number_of_bits_to_represent_maximum_value = maximum_value.next_power_of_two().ilog2();
+        let number_of_bits_to_represent_maximum_value = (maximum_value + 1).next_power_of_two().ilog2();
+        
         unsafe {
             let bit_field = AtomicBitFieldVec::new_uninit(
                 number_of_bits_to_represent_maximum_value as usize,
@@ -446,7 +450,8 @@ impl AdaptativeVector {
 
     /// Converts the vector into a bit field vector.
     pub fn into_bitvec(self, maximum_value: usize) -> BitFieldVec {
-        let number_of_bits_to_represent_maximum_value = maximum_value.next_power_of_two().ilog2();
+        let number_of_bits_to_represent_maximum_value = (maximum_value + 1).next_power_of_two().ilog2();
+        
         unsafe {
             let mut bit_field = BitFieldVec::new_uninit(
                 number_of_bits_to_represent_maximum_value as usize,
@@ -455,22 +460,22 @@ impl AdaptativeVector {
             match self {
                 AdaptativeVector::U8(vector) => {
                     for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set_unchecked(index, value as usize);
+                        bit_field.set(index, value as usize);
                     }
                 }
                 AdaptativeVector::U16(vector) => {
                     for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set_unchecked(index, value as usize);
+                        bit_field.set(index, value as usize);
                     }
                 }
                 AdaptativeVector::U32(vector) => {
                     for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set_unchecked(index, value as usize);
+                        bit_field.set(index, value as usize);
                     }
                 }
                 AdaptativeVector::U64(vector) => {
                     for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set_unchecked(index, value as usize);
+                        bit_field.set(index, value as usize);
                     }
                 }
             }

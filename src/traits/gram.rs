@@ -2,6 +2,7 @@
 
 use std::{
     cell::UnsafeCell,
+    fmt::Debug,
     hash::Hash,
     iter::Copied,
     ops::{Index, IndexMut},
@@ -334,6 +335,7 @@ pub trait Ngram:
     + Eq
     + Send
     + Sync
+    + Debug
     + PartialEq
     + Hash
     + Index<usize, Output = <Self as Ngram>::G>
@@ -344,6 +346,13 @@ pub trait Ngram:
 
     /// The arity of the ngram.
     const ARITY: usize;
+
+    /// The padding type. It will generally be an
+    /// array of one unit smaller than the arity of Self.
+    type Pad: IntoIterator<Item = Self::G>;
+
+    /// The padding value.
+    const PADDING: Self::Pad;
 
     #[cfg(feature = "mem_dbg")]
     /// The type of structure to use to store the ngrams.
@@ -376,6 +385,9 @@ impl Ngram for MonoGram<u8> {
     type G = u8;
     type SortedStorage = EliasFano<SelectFixed2>;
 
+    type Pad = [Self::G; 0];
+    const PADDING: Self::Pad = [Self::G::PADDING; 0];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         // Do nothing.
@@ -386,6 +398,9 @@ impl Ngram for MonoGram<ASCIIChar> {
     const ARITY: usize = 1;
     type G = ASCIIChar;
     type SortedStorage = EliasFano<SelectFixed2>;
+
+    type Pad = [Self::G; 0];
+    const PADDING: Self::Pad = [Self::G::PADDING; 0];
 
     #[inline(always)]
     fn rotate_left(&mut self) {
@@ -398,6 +413,9 @@ impl Ngram for MonoGram<char> {
     type G = char;
     type SortedStorage = EliasFano<SelectFixed2>;
 
+    type Pad = [Self::G; 0];
+    const PADDING: Self::Pad = [Self::G::PADDING; 0];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         // Do nothing.
@@ -408,6 +426,9 @@ impl Ngram for BiGram<u8> {
     const ARITY: usize = 2;
     type G = u8;
     type SortedStorage = EliasFano<SelectFixed2>;
+
+    type Pad = [Self::G; 1];
+    const PADDING: Self::Pad = [Self::G::PADDING; 1];
 
     #[inline(always)]
     fn rotate_left(&mut self) {
@@ -420,6 +441,9 @@ impl Ngram for BiGram<ASCIIChar> {
     type G = ASCIIChar;
     type SortedStorage = EliasFano<SelectFixed2>;
 
+    type Pad = [Self::G; 1];
+    const PADDING: Self::Pad = [Self::G::PADDING; 1];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         <[ASCIIChar]>::rotate_left(self, 1);
@@ -430,6 +454,9 @@ impl Ngram for BiGram<char> {
     const ARITY: usize = 2;
     type G = char;
     type SortedStorage = EliasFano<SelectFixed2>;
+
+    type Pad = [Self::G; 1];
+    const PADDING: Self::Pad = [Self::G::PADDING; 1];
 
     #[inline(always)]
     fn rotate_left(&mut self) {
@@ -442,6 +469,9 @@ impl Ngram for TriGram<u8> {
     type G = u8;
     type SortedStorage = EliasFano<SelectFixed2>;
 
+    type Pad = [Self::G; 2];
+    const PADDING: Self::Pad = [Self::G::PADDING; 2];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         <[u8]>::rotate_left(self, 1);
@@ -452,6 +482,9 @@ impl Ngram for TriGram<ASCIIChar> {
     const ARITY: usize = 3;
     type G = ASCIIChar;
     type SortedStorage = EliasFano<SelectFixed2>;
+
+    type Pad = [Self::G; 2];
+    const PADDING: Self::Pad = [Self::G::PADDING; 2];
 
     #[inline(always)]
     fn rotate_left(&mut self) {
@@ -464,6 +497,9 @@ impl Ngram for TriGram<char> {
     type G = char;
     type SortedStorage = Vec<Self>;
 
+    type Pad = [Self::G; 2];
+    const PADDING: Self::Pad = [Self::G::PADDING; 2];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         <[char]>::rotate_left(self, 1);
@@ -474,6 +510,9 @@ impl Ngram for TetraGram<u8> {
     const ARITY: usize = 4;
     type G = u8;
     type SortedStorage = EliasFano<SelectFixed2>;
+
+    type Pad = [Self::G; 3];
+    const PADDING: Self::Pad = [Self::G::PADDING; 3];
 
     #[inline(always)]
     fn rotate_left(&mut self) {
@@ -486,6 +525,9 @@ impl Ngram for TetraGram<ASCIIChar> {
     type G = ASCIIChar;
     type SortedStorage = EliasFano<SelectFixed2>;
 
+    type Pad = [Self::G; 3];
+    const PADDING: Self::Pad = [Self::G::PADDING; 3];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         <[ASCIIChar]>::rotate_left(self, 1);
@@ -496,6 +538,9 @@ impl Ngram for TetraGram<char> {
     const ARITY: usize = 4;
     type G = char;
     type SortedStorage = Vec<Self>;
+
+    type Pad = [Self::G; 3];
+    const PADDING: Self::Pad = [Self::G::PADDING; 3];
 
     #[inline(always)]
     fn rotate_left(&mut self) {
@@ -508,6 +553,9 @@ impl Ngram for PentaGram<u8> {
     type G = u8;
     type SortedStorage = EliasFano<SelectFixed2>;
 
+    type Pad = [Self::G; 4];
+    const PADDING: Self::Pad = [Self::G::PADDING; 4];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         <[u8]>::rotate_left(self, 1);
@@ -518,6 +566,9 @@ impl Ngram for PentaGram<ASCIIChar> {
     const ARITY: usize = 5;
     type G = ASCIIChar;
     type SortedStorage = EliasFano<SelectFixed2>;
+
+    type Pad = [Self::G; 4];
+    const PADDING: Self::Pad = [Self::G::PADDING; 4];
 
     #[inline(always)]
     fn rotate_left(&mut self) {
@@ -530,6 +581,9 @@ impl Ngram for PentaGram<char> {
     type G = char;
     type SortedStorage = Vec<Self>;
 
+    type Pad = [Self::G; 4];
+    const PADDING: Self::Pad = [Self::G::PADDING; 4];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         <[char]>::rotate_left(self, 1);
@@ -540,6 +594,9 @@ impl Ngram for HexaGram<u8> {
     const ARITY: usize = 6;
     type G = u8;
     type SortedStorage = EliasFano<SelectFixed2>;
+
+    type Pad = [Self::G; 5];
+    const PADDING: Self::Pad = [Self::G::PADDING; 5];
 
     #[inline(always)]
     fn rotate_left(&mut self) {
@@ -552,6 +609,9 @@ impl Ngram for HexaGram<ASCIIChar> {
     type G = ASCIIChar;
     type SortedStorage = EliasFano<SelectFixed2>;
 
+    type Pad = [Self::G; 5];
+    const PADDING: Self::Pad = [Self::G::PADDING; 5];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         <[ASCIIChar]>::rotate_left(self, 1);
@@ -562,6 +622,9 @@ impl Ngram for HexaGram<char> {
     const ARITY: usize = 6;
     type G = char;
     type SortedStorage = Vec<Self>;
+
+    type Pad = [Self::G; 5];
+    const PADDING: Self::Pad = [Self::G::PADDING; 5];
 
     #[inline(always)]
     fn rotate_left(&mut self) {
@@ -574,6 +637,9 @@ impl Ngram for HeptaGram<u8> {
     type G = u8;
     type SortedStorage = EliasFano<SelectFixed2>;
 
+    type Pad = [Self::G; 6];
+    const PADDING: Self::Pad = [Self::G::PADDING; 6];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         <[u8]>::rotate_left(self, 1);
@@ -584,6 +650,9 @@ impl Ngram for HeptaGram<ASCIIChar> {
     const ARITY: usize = 7;
     type G = ASCIIChar;
     type SortedStorage = EliasFano<SelectFixed2>;
+
+    type Pad = [Self::G; 6];
+    const PADDING: Self::Pad = [Self::G::PADDING; 6];
 
     #[inline(always)]
     fn rotate_left(&mut self) {
@@ -596,6 +665,9 @@ impl Ngram for HeptaGram<char> {
     type G = char;
     type SortedStorage = Vec<Self>;
 
+    type Pad = [Self::G; 6];
+    const PADDING: Self::Pad = [Self::G::PADDING; 6];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         <[char]>::rotate_left(self, 1);
@@ -606,6 +678,9 @@ impl Ngram for OctaGram<u8> {
     const ARITY: usize = 8;
     type G = u8;
     type SortedStorage = EliasFano<SelectFixed2>;
+
+    type Pad = [Self::G; 7];
+    const PADDING: Self::Pad = [Self::G::PADDING; 7];
 
     #[inline(always)]
     fn rotate_left(&mut self) {
@@ -618,84 +693,25 @@ impl Ngram for OctaGram<ASCIIChar> {
     type G = ASCIIChar;
     type SortedStorage = EliasFano<SelectFixed2>;
 
+    type Pad = [Self::G; 7];
+    const PADDING: Self::Pad = [Self::G::PADDING; 7];
+
     #[inline(always)]
     fn rotate_left(&mut self) {
         <[ASCIIChar]>::rotate_left(self, 1);
     }
 }
 
-/// Trait defining a paddable ngram.
-pub trait PaddableNgram: Ngram
-where
-    <Self as Ngram>::G: Paddable,
-{
-    /// The padding type. It will generally be an
-    /// array of one unit smaller than the arity of Self.
-    type Pad: IntoIterator<Item = Self::G>;
-    /// The padding value.
-    const PADDING: Self::Pad;
-}
+impl Ngram for OctaGram<char> {
+    const ARITY: usize = 8;
+    type G = char;
+    type SortedStorage = Vec<Self>;
 
-impl<G: Paddable + Gram> PaddableNgram for MonoGram<G>
-where
-    Self: Ngram<G = G>,
-{
-    type Pad = [G; 0];
-    const PADDING: Self::Pad = [];
-}
+    type Pad = [Self::G; 7];
+    const PADDING: Self::Pad = [Self::G::PADDING; 7];
 
-impl<G: Paddable + Gram> PaddableNgram for BiGram<G>
-where
-    Self: Ngram<G = G>,
-{
-    type Pad = MonoGram<G>;
-    const PADDING: Self::Pad = [G::PADDING];
-}
-
-impl<G: Paddable + Gram> PaddableNgram for TriGram<G>
-where
-    Self: Ngram<G = G>,
-{
-    type Pad = BiGram<G>;
-    const PADDING: Self::Pad = [G::PADDING; 2];
-}
-
-impl<G: Paddable + Gram> PaddableNgram for TetraGram<G>
-where
-    Self: Ngram<G = G>,
-{
-    type Pad = TriGram<G>;
-    const PADDING: Self::Pad = [G::PADDING; 3];
-}
-
-impl<G: Paddable + Gram> PaddableNgram for PentaGram<G>
-where
-    Self: Ngram<G = G>,
-{
-    type Pad = TetraGram<G>;
-    const PADDING: Self::Pad = [G::PADDING; 4];
-}
-
-impl<G: Paddable + Gram> PaddableNgram for HexaGram<G>
-where
-    Self: Ngram<G = G>,
-{
-    type Pad = PentaGram<G>;
-    const PADDING: Self::Pad = [G::PADDING; 5];
-}
-
-impl<G: Paddable + Gram> PaddableNgram for HeptaGram<G>
-where
-    Self: Ngram<G = G>,
-{
-    type Pad = HexaGram<G>;
-    const PADDING: Self::Pad = [G::PADDING; 6];
-}
-
-impl<G: Paddable + Gram> PaddableNgram for OctaGram<G>
-where
-    Self: Ngram<G = G>,
-{
-    type Pad = HeptaGram<G>;
-    const PADDING: Self::Pad = [G::PADDING; 7];
+    #[inline(always)]
+    fn rotate_left(&mut self) {
+        <[char]>::rotate_left(self, 1);
+    }
 }
