@@ -70,7 +70,7 @@ impl<const N: usize, NG: Ngram, K: Key<NG, NG::G>> Keys<NG> for &[K; N] {
     type IterKeys<'a> = std::slice::Iter<'a, K> where K: 'a, Self: 'a;
 
     fn len(&self) -> usize {
-        <[K]>::len(*self)
+        <[K; N]>::len(*self)
     }
 
     fn get_ref(&self, index: usize) -> &<Self::K as Key<NG, <NG as Ngram>::G>>::Ref {
@@ -78,7 +78,7 @@ impl<const N: usize, NG: Ngram, K: Key<NG, NG::G>> Keys<NG> for &[K; N] {
     }
 
     fn iter(&self) -> Self::IterKeys<'_> {
-        <[K]>::iter(*self)
+        <[K; N]>::iter(*self)
     }
 }
 
@@ -104,7 +104,7 @@ impl<NG: Ngram, K: Key<NG, NG::G>> Keys<NG> for &[K] {
     type IterKeys<'a> = std::slice::Iter<'a, K> where K: 'a, Self: 'a;
 
     fn len(&self) -> usize {
-        <[K]>::len(*self)
+        <[K]>::len(self)
     }
 
     fn get_ref(&self, index: usize) -> &<Self::K as Key<NG, <NG as Ngram>::G>>::Ref {

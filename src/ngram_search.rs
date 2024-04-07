@@ -88,9 +88,9 @@ impl<W: Copy, F: Float> NgramSearchConfig<W, F> {
     ///
     /// # Arguments
     /// * `warp` - The warp factor to use in the trigram similarity calculation.
-    pub fn set_warp<W2: Copy>(self, warp: W2) -> Result<NgramSearchConfig<W2, F>, &'static str>
+    pub fn set_warp<W2>(self, warp: W2) -> Result<NgramSearchConfig<W2, F>, &'static str>
     where
-        W2: TryInto<Warp<W2>, Error = &'static str>,
+        W2: Copy + TryInto<Warp<W2>, Error = &'static str>,
     {
         Ok(NgramSearchConfig {
             search_config: self.search_config,
@@ -209,7 +209,7 @@ where
         &self,
         key: KR,
         mut config: NgramSearchConfig<i32, F>,
-    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    ) -> SearchResults<'_, KS, NG, F>
     where
         KR: AsRef<K>,
     {
@@ -243,7 +243,7 @@ where
         &self,
         key: KR,
         config: NgramSearchConfig<W, F>,
-    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    ) -> SearchResults<'_, KS, NG, F>
     where
         KR: AsRef<K>,
         Warp<W>: TrigramSimilarity + Copy,
@@ -297,12 +297,12 @@ where
         &self,
         key: KR,
         mut config: NgramSearchConfig<i32, F>,
-    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    ) -> SearchResults<'_, KS, NG, F>
     where
         KR: AsRef<K> + Send + Sync,
     {
         config = config.set_warp(2).unwrap();
-        self.ngram_par_search_with_warp(key, config.into())
+        self.ngram_par_search_with_warp(key, config)
     }
 
     #[inline(always)]
@@ -329,14 +329,14 @@ where
     ///
     /// assert_eq!(results[0].key(), "Cat");
     /// ```
-    pub fn ngram_par_search_with_warp<KR, W: Copy, F: Float>(
+    pub fn ngram_par_search_with_warp<KR, W, F: Float>(
         &self,
         key: KR,
         config: NgramSearchConfig<W, F>,
-    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    ) -> SearchResults<'_, KS, NG, F>
     where
         KR: AsRef<K> + Send + Sync,
-        W: TryInto<Warp<W>, Error = &'static str>,
+        W: Copy + TryInto<Warp<W>, Error = &'static str>,
         Warp<W>: TrigramSimilarity + Copy + Send + Sync,
     {
         let warp: Warp<W> = config.warp();

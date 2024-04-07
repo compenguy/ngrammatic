@@ -1,10 +1,14 @@
 //! Contains the `SearchResult` struct, which holds a fuzzy match search result string, and its associated similarity to the query text.
 
-use crate::traits::Float;
+use crate::prelude::*;
 use std::cmp::{Ordering, Reverse};
 
 #[cfg(feature = "mem_dbg")]
 use mem_dbg::{MemDbg, MemSize};
+
+/// Holds a collection of search results.
+pub type SearchResults<'a, KS, NG, F> =
+    Vec<SearchResult<'a, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>;
 
 /// Holds a fuzzy match search result string, and its associated similarity
 /// to the query text.

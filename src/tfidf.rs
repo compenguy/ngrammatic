@@ -135,9 +135,9 @@ impl<W: Copy, F: Float> TFIDFSearchConfig<W, F> {
     ///
     /// # Arguments
     /// * `warp` - The warp factor to use in the trigram similarity calculation.
-    pub fn set_warp<W2: Copy>(self, warp: W2) -> Result<TFIDFSearchConfig<W2, F>, &'static str>
+    pub fn set_warp<W2>(self, warp: W2) -> Result<TFIDFSearchConfig<W2, F>, &'static str>
     where
-        W2: TryInto<Warp<W2>, Error = &'static str>,
+        W2: Copy + TryInto<Warp<W2>, Error = &'static str>,
     {
         Ok(TFIDFSearchConfig {
             search_config: self.search_config.set_warp(warp)?,
@@ -293,7 +293,7 @@ where
         &self,
         key: KR,
         config: TFIDFSearchConfig<i32, F>,
-    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    ) -> SearchResults<'_, KS, NG, F>
     where
         KR: AsRef<K>,
     {
@@ -333,14 +333,14 @@ where
     ///
     /// assert_eq!(results[0].key(), "Cat");
     /// ```
-    pub fn warped_tf_idf_search<KR, W: Copy, F: Float>(
+    pub fn warped_tf_idf_search<KR, W, F: Float>(
         &self,
         key: KR,
         config: TFIDFSearchConfig<W, F>,
-    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    ) -> SearchResults<'_, KS, NG, F>
     where
         KR: AsRef<K>,
-        W: TryInto<Warp<W>, Error = &'static str>,
+        W: Copy + TryInto<Warp<W>, Error = &'static str>,
         Warp<W>: TrigramSimilarity + Copy,
     {
         let k1 = config.k1().to_f64();
@@ -402,7 +402,7 @@ where
         &self,
         key: KR,
         config: TFIDFSearchConfig<i32, F>,
-    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    ) -> SearchResults<'_, KS, NG, F>
     where
         KR: AsRef<K> + Send + Sync,
     {
@@ -439,14 +439,14 @@ where
     ///
     /// assert_eq!(results[0].key(), "Cat");
     /// ```
-    pub fn warped_tf_idf_par_search<KR, W: Copy, F: Float>(
+    pub fn warped_tf_idf_par_search<KR, W, F: Float>(
         &self,
         key: KR,
         config: TFIDFSearchConfig<W, F>,
-    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    ) -> SearchResults<'_, KS, NG, F>
     where
         KR: AsRef<K> + Send + Sync,
-        W: TryInto<Warp<W>, Error = &'static str>,
+        W: Copy + TryInto<Warp<W>, Error = &'static str>,
         Warp<W>: TrigramSimilarity + Copy + Send + Sync,
     {
         let k1 = config.k1().to_f64();

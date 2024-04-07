@@ -7,6 +7,7 @@ use std::iter::Zip;
 
 #[cfg(feature = "mem_dbg")]
 use mem_dbg::{MemDbg, MemSize};
+
 use sux::bits::BitFieldVec;
 use sux::dict::elias_fano::EliasFanoIterator;
 use sux::dict::EliasFano;

@@ -1,5 +1,6 @@
 //! This module contains the search functionality for the `Corpus` struct.
 use crate::NgramIdsAndCooccurrences;
+use crate::SearchResults;
 use crate::SearchResultsHeap;
 use core::slice::Iter;
 use fxhash::FxBuildHasher;
@@ -302,7 +303,7 @@ where
         key: KR,
         config: SearchConfig<F>,
         similarity: impl Fn(&QueryHashmap, NgramIdsAndCooccurrences<'_, G>) -> F,
-    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>
+    ) -> SearchResults<'_, KS, NG, F>
     where
         KR: AsRef<K>,
     {

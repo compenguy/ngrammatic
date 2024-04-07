@@ -4,6 +4,7 @@ use crate::search::QueryHashmap;
 use crate::search::SearchConfig;
 use crate::traits::key::Key;
 use crate::NgramIdsAndCooccurrences;
+use crate::SearchResults;
 use crate::SearchResultsHeap;
 use crate::{Corpus, Float, Keys, Ngram, SearchResult, WeightedBipartiteGraph};
 use rayon::prelude::*;
@@ -34,7 +35,10 @@ where
         key: KR,
         config: SearchConfig<F>,
         similarity: impl Fn(&QueryHashmap, NgramIdsAndCooccurrences<'_, G>) -> F + Send + Sync,
-    ) -> Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>> where KR: AsRef<K> + Send + Sync{
+    ) -> SearchResults<'_, KS, NG, F>
+    where
+        KR: AsRef<K> + Send + Sync,
+    {
         let key: &K = key.as_ref();
         let query_hashmap = self.ngram_ids_from_ngram_counts(key.counts());
         let query_hashmap_ref = &query_hashmap;
