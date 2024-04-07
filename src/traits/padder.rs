@@ -107,9 +107,7 @@ where
     ///     ]
     /// );
     /// ```
-    fn right_padding<NG>(
-        self,
-    ) -> Chain<Self, <<NG as Ngram>::Pad as IntoIterator>::IntoIter>
+    fn right_padding<NG>(self) -> Chain<Self, <<NG as Ngram>::Pad as IntoIterator>::IntoIter>
     where
         NG: Ngram<G = Self::Item>,
     {

@@ -22,7 +22,11 @@ pub trait FromGraphRange {
     type Iter<'a>: Iterator;
 
     /// Returns a new struct from the graph and the range of nodes to iterate over.
-    fn from_graph_range(graph: &WeightedBitFieldBipartiteGraph, start: usize, end: usize) -> Self::Iter<'_>;
+    fn from_graph_range(
+        graph: &WeightedBitFieldBipartiteGraph,
+        start: usize,
+        end: usize,
+    ) -> Self::Iter<'_>;
 }
 
 /// A struct handling the offsetting of ngram nodes in the WeightedBitFieldBipartiteGraph.
@@ -78,7 +82,11 @@ pub struct RaggedListIter<'a> {
 impl<'a> FromGraphRange for RaggedListIter<'a> {
     type Iter<'b> = RaggedListIter<'b>;
 
-    fn from_graph_range(graph: &WeightedBitFieldBipartiteGraph, start: usize, end: usize) -> Self::Iter<'_> {
+    fn from_graph_range(
+        graph: &WeightedBitFieldBipartiteGraph,
+        start: usize,
+        end: usize,
+    ) -> Self::Iter<'_> {
         RaggedListIter { graph, start, end }
     }
 }
@@ -183,7 +191,11 @@ pub struct RaggedWeightListIter<'a> {
 impl<'a> FromGraphRange for RaggedWeightListIter<'a> {
     type Iter<'b> = RaggedWeightListIter<'b>;
 
-    fn from_graph_range(graph: &WeightedBitFieldBipartiteGraph, start: usize, end: usize) -> Self::Iter<'_> {
+    fn from_graph_range(
+        graph: &WeightedBitFieldBipartiteGraph,
+        start: usize,
+        end: usize,
+    ) -> Self::Iter<'_> {
         RaggedWeightListIter { graph, start, end }
     }
 }
@@ -389,7 +401,7 @@ impl WeightedBitFieldBipartiteGraph {
     }
 
     /// Returns an iterator over fractioned ragged weight list iterators.
-    /// 
+    ///
     /// # Arguments
     /// * `number_of_chunks` - The number of chunks to split the nodes into.
     pub fn iter_fractional_ragged_weight_list(

@@ -115,7 +115,7 @@ mod tests {
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 /// The maximum degree of the ngrams to consider in the search.
-/// 
+///
 /// Ngrams with a degree that is exceeding this value will be excluded from the search.
 /// The reasoning is, when an ngram is too common, it does not provide much information
 /// about the rarity of the key, while adding a significant amount of computation time
@@ -134,7 +134,7 @@ pub enum MaxNgramDegree {
 impl MaxNgramDegree {
     #[inline(always)]
     /// Returns the maximum number of ngrams to consider in the search.
-    /// 
+    ///
     /// # Arguments
     /// * `number_of_keys` - The number of keys in the corpus.
     fn max_ngram_degree(&self, number_of_keys: usize) -> usize {
@@ -155,7 +155,7 @@ impl MaxNgramDegree {
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 /// Struct providing a search configuration.
-pub(crate) struct SearchConfig<F: Float=f64> {
+pub(crate) struct SearchConfig<F: Float = f64> {
     /// The maximum number of results to return.
     maximum_number_of_results: usize,
     /// The minimum similarity value for a result to be included in the output.
@@ -179,7 +179,7 @@ impl<F: Float> Default for SearchConfig<F> {
 impl<F: Float> SearchConfig<F> {
     #[inline(always)]
     /// Returns the maximum number of ngrams to consider in the search.
-    /// 
+    ///
     /// # Arguments
     /// * `number_of_keys` - The number of keys in the corpus.
     pub(crate) fn max_ngram_degree(&self, number_of_keys: usize) -> usize {
@@ -200,10 +200,13 @@ impl<F: Float> SearchConfig<F> {
 
     #[inline(always)]
     /// Set the minimum similarity value for a result to be included in the output.
-    /// 
+    ///
     /// # Arguments
     /// * `minimum_similarity_score` - The minimum similarity value for a result to be included in the output.
-    pub fn set_minimum_similarity_score(mut self, minimum_similarity_score: F) -> Result<Self, &'static str> {
+    pub fn set_minimum_similarity_score(
+        mut self,
+        minimum_similarity_score: F,
+    ) -> Result<Self, &'static str> {
         if minimum_similarity_score < F::from_f64(0.0) {
             return Err("The minimum similarity score must be greater than or equal to 0.0");
         }
@@ -213,10 +216,10 @@ impl<F: Float> SearchConfig<F> {
         self.minimum_similarity_score = minimum_similarity_score;
         Ok(self)
     }
-    
+
     #[inline(always)]
     /// Set the maximum number of results to return.
-    /// 
+    ///
     /// # Arguments
     /// * `maximum_number_of_results` - The maximum number of results to return.
     pub fn set_maximum_number_of_results(mut self, maximum_number_of_results: usize) -> Self {
@@ -226,7 +229,7 @@ impl<F: Float> SearchConfig<F> {
 
     #[inline(always)]
     /// Set the maximum degree of the ngrams to consider in the search.
-    /// 
+    ///
     /// # Arguments
     /// * `max_ngram_degree` - The maximum degree of the ngrams to consider in the search.
     pub fn set_max_ngram_degree(mut self, max_ngram_degree: MaxNgramDegree) -> Self {
@@ -234,7 +237,6 @@ impl<F: Float> SearchConfig<F> {
         self
     }
 }
-
 
 impl<KS, NG, K, G> Corpus<KS, NG, K, G>
 where
