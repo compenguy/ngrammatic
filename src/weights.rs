@@ -6,6 +6,7 @@ use dsi_bitstream::prelude::*;
 use std::io::{Read, Seek, Write};
 use sux::prelude::*;
 use webgraph::prelude::*;
+use mem_dbg::{MemSize, MemDbg};
 
 type Writer<W> = BufBitWriter<LittleEndian, WordAdapter<u64, W>>;
 type Reader<R> = BufBitReader<LittleEndian, WordAdapter<u32, R>>;
@@ -14,6 +15,7 @@ type EF = EliasFano<SelectFixed2>;
 /// A builder on which you can push the weights of a document.
 /// The compression is highly dependent on **our** weights distribution and thus
 /// it's not recommended to use this builder for other purposes.
+#[derive(Clone, Debug, MemSize, MemDbg)]
 pub struct WeightsBuilder<W: Write> {
     /// The bitstream
     writer: Writer<W>,
@@ -90,6 +92,7 @@ impl<RW: Write + Read + Seek> WeightsBuilder<RW> {
 /// A builder on which you can push the weights of a document.
 /// The compression is highly dependent on **our** weights distribution and thus
 /// it's not recommended to use this builder for other purposes.
+#[derive(Clone, Debug, MemSize, MemDbg)]
 pub struct Weights<R: Read, OFF> {
     /// The bitstream
     reader: R,
