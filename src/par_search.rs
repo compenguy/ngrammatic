@@ -24,21 +24,25 @@ where
     ///
     /// # Arguments
     /// * `key` - The key to search for in the corpus
-    /// * `warp` - The warp factor to use in the similarity calculation. This value
-    ///  should be in the range 1.0 to 3.0, with 2.0 being the default.
     /// * `threshold` - The minimum similarity value for a result to be included in the
     /// output. This value should be in the range 0.0 to 1.0.
     /// * `limit` - The maximum number of results to return.
+    /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
+    /// * `similarity` - A function that computes the similarity between the query hashmap
+    /// and the ngram ids and cooccurrences.
     pub fn par_search<F: Float>(
         &self,
         key: &KS::K,
         threshold: F,
         limit: usize,
+        max_counts: Option<usize>,
         similarity: impl Fn(&QueryHashmap, NgramIdsAndCooccurrences<'_, G>) -> F + Send + Sync,
     ) -> Vec<SearchResult<'_, KS::K, F>> {
         let key: &K = key.as_ref();
         let query_hashmap = self.ngram_ids_from_ngram_counts(key.counts());
         let query_hashmap_ref = &query_hashmap;
+        let max_counts =
+            max_counts.unwrap_or_else(|| if self.keys.len() < 1_000 { 100 } else { self.keys.len() / 10 });
 
         // We identify all of the ngrams to be considered in the search, which
         // are the set of ngrams that contain any of the grams in the ngram
@@ -46,6 +50,11 @@ where
             .par_ngram_ids()
             .enumerate()
             .flat_map(|(ngram_number, ngram_id)| {
+                // If this term is too common, we can skip it as it does not provide
+                // much information associated to the rarity of this term.
+                if self.number_of_keys_from_ngram_id(ngram_id) > max_counts {
+                    return Vec::new();
+                }
                 let mut heap = SearchResultsHeap::new(limit);
                 self.key_ids_from_ngram_id(ngram_id).for_each(|key_id| {
                     if self.contains_any_ngram_ids(

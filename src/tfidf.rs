@@ -103,6 +103,7 @@ where
     /// * `key` - The key to search for in the corpus.
     /// * `threshold` - The minimum similarity value for a result to be included in the output.
     /// * `limit` - The maximum number of results to return.
+    /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
     /// * `k1` - The K1 constant.
     /// * `b` - The B constant.
     pub fn tf_idf_search<F: Float>(
@@ -110,6 +111,7 @@ where
         key: &KS::K,
         threshold: F,
         limit: usize,
+        max_counts: Option<usize>,
         k1: F,
         b: F,
     ) -> Result<Vec<SearchResult<'_, KS::K, F>>, &'static str> {
@@ -132,6 +134,7 @@ where
             key,
             threshold,
             limit,
+            max_counts,
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
                 F::from_f64(self.tf_idf(query, ngrams, k1, b))
             },
@@ -145,6 +148,7 @@ where
     /// * `key` - The key to search for in the corpus.
     /// * `threshold` - The minimum similarity value for a result to be included in the output.
     /// * `limit` - The maximum number of results to return.
+    /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
     /// * `warp` - The warp factor.
     /// * `k1` - The K1 constant.
     /// * `b` - The B constant.
@@ -153,6 +157,7 @@ where
         key: &KS::K,
         threshold: F,
         limit: usize,
+        max_counts: Option<usize>,
         warp: W,
         k1: F,
         b: F,
@@ -182,6 +187,7 @@ where
             key,
             threshold,
             limit,
+            max_counts,
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
                 F::from_f64(self.tf_idf(query, ngrams.clone(), k1, b))
                     * warp.trigram_similarity(query, ngrams, NG::ARITY)
@@ -208,6 +214,7 @@ where
     /// * `key` - The key to search for in the corpus.
     /// * `threshold` - The minimum similarity value for a result to be included in the output.
     /// * `limit` - The maximum number of results to return.
+    /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
     /// * `k1` - The K1 constant.
     /// * `b` - The B constant.
     pub fn tf_idf_par_search<F: Float>(
@@ -215,6 +222,7 @@ where
         key: &KS::K,
         threshold: F,
         limit: usize,
+        max_counts: Option<usize>,
         k1: F,
         b: F,
     ) -> Result<Vec<SearchResult<'_, KS::K, F>>, &'static str> {
@@ -237,6 +245,7 @@ where
             key,
             threshold,
             limit,
+            max_counts,
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
                 F::from_f64(self.tf_idf(query, ngrams, k1, b))
             },
@@ -250,6 +259,7 @@ where
     /// * `key` - The key to search for in the corpus.
     /// * `threshold` - The minimum similarity value for a result to be included in the output.
     /// * `limit` - The maximum number of results to return.
+    /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
     /// * `warp` - The warp factor.
     /// * `k1` - The K1 constant.
     /// * `b` - The B constant.
@@ -258,6 +268,7 @@ where
         key: &KS::K,
         threshold: F,
         limit: usize,
+        max_counts: Option<usize>,
         warp: W,
         k1: F,
         b: F,
@@ -287,6 +298,7 @@ where
             key,
             threshold,
             limit,
+            max_counts,
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
                 F::from_f64(self.tf_idf(query, ngrams.clone(), k1, b))
                     * warp.trigram_similarity(query, ngrams, NG::ARITY)

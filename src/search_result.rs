@@ -71,7 +71,7 @@ impl<'a, K, F: Float> SearchResultsHeap<'a, K, F> {
     ///
     /// # Arguments
     /// * `n` - The maximum number of results to return
-    pub fn new(n: usize) -> Self {
+    pub(crate) fn new(n: usize) -> Self {
         Self {
             heap: std::collections::BinaryHeap::with_capacity(n),
             n,
@@ -82,7 +82,7 @@ impl<'a, K, F: Float> SearchResultsHeap<'a, K, F> {
     ///
     /// # Arguments
     /// * `search_result` - The search result to push onto the heap
-    pub fn push(&mut self, search_result: SearchResult<'a, K, F>) {
+    pub(crate) fn push(&mut self, search_result: SearchResult<'a, K, F>) {
         if self.heap.len() < self.n {
             self.heap.push(Reverse(search_result));
         } else if let Some(min) = self.heap.peek() {
@@ -94,7 +94,7 @@ impl<'a, K, F: Float> SearchResultsHeap<'a, K, F> {
     }
 
     /// Returns the top n best search results
-    pub fn into_sorted_vec(self) -> Vec<SearchResult<'a, K, F>> {
+    pub(crate) fn into_sorted_vec(self) -> Vec<SearchResult<'a, K, F>> {
         self.heap
             .into_sorted_vec()
             .into_iter()

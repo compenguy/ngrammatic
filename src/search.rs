@@ -55,6 +55,32 @@ impl QueryHashmap {
     }
 }
 
+/// We test that the QueryHashmap struct is working as expected.
+#[cfg(test)]
+mod tests {
+    use crate::prelude::*;
+
+    #[test]
+    fn test_query_hashmap() {
+        let corpus: Corpus<[&str; 699], TriGram<char>> = Corpus::from(ANIMALS);
+        let query_hashmap = corpus.ngram_ids_from_ngram_counts("cat".counts());
+        let ngram_ids: Vec<_> = query_hashmap.ngram_ids().collect();
+        // We check that the ngram ids are sorted.
+        let mut sorted_ngram_ids = ngram_ids.clone();
+        sorted_ngram_ids.sort_unstable();
+        assert_eq!(ngram_ids, sorted_ngram_ids, "The ngram ids are not sorted");
+        // We check that the total sum of the counts is correct.
+        let total_count: usize = query_hashmap
+            .ngram_ids_and_counts()
+            .map(|(_, count)| count)
+            .sum();
+        assert_eq!(
+            total_count, query_hashmap.total_identified_count,
+            "The total count is incorrect"
+        );
+    }
+}
+
 impl<KS, NG, K, G> Corpus<KS, NG, K, G>
 where
     NG: Ngram,
@@ -118,17 +144,22 @@ where
     /// * `threshold` - The minimum similarity value for a result to be included in the
     /// output. This value should be in the range 0.0 to 1.0.
     /// * `limit` - The maximum number of results to return.
+    /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
+    /// * `similarity` - A function that computes the similarity between the query hashmap
     pub(crate) fn search<F: Float>(
         &self,
         key: &KS::K,
         threshold: F,
         limit: usize,
+        max_counts: Option<usize>,
         similarity: impl Fn(&QueryHashmap, NgramIdsAndCooccurrences<'_, G>) -> F,
     ) -> Vec<SearchResult<'_, KS::K, F>> {
         let key: &K = key.as_ref();
         let query_hashmap = self.ngram_ids_from_ngram_counts(key.counts());
         let query_hashmap_ref = &query_hashmap;
         let mut heap = SearchResultsHeap::new(limit);
+        let max_counts =
+            max_counts.unwrap_or_else(|| if self.keys.len() < 1_000 { 100 } else { self.keys.len() / 10 });
 
         // We identify all of the ngrams to be considered in the search, which
         // are the set of ngrams that contain any of the grams in the ngram
@@ -136,6 +167,11 @@ where
             .ngram_ids()
             .enumerate()
             .for_each(|(ngram_number, ngram_id)| {
+                // If this term is too common, we can skip it as it does not provide
+                // much information associated to the rarity of this term.
+                if self.number_of_keys_from_ngram_id(ngram_id) > max_counts {
+                    return;
+                }
                 self.key_ids_from_ngram_id(ngram_id).for_each(|key_id| {
                     if self.contains_any_ngram_ids(
                         query_hashmap_ref.ngram_ids().take(ngram_number),

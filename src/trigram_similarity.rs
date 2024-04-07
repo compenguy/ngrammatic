@@ -53,6 +53,10 @@ where
 }
 
 /// Returns the number of shared ngrams between two iterators.
+///
+/// # Arguments
+/// * `left` - The first iterator of ngrams.
+/// * `right` - The second iterator of ngrams.
 fn number_of_shared_items<I, J>(mut left: I, mut right: J) -> (usize, usize)
 where
     I: Iterator<Item = (usize, usize)>,
@@ -94,6 +98,42 @@ where
     right.for_each(|(_, count)| right_number_of_right_ngrams += count);
 
     (count, right_number_of_right_ngrams)
+}
+
+/// Test that number_of_shared_items works correctly.
+#[cfg(test)]
+mod test_number_of_shared_items {
+    use super::*;
+
+    #[test]
+    fn test_number_of_shared_items() {
+        let left = vec![(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)];
+        let right = vec![(1, 1), (3, 1), (5, 1), (7, 1), (9, 1)];
+
+        let (count, right_number_of_right_ngrams) =
+            number_of_shared_items(left.into_iter(), right.into_iter());
+
+        assert_eq!(count, 3);
+        assert_eq!(right_number_of_right_ngrams, 5);
+
+        let left = vec![(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)];
+        let right = vec![(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)];
+
+        let (count, right_number_of_right_ngrams) =
+            number_of_shared_items(left.into_iter(), right.into_iter());
+
+        assert_eq!(count, 5);
+        assert_eq!(right_number_of_right_ngrams, 5);
+
+        let left = vec![(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)];
+        let right = vec![(6, 1), (7, 1), (8, 1), (9, 1), (10, 1)];
+
+        let (count, right_number_of_right_ngrams) =
+            number_of_shared_items(left.into_iter(), right.into_iter());
+
+        assert_eq!(count, 0);
+        assert_eq!(right_number_of_right_ngrams, 5);
+    }
 }
 
 #[inline(always)]
