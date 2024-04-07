@@ -3,10 +3,11 @@
 //! it's not recommended to use this module for other purposes.
 
 use dsi_bitstream::prelude::*;
+#[cfg(feature = "mem_dbg")]
+use mem_dbg::{MemDbg, MemSize};
 use std::io::{Read, Seek, Write};
 use sux::prelude::*;
 use webgraph::prelude::*;
-use mem_dbg::{MemSize, MemDbg};
 
 type Writer<W> = BufBitWriter<LittleEndian, WordAdapter<u64, W>>;
 type Reader<R> = BufBitReader<LittleEndian, WordAdapter<u32, R>>;
@@ -15,7 +16,8 @@ type EF = EliasFano<SelectFixed2>;
 /// A builder on which you can push the weights of a document.
 /// The compression is highly dependent on **our** weights distribution and thus
 /// it's not recommended to use this builder for other purposes.
-#[derive(Clone, Debug, MemSize, MemDbg)]
+#[derive(Debug)]
+#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
 pub struct WeightsBuilder<W: Write> {
     /// The bitstream
     writer: Writer<W>,
@@ -92,7 +94,8 @@ impl<RW: Write + Read + Seek> WeightsBuilder<RW> {
 /// A builder on which you can push the weights of a document.
 /// The compression is highly dependent on **our** weights distribution and thus
 /// it's not recommended to use this builder for other purposes.
-#[derive(Clone, Debug, MemSize, MemDbg)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
 pub struct Weights<R: Read, OFF> {
     /// The bitstream
     reader: R,
@@ -217,9 +220,7 @@ impl<R: Read + Seek + Clone, OFF: IndexedDict<Input = usize, Output = usize>> Ra
             let weight = reader.read_unary().unwrap() as usize + 1;
             if weight == 1 {
                 let ones_range = reader.read_gamma().unwrap() as usize;
-                for _ in 0..ones_range {
-                    successors.extend_from_slice(1);
-                }
+                successors.resize(successors.len() + ones_range, 1);
                 weights_to_decode -= ones_range;
                 continue;
             }
