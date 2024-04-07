@@ -32,12 +32,10 @@ where
             (keys.len() as f32).sqrt() as usize,
             FxBuildHasher::default(),
         );
-        let mut cooccurrences = AdaptativeVector::with_capacity(keys.len());
+        let mut cooccurrences = AdaptativeVector::with_capacity(keys.len(), 0_u8);
         let mut maximal_cooccurrence: usize = 0;
         let mut total_key_length: f64 = 0.0;
-        let mut key_offsets = AdaptativeVector::with_capacity(keys.len() + 1);
-        // TODO: The adaptative vector needs to be allocated in such a way it
-        // can contain AT LEAST a value as large as the number of keys.
+        let mut key_offsets = AdaptativeVector::with_capacity(keys.len() + 1, keys.len());
         key_offsets.push(0_u8);
         let mut key_to_ngrams: Vec<NG> = Vec::with_capacity(keys.len());
 

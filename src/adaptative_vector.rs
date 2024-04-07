@@ -139,13 +139,22 @@ impl AdaptativeVector {
 
     /// Creates a new adaptative vector.
     ///
+    /// # Arguments
+    /// * `capacity` - The capacity of the vector.
+    /// * `value_type` - The type of the values to store in the vector.
+    /// 
     /// # Implementation details
     /// By default, the adaptative vector starts with the
     /// smallest possible data type, i.e. `u8`. As soon as
     /// the data type does not fit any of the provided values,
     /// the vector is converted to the next bigger data type.
-    pub(crate) fn with_capacity(capacity: usize) -> Self {
-        AdaptativeVector::U8(Vec::with_capacity(capacity))
+    pub(crate) fn with_capacity<A>(capacity: usize, value_type: A) -> Self where A: Into<AdaptativeVectorValue> {
+        match AdaptativeVectorValue::smallest(value_type) {
+            AdaptativeVectorValue::U8(_) => AdaptativeVector::U8(Vec::with_capacity(capacity)),
+            AdaptativeVectorValue::U16(_) => AdaptativeVector::U16(Vec::with_capacity(capacity)),
+            AdaptativeVectorValue::U32(_) => AdaptativeVector::U32(Vec::with_capacity(capacity)),
+            AdaptativeVectorValue::U64(_) => AdaptativeVector::U64(Vec::with_capacity(capacity)),
+        }
     }
 
     /// Returns the length of the vector.

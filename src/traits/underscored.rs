@@ -5,6 +5,17 @@
 /// Trait providing a method to format integers with underscores.
 pub trait Underscored {
     /// Returns the integer formatted with underscores.
+    /// 
+    /// # Example
+    /// 
+    /// The following example demonstrates how to format an integer with underscores:
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    /// 
+    /// let value: u32 = 1_000_000;
+    /// assert_eq!(value.underscored(), "1_000_000");
+    /// ```
+    /// 
     fn underscored(&self) -> String;
 }
 
