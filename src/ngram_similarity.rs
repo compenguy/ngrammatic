@@ -141,7 +141,7 @@ mod test_number_of_shared_items {
 /// Use warp greater than 1.0 to increase the similarity of shorter string pairs.
 /// * `query` - The query hashmap.
 /// * `ngrams` - The iterator of ngrams.
-pub(crate) fn trigram_similarity<I, W, F>(warp: Warp<W>, query: &QueryHashmap, ngrams: I) -> F
+pub(crate) fn ngram_similarity<I, W, F>(warp: Warp<W>, query: &QueryHashmap, ngrams: I) -> F
 where
     I: Iterator<Item = (usize, usize)>,
     F: Float,
@@ -219,7 +219,7 @@ pub trait TrigramSimilarity {
     fn pow(&self, value: f64) -> f64;
 
     /// Calculate the similarity between two iterators of ngrams.
-    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I) -> F
+    fn ngram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I) -> F
     where
         I: Iterator<Item = (usize, usize)>,
         F: Float;
@@ -232,12 +232,12 @@ impl TrigramSimilarity for Warp<i32> {
     }
 
     #[inline(always)]
-    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I) -> F
+    fn ngram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I) -> F
     where
         I: Iterator<Item = (usize, usize)>,
         F: Float,
     {
-        trigram_similarity(self, query, ngrams)
+        ngram_similarity(self, query, ngrams)
     }
 }
 
@@ -248,12 +248,12 @@ impl TrigramSimilarity for Warp<f64> {
     }
 
     #[inline(always)]
-    fn trigram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I) -> F
+    fn ngram_similarity<I, F>(self, query: &QueryHashmap, ngrams: I) -> F
     where
         I: Iterator<Item = (usize, usize)>,
         F: Float,
     {
-        trigram_similarity(self, query, ngrams)
+        ngram_similarity(self, query, ngrams)
     }
 }
 

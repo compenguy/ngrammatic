@@ -353,7 +353,7 @@ where
             config.into(),
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
                 F::from_f64(self.tf_idf(query, ngrams.clone(), k1, b))
-                    * warp.trigram_similarity(query, ngrams)
+                    * warp.ngram_similarity(query, ngrams)
             },
         )
     }
@@ -459,7 +459,7 @@ where
             config.into(),
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
                 F::from_f64(self.tf_idf(query, ngrams.clone(), k1, b))
-                    * warp.trigram_similarity(query, ngrams)
+                    * warp.ngram_similarity(query, ngrams)
             },
         )
     }

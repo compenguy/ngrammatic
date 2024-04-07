@@ -33,6 +33,10 @@ lender = "0.2.9"
 [dev-dependencies]
 flate2 = "1.0.28"
 indicatif = "0.17.8"
+# We also use the version of the ngrammatic library before the refactoring
+# to evaluate the changes in performance. The version we refer to is the 0.4.0
+# version of the library.
+ngrammatic_old = { version = "0.4.0", package="ngrammatic" }
 
 [features]
 default = ["rayon"]

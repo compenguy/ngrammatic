@@ -7,8 +7,8 @@ pub mod search_result;
 pub use search_result::*;
 pub mod corpus;
 pub use corpus::*;
-mod trigram_similarity;
-pub use trigram_similarity::*;
+mod ngram_similarity;
+pub use ngram_similarity::*;
 pub mod adaptative_vector;
 pub mod search;
 pub use adaptative_vector::*;
@@ -19,7 +19,7 @@ pub mod iter_bit_field_bipartite_graph;
 pub mod lender_bit_field_bipartite_graph;
 pub mod report;
 pub mod tfidf;
-pub mod trigram_search;
+pub mod ngram_search;
 
 #[cfg(feature = "rayon")]
 pub mod corpus_par_from;
@@ -36,10 +36,10 @@ pub mod prelude {
     pub use crate::corpus::*;
     pub use crate::search_result::*;
     pub use crate::traits::*;
-    pub use crate::trigram_similarity::*;
+    pub use crate::ngram_similarity::*;
     // #[cfg(feature = "webgraph")]
     pub use crate::animals::*;
     pub use crate::bi_webgraph::*;
-    pub use crate::trigram_search::*;
+    pub use crate::ngram_search::*;
     pub use crate::tfidf::*;
 }

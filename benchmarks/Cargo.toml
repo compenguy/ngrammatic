@@ -12,6 +12,7 @@ log = "0.4.21"
 mem_dbg = "0.1"
 ngrammatic = { path = "../../ngrammatic", features = ["mem_dbg", "rayon"] }
 rayon = "1.10.0"
+serde_json = "1.0.115"
 
 [profile.release]
 overflow-checks = false   # Disable integer overflow checks.

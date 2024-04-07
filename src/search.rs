@@ -31,16 +31,16 @@ pub type ParNgramIds<'a> =
 /// A sequential iterator over the identified ngram ids.
 pub type NgramIds<'a> = Map<Iter<'a, (usize, usize)>, fn(&(usize, usize)) -> usize>;
 
-/// Test that trigram_similarity works correctly.
+/// Test that ngram_similarity works correctly.
 #[cfg(test)]
-mod test_trigram_similarity {
+mod test_ngram_similarity {
     use crate::{TrigramSimilarity, Warp};
 
     use super::*;
 
     #[test]
     /// Test that the trigram similarity of a series with itself is 1.
-    fn test_simmetric_trigram_similarity() {
+    fn test_simmetric_ngram_similarity() {
         let ngrams = vec![(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)];
         let total_identified_count = ngrams.iter().map(|(_, count)| count).sum();
         let query = QueryHashmap {
@@ -51,7 +51,7 @@ mod test_trigram_similarity {
 
         for warp in 1..=3 {
             let warp = Warp::try_from(warp).unwrap();
-            let similarity: f64 = warp.trigram_similarity(&query, ngrams.iter().copied());
+            let similarity: f64 = warp.ngram_similarity(&query, ngrams.iter().copied());
             assert_eq!(similarity, 1.0);
         }
     }

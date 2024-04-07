@@ -137,7 +137,7 @@ where
     /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::from(&ANIMALS);
     ///
     /// let results: Vec<SearchResult<'_, str, f32>> =
-    ///     corpus.trigram_search("Cat", NgramSearchConfig::default());
+    ///     corpus.ngram_search("Cat", NgramSearchConfig::default());
     ///
     /// assert_eq!(results[0].key(), "Cat");
     /// ```
@@ -154,7 +154,7 @@ where
     /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::from(&ANIMALS);
     ///
     /// let results: Vec<SearchResult<'_, str, f32>> =
-    ///     corpus.trigram_search("catt", NgramSearchConfig::default());
+    ///     corpus.ngram_search("catt", NgramSearchConfig::default());
     ///
     /// assert!(results.is_empty());
     /// ```
@@ -170,7 +170,7 @@ where
     /// let corpus: Corpus<&[&str; 699], BiGram<char>, Lowercase<str>> = Corpus::from(&ANIMALS);
     ///
     /// let results: Vec<SearchResult<'_, str, f32>> =
-    ///     corpus.trigram_search("catt", NgramSearchConfig::default());
+    ///     corpus.ngram_search("catt", NgramSearchConfig::default());
     ///
     /// assert_eq!(results[0].key(), "Cat");
     /// ```
@@ -185,7 +185,7 @@ where
     /// let corpus: Corpus<&[&str; 699], BiGram<ASCIIChar>> = Corpus::from(&ANIMALS);
     ///
     /// let results: Vec<SearchResult<'_, str, f32>> =
-    ///     corpus.trigram_search("Cat", NgramSearchConfig::default());
+    ///     corpus.ngram_search("Cat", NgramSearchConfig::default());
     ///
     /// assert_eq!(results[0].key(), "Cat");
     /// ```
@@ -201,11 +201,11 @@ where
     /// let corpus: Corpus<&[&str; 699], BiGram<u8>> = Corpus::from(&ANIMALS);
     ///
     /// let results: Vec<SearchResult<'_, str, f32>> =
-    ///     corpus.trigram_search("Cat", NgramSearchConfig::default());
+    ///     corpus.ngram_search("Cat", NgramSearchConfig::default());
     ///
     /// assert_eq!(results[0].key(), "Cat");
     /// ```
-    pub fn trigram_search<KR, F: Float>(
+    pub fn ngram_search<KR, F: Float>(
         &self,
         key: KR,
         mut config: NgramSearchConfig<i32, F>,
@@ -214,7 +214,7 @@ where
         KR: AsRef<K>,
     {
         config = config.set_warp(2).unwrap();
-        self.trigram_search_with_warp(key, config)
+        self.ngram_search_with_warp(key, config)
     }
 
     #[inline(always)]
@@ -235,11 +235,11 @@ where
     ///
     /// let config = NgramSearchConfig::default().set_warp(2.5).unwrap();
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> = corpus.trigram_search_with_warp("Cat", config);
+    /// let results: Vec<SearchResult<'_, str, f32>> = corpus.ngram_search_with_warp("Cat", config);
     ///
     /// assert_eq!(results[0].key(), "Cat");
     /// ```
-    pub fn trigram_search_with_warp<KR, W: Copy, F: Float>(
+    pub fn ngram_search_with_warp<KR, W: Copy, F: Float>(
         &self,
         key: KR,
         config: NgramSearchConfig<W, F>,
@@ -253,7 +253,7 @@ where
             key,
             config.into(),
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
-                warp.trigram_similarity(query, ngrams)
+                warp.ngram_similarity(query, ngrams)
             },
         )
     }
@@ -279,8 +279,8 @@ where
     /// * `config` - The configuration for the search.
     ///
     /// # Example
-    /// This is the concurrent version of the `trigram_search` method.
-    /// Please look at the documentation of the `trigram_search` method for the extended
+    /// This is the concurrent version of the `ngram_search` method.
+    /// Please look at the documentation of the `ngram_search` method for the extended
     /// documentation.
     ///
     /// ```rust
@@ -289,11 +289,11 @@ where
     /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::par_from(&ANIMALS);
     ///
     /// let results: Vec<SearchResult<'_, str, f32>> =
-    ///     corpus.trigram_par_search("Cat", NgramSearchConfig::default());
+    ///     corpus.ngram_par_search("Cat", NgramSearchConfig::default());
     ///
     /// assert_eq!(results[0].key(), "Cat");
     /// ```
-    pub fn trigram_par_search<KR, F: Float>(
+    pub fn ngram_par_search<KR, F: Float>(
         &self,
         key: KR,
         mut config: NgramSearchConfig<i32, F>,
@@ -302,7 +302,7 @@ where
         KR: AsRef<K> + Send + Sync,
     {
         config = config.set_warp(2).unwrap();
-        self.trigram_par_search_with_warp(key, config.into())
+        self.ngram_par_search_with_warp(key, config.into())
     }
 
     #[inline(always)]
@@ -313,8 +313,8 @@ where
     /// * `config` - The configuration for the search.
     ///
     /// # Example
-    /// This is the concurrent version of the `trigram_search_with_warp` method.
-    /// Please look at the documentation of the `trigram_search_with_warp` method for the extended
+    /// This is the concurrent version of the `ngram_search_with_warp` method.
+    /// Please look at the documentation of the `ngram_search_with_warp` method for the extended
     /// documentation.
     ///
     /// ```rust
@@ -325,11 +325,11 @@ where
     /// let config = NgramSearchConfig::default().set_warp(2.5).unwrap();
     ///
     /// let results: Vec<SearchResult<'_, str, f32>> =
-    ///     corpus.trigram_par_search_with_warp("Cat", config);
+    ///     corpus.ngram_par_search_with_warp("Cat", config);
     ///
     /// assert_eq!(results[0].key(), "Cat");
     /// ```
-    pub fn trigram_par_search_with_warp<KR, W: Copy, F: Float>(
+    pub fn ngram_par_search_with_warp<KR, W: Copy, F: Float>(
         &self,
         key: KR,
         config: NgramSearchConfig<W, F>,
@@ -344,7 +344,7 @@ where
             key,
             config.into(),
             move |query: &QueryHashmap, ngrams: NgramIdsAndCooccurrences<'_, G>| {
-                warp.trigram_similarity(query, ngrams)
+                warp.ngram_similarity(query, ngrams)
             },
         )
     }

@@ -10,6 +10,7 @@ use core::fmt::Debug;
 use indicatif::ProgressIterator;
 use mem_dbg::*;
 use ngrammatic::prelude::*;
+use std::io::Write;
 use rayon::prelude::*;
 
 /// Returns an iterator over the taxons in the corpus.
@@ -104,32 +105,11 @@ where
         .mem_dbg(DbgFlags::HUMANIZE | DbgFlags::PERCENTAGE | DbgFlags::TYPE_NAME)
         .unwrap();
 
-    // We write the node degrees to a CSV file.
-    let mut writer = csv::Writer::from_path("node_degrees.csv").unwrap();
-    writer.write_record(&["degree"]).unwrap();
-    corpus
-        .graph()
-        .degrees()
-        .for_each(|degree| writer.write_record(&[degree.to_string()]).unwrap());
+    log::info!("Creating webgraph from corpus");
 
-    // We close the writer.
-    writer.flush().unwrap();
+    let corpus_webgraph: Corpus<Vec<String>, NG, Lowercase<str>, BiWebgraph> = Corpus::from(corpus);
 
-    // We write the cooccurrence weigts to a CSV file.
-    let mut writer = csv::Writer::from_path("cooccurrence_weights.csv").unwrap();
-    writer.write_record(&["weight"]).unwrap();
-    corpus
-        .cooccurrences()
-        .for_each(|weight| writer.write_record(&[weight.to_string()]).unwrap());
-
-    // We close the writer.
-    writer.flush().unwrap();
-
-    // log::info!("Creating webgraph from corpus");
-
-    // let corpus_webgraph: Corpus<Vec<String>, NG, Lowercase<str>, BiWebgraph> = Corpus::from(corpus);
-
-    // log::info!("Created webgraph from corpus");
+    log::info!("Created webgraph from corpus");
 }
 
 /// Returns bigram corpus.
