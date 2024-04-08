@@ -16,6 +16,7 @@ type EF = EliasFano<SelectFixed2>;
 /// A factory that can create a reader.
 /// The factory own the data and the reader borrows it.
 pub trait ReaderFactory {
+    /// The reader type that we will pass to another struct.
     type Reader<'a>: GammaRead<LittleEndian> + BitRead<LittleEndian>
     where
         Self: 'a;
@@ -24,15 +25,18 @@ pub trait ReaderFactory {
 }
 
 /// A factory that creates a reader from vec of u8.
+#[derive(Clone, Debug)]
 pub struct CursorReaderFactory {
     data: Vec<u8>,
 }
 
 impl CursorReaderFactory {
+    /// Creates a new `CursorReaderFactory` that reads from the given data.
     pub fn new(data: Vec<u8>) -> Self {
         CursorReaderFactory { data }
     }
 
+    /// Consumes the `CursorReaderFactory` and returns the inner data.
     pub fn into_inner(self) -> Vec<u8> {
         self.data
     }
@@ -42,9 +46,11 @@ impl ReaderFactory for CursorReaderFactory {
     type Reader<'a> = Reader<std::io::Cursor<&'a [u8]>>;
 
     fn get_reader(&self, offset: usize) -> Self::Reader<'_> {
-        BufBitReader::<LittleEndian, _>::new(WordAdapter::<u32, _>::new(std::io::Cursor::new(
-            &self.data,
-        )))
+        let mut reader = std::io::Cursor::new(
+            self.data.as_slice(),
+        );
+        reader.set_position(offset as u64);
+        BufBitReader::<LittleEndian, _>::new(WordAdapter::<u32, _>::new(reader))
     }
 }
 
@@ -89,22 +95,22 @@ impl<W: Write> WeightsBuilder<W> {
         let mut bits_written = 0;
         bits_written += self.writer.write_gamma(weights.len() as u64)?;
 
-        let mut ones_range = 0;
+        let mut zeros_range = 0;
         for weight in weights {
-            if weight == 1 {
-                if ones_range == 0 {
+            if weight == 0 {
+                if zeros_range == 0 {
                     bits_written += self.writer.write_unary(0)?;
                 }
-                ones_range += 1;
+                zeros_range += 1;
                 continue;
             }
 
-            if ones_range > 0 {
-                bits_written += self.writer.write_gamma(ones_range as u64)?;
-                ones_range = 0;
+            if zeros_range > 0 {
+                bits_written += self.writer.write_gamma(zeros_range as u64)?;
+                zeros_range = 0;
             }
 
-            bits_written += self.writer.write_unary(weight as u64 - 1)?;
+            bits_written += self.writer.write_unary(weight as u64)?;
         }
 
         Ok(bits_written)
@@ -170,6 +176,7 @@ impl<RF, OFF> Weights<RF, OFF> {
 }
 
 /// A lender
+#[derive(Clone, Debug)]
 pub struct Lender<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> {
     /// The bitstream
     reader: R,
@@ -211,11 +218,11 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> lender::Lender for Lend
         let mut successors = Vec::with_capacity(weights_to_decode);
 
         while weights_to_decode != 0 {
-            let weight = self.reader.read_unary().unwrap() as usize + 1;
-            if weight == 1 {
-                let ones_range = self.reader.read_gamma().unwrap() as usize;
-                successors.resize(successors.len() + ones_range, 1);
-                weights_to_decode -= ones_range;
+            let weight = self.reader.read_unary().unwrap() as usize;
+            if weight == 0 {
+                let zeros_range = self.reader.read_gamma().unwrap() as usize;
+                successors.resize(successors.len() + zeros_range, 0);
+                weights_to_decode -= zeros_range;
                 continue;
             }
 
@@ -227,25 +234,73 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> lender::Lender for Lend
     }
 }
 
+/// The iterator over all the weights of the successors of all nodes
+pub struct WeightsIter<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> {
+    num_nodes: usize,
+    succ: Succ<R>
+}
+
+impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> WeightsIter<R> {
+    /// Creates a new `WeightsIter` that reads from the given reader.
+    pub fn new(reader: R, num_nodes: usize) -> Self {
+        WeightsIter {num_nodes, succ: Succ::new(reader)}
+    }
+}
+
+
+impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Iterator for WeightsIter<R> {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.num_nodes == 0 {
+            return None;
+        }
+
+        let mut next = None;
+        while next.is_none() {
+            next = self.succ.next();
+            self.num_nodes -= 1;
+            self.succ.reset();
+        }
+
+        next
+    }
+}
+
+
 /// The iterator over the weights of the successors of a node
+#[derive(Clone, Debug)]
 pub struct Succ<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> {
     /// The bitstream
     reader: R,
     /// how many weights left to decode
     weights_to_decode: usize,
-    /// ones_range
-    ones_range: usize,
+    /// zeros_range
+    zeros_range: usize,
 }
 
 impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Succ<R> {
     /// Creates a new `Succ` that reads from the given reader.
-    pub fn new(mut reader: R) -> Self {
-        let weights_to_decode = reader.read_gamma().unwrap() as usize;
-        Succ {
+    pub fn new(reader: R) -> Self {
+        let mut res = Succ {
             reader,
-            weights_to_decode,
-            ones_range: 0,
-        }
+            weights_to_decode: 0,
+            zeros_range: 0,
+        };
+        res.reset();
+        res
+    }
+
+    /// Consumes the `Succ` and returns the inner reader.
+    pub fn into_inner(self) -> R {
+        self.reader
+    }
+
+    /// Resets the iterator so it can decode the weights of the next node.
+    pub fn reset(&mut self) {
+        let weights_to_decode = self.reader.read_gamma().unwrap() as usize;
+        self.weights_to_decode = weights_to_decode;
+        self.zeros_range = 0;
     }
 }
 
@@ -261,21 +316,21 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Iterator for Succ<R> {
 
     #[inline(always)]
     fn next(&mut self) -> Option<usize> {
-        debug_assert!(self.weights_to_decode <= self.ones_range);
+        debug_assert!(self.weights_to_decode <= self.zeros_range);
         if self.weights_to_decode == 0 {
             return None;
         }
 
-        if self.ones_range > 0 {
-            self.ones_range -= 1;
-            return Some(1);
+        if self.zeros_range > 0 {
+            self.zeros_range -= 1;
+            return Some(0);
         }
 
-        let weight = self.reader.read_unary().unwrap() as usize + 1;
+        let weight = self.reader.read_unary().unwrap() as usize;
 
-        if weight == 1 {
-            self.ones_range = self.reader.read_gamma().unwrap() as usize;
-            self.ones_range -= 1;
+        if weight == 0 {
+            self.zeros_range = self.reader.read_gamma().unwrap() as usize;
+            self.zeros_range -= 1;
         }
 
         self.weights_to_decode -= 1;
@@ -322,5 +377,13 @@ impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> RandomA
         let offset = self.offsets.get(node_id);
         let mut reader = self.reader_factory.get_reader(offset);
         reader.read_gamma().unwrap() as usize
+    }
+}
+
+impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> Weights<RF, OFF>
+{
+    /// Returns an iterator over all the weights of the successors of all nodes.
+    pub fn weights(&self) -> WeightsIter<<RF as ReaderFactory>::Reader<'_>> {
+        WeightsIter::new(self.reader_factory.get_reader(0), self.num_nodes)
     }
 }
