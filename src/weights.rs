@@ -26,6 +26,7 @@ pub trait ReaderFactory {
 
 /// A factory that creates a reader from vec of u8.
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
 pub struct CursorReaderFactory {
     data: Vec<u8>,
 }
