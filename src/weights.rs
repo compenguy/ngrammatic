@@ -47,9 +47,11 @@ impl ReaderFactory for CursorReaderFactory {
     type Reader<'a> = Reader<std::io::Cursor<&'a [u8]>>;
 
     fn get_reader(&self, offset: usize) -> Self::Reader<'_> {
-        let mut reader = std::io::Cursor::new(self.data.as_slice());
-        reader.set_position(offset as u64);
-        BufBitReader::<LittleEndian, _>::new(WordAdapter::<u32, _>::new(reader))
+        let mut res = BufBitReader::<LittleEndian, _>::new(WordAdapter::<u32, _>::new(
+            std::io::Cursor::new(self.data.as_slice()),
+        ));
+        res.set_bit_pos(offset as u64).unwrap();
+        res
     }
 }
 
@@ -71,11 +73,24 @@ pub struct WeightsBuilder<W: Write = std::io::Cursor<Vec<u8>>> {
     num_weights: usize,
 }
 
-impl<W: Write> WeightsBuilder<W> {
+impl WeightsBuilder {
     /// Creates a new `WeightsBuilder` that writes to the given writer.
-    pub fn new() -> WeightsBuilder<Cursor<Vec<u8>>> {
+    pub fn new() -> WeightsBuilder {
         WeightsBuilder {
             writer: BufBitWriter::new(WordAdapter::new(Cursor::new(Vec::new()))),
+            offsets: vec![],
+            len: 0,
+            num_nodes: 0,
+            num_weights: 0,
+        }
+    }
+}
+
+impl<W: Write> WeightsBuilder<W> {
+    /// Creates a new `WeightsBuilder` that writes to the given writer.
+    pub fn with_writer(writer: W) -> WeightsBuilder<W> {
+        WeightsBuilder {
+            writer: BufBitWriter::new(WordAdapter::new(writer)),
             offsets: vec![],
             len: 0,
             num_nodes: 0,
@@ -111,7 +126,7 @@ impl<W: Write> WeightsBuilder<W> {
 
             bits_written += self.writer.write_unary(weight as u64)?;
         }
-
+        self.len += bits_written;
         Ok(bits_written)
     }
 }
@@ -237,7 +252,7 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> lender::ExactSizeLender
 
 impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> lender::Lender for Lender<R> {
     fn next(&mut self) -> Option<lender::prelude::Lend<'_, Self>> {
-        if self.start_node == self.num_nodes - 1 {
+        if self.start_node == self.num_nodes {
             return None;
         }
 
@@ -266,17 +281,23 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> lender::Lender for Lend
 
 /// The iterator over all the weights of the successors of all nodes
 pub struct WeightsIter<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> {
-    num_nodes: usize,
+   len: usize,
     succ: Succ<R>,
 }
 
 impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> WeightsIter<R> {
     /// Creates a new `WeightsIter` that reads from the given reader.
-    pub fn new(reader: R, num_nodes: usize) -> Self {
+    pub fn new(reader: R, num_arcs: usize) -> Self {
         WeightsIter {
-            num_nodes,
+            len: num_arcs,
             succ: Succ::new(reader),
         }
+    }
+}
+
+impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> ExactSizeIterator for WeightsIter<R> {
+    fn len(&self) -> usize {
+        self.len
     }
 }
 
@@ -284,18 +305,18 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Iterator for WeightsIte
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.num_nodes == 0 {
-            return None;
-        }
-
-        let mut next = None;
-        while next.is_none() {
+        let mut next;
+        loop {
+            if self.len == 0 {
+                return None;
+            }
             next = self.succ.next();
-            self.num_nodes -= 1;
+            if next.is_some() {
+                self.len -= 1;
+                return next;
+            }
             self.succ.reset();
         }
-
-        next
     }
 }
 
@@ -329,8 +350,7 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Succ<R> {
 
     /// Resets the iterator so it can decode the weights of the next node.
     pub fn reset(&mut self) {
-        let weights_to_decode = self.reader.read_gamma().unwrap() as usize;
-        self.weights_to_decode = weights_to_decode;
+        self.weights_to_decode = self.reader.read_gamma().unwrap() as usize;
         self.zeros_range = 0;
     }
 }
@@ -422,6 +442,72 @@ impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> RandomA
 impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> Weights<RF, OFF> {
     /// Returns an iterator over all the weights of the successors of all nodes.
     pub fn weights(&self) -> WeightsIter<<RF as ReaderFactory>::Reader<'_>> {
-        WeightsIter::new(self.reader_factory.get_reader(0), self.num_nodes)
+        WeightsIter::new(self.reader_factory.get_reader(0), self.num_weights)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use lender::Lender;
+
+    use super::*;
+
+    #[test]
+    fn test_weights() {
+        let weights = vec![
+            vec![1, 2, 3, 4, 5],
+            vec![1, 1, 1, 1, 1],
+            vec![1, 1, 1, 1, 1],
+            vec![1, 1, 3, 2, 2],
+            vec![],
+        ];
+
+        let mut writer = WeightsBuilder::new();
+        for row in weights.iter() {
+            writer.push(row.iter().copied()).unwrap();
+        }
+
+        let reader = writer.build();
+
+        assert_eq!(weights.len(), reader.num_nodes());
+        assert_eq!(
+            weights.iter().map(|w| w.len()).sum::<usize>(),
+            reader.num_arcs() as usize
+        );
+
+        // test weights iter
+        println!("Testing weights iter");
+        let mut iter = reader.weights();
+        for row in weights.iter() {
+            for weight in row.iter() {
+                assert_eq!(Some(*weight), iter.next());
+            }
+        }
+
+        assert_eq!(None, iter.next());
+
+        // test random access iter
+        println!("Testing random access iter");
+        for (i, row) in weights.iter().enumerate() {
+            let mut iter = reader.labels(i);
+            for weight in row.iter() {
+                assert_eq!(Some(*weight), iter.next());
+            }
+            assert_eq!(None, iter.next());
+        }
+
+        // test random access degrees
+        println!("Testing random access degrees");
+        for (i, row) in weights.iter().enumerate() {
+            assert_eq!(row.len(), reader.outdegree(i));
+        }
+
+        // test sequenital iter
+        println!("Testing sequential iter");
+        let mut iter = reader.iter();
+        for row in weights.iter() {
+            let (_node_id, weights) = iter.next().unwrap();
+            assert_eq!(row, &weights);
+        }
     }
 }
