@@ -13,7 +13,6 @@ use ngrammatic::prelude::*;
 use rayon::prelude::*;
 use std::io::Write;
 
-
 /// Returns an iterator over the taxons in the corpus.
 fn iter_taxons() -> impl Iterator<Item = String> {
     use flate2::read::GzDecoder;
@@ -39,7 +38,7 @@ where
     let duration: usize = (end_time - start_time).as_millis() as usize;
 
     log::info!(
-        "NEW - Arity: {}, Time: {:?}, memory: {:?}",
+        "NEW - Arity: {}, Time (ms): {}, memory (B): {}",
         NG::ARITY,
         duration.underscored(),
         corpus.mem_size(SizeFlags::default()).underscored()
@@ -59,7 +58,7 @@ where
     let duration: usize = (end_time - start_time).as_millis() as usize;
 
     log::info!(
-        "NEWPAR - Arity: {}, Time: {:?}, memory: {:?}",
+        "NEWPAR - Arity: {}, Time (ms): {}, memory (B): {}",
         NG::ARITY,
         duration.underscored(),
         corpus.mem_size(SizeFlags::default()).underscored()
@@ -81,7 +80,7 @@ fn load_corpus_old(arity: usize) -> ngrammatic_old::Corpus {
     let duration: usize = (end_time - start_time).as_millis() as usize;
 
     log::info!(
-        "OLD - Arity: {}, Time: {:?}, memory: {:?}",
+        "OLD - Arity: {}, Time (ms): {}, memory (B): {}",
         arity,
         duration.underscored(),
         corpus.mem_size(SizeFlags::default()).underscored()

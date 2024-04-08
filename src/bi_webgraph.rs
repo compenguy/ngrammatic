@@ -160,11 +160,12 @@ impl WeightedBipartiteGraph for BiWebgraph {
         todo!()
     }
 
-    type Weights<'a> = Succ<std::io::Cursor<Vec<u8>>>;
+    type Weights<'a> = Take<BitFieldVecIterator<'a, usize, Vec<usize>>>;
 
     #[inline(always)]
     fn weights(&self) -> Self::Weights<'_> {
-        self.srcs_to_dsts_weights.iter_from(0)
+        todo!()
+        // self.srcs_to_dsts_weights.iter_from(0)
     }
 
     type Degrees<'a> = Map<
