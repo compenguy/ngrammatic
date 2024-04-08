@@ -182,10 +182,7 @@ pub struct Warp<W> {
     value: W,
 }
 
-unsafe impl Send for Warp<i32> {}
-unsafe impl Sync for Warp<i32> {}
-unsafe impl Send for Warp<f64> {}
-unsafe impl Sync for Warp<f64> {}
+unsafe impl<W> Send for Warp<W> {}
 
 impl<W: One> One for Warp<W> {
     const ONE: Self = Warp { value: W::ONE };
