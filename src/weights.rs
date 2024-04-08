@@ -5,7 +5,7 @@
 use dsi_bitstream::prelude::*;
 #[cfg(feature = "mem_dbg")]
 use mem_dbg::{MemDbg, MemSize};
-use std::io::Write;
+use std::io::{Cursor, Write};
 use sux::prelude::*;
 use webgraph::prelude::*;
 
@@ -74,9 +74,9 @@ pub struct WeightsBuilder<W: Write = std::io::Cursor<Vec<u8>>> {
 
 impl<W: Write> WeightsBuilder<W> {
     /// Creates a new `WeightsBuilder` that writes to the given writer.
-    pub fn new(writer: W) -> Self {
+    pub fn new() -> WeightsBuilder<Cursor<Vec<u8>>> {
         WeightsBuilder {
-            writer: BufBitWriter::new(WordAdapter::new(writer)),
+            writer: BufBitWriter::new(WordAdapter::new(Cursor::new(Vec::new()))),
             offsets: vec![],
             len: 0,
             num_nodes: 0,
@@ -167,6 +167,11 @@ impl<RF, OFF> Weights<RF, OFF> {
     /// Returns the number of weights.
     pub fn num_weights(&self) -> usize {
         self.num_weights
+    }
+
+    /// Returns the number of nodes.
+    pub fn num_nodes(&self) -> usize {
+        self.num_nodes
     }
 
     /// Consumes the `Weights` and returns the inner reader and offsets.
@@ -316,7 +321,10 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Iterator for Succ<R> {
 
     #[inline(always)]
     fn next(&mut self) -> Option<usize> {
-        debug_assert!(self.weights_to_decode <= self.zeros_range);
+        debug_assert!(self.weights_to_decode >= self.zeros_range, concat!(
+            "Expected weights_to_decode >= zeros_range, but got ",
+            "weights_to_decode = {:?}, zeros_range = {:?}"
+        ), self.weights_to_decode, self.zeros_range);
         if self.weights_to_decode == 0 {
             return None;
         }

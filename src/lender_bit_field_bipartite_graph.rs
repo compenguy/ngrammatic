@@ -211,7 +211,10 @@ impl<'a> From<&'a WeightedBitFieldBipartiteGraph> for RaggedWeightListIter<'a> {
 }
 
 impl<'a> Iterator for RaggedWeightListIter<'a> {
-    type Item = (usize, BitFieldVecIterator<'a, usize, Vec<usize>>);
+    type Item = (
+        usize,
+        <WeightedBitFieldBipartiteGraph as WeightedBipartiteGraph>::WeightsSrc<'a>,
+    );
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.start >= self.end {
@@ -263,7 +266,7 @@ impl<'a> ExactSizeLender for RaggedWeightListIter<'a> {
 
 impl<'a, 'b> NodeLabelsLender<'b> for RaggedWeightListIter<'a> {
     type Label = <BitFieldVecIterator<'a, usize, Vec<usize>> as Iterator>::Item;
-    type IntoIterator = BitFieldVecIterator<'a, usize, Vec<usize>>;
+    type IntoIterator = <WeightedBitFieldBipartiteGraph as WeightedBipartiteGraph>::WeightsSrc<'a>;
 }
 
 /// A struct implementing an iterator over ragged list iterators that only

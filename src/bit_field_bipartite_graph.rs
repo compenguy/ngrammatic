@@ -16,8 +16,9 @@ use sux::rank_sel::SelectFixed2;
 use sux::traits::BitFieldSliceCore;
 use sux::traits::IndexedDict;
 use sux::traits::Pred;
+use webgraph::traits::RandomAccessLabeling;
 
-use crate::iter_bit_field_bipartite_graph::EdgesIterator;
+use crate::weights::Weights;
 use crate::WeightedBipartiteGraph;
 
 #[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
@@ -26,7 +27,7 @@ use crate::WeightedBipartiteGraph;
 pub struct WeightedBitFieldBipartiteGraph {
     /// Vector containing the number of times a given gram appears in a given key.
     /// This is a descriptor of an edge from a Key to a Gram.
-    pub(crate) srcs_to_dsts_weights: BitFieldVec,
+    pub(crate) srcs_to_dsts_weights: Weights,
     /// Vector containing the comulative outbound degree from a given key to grams.
     /// This is a vector with the same length as the keys vector PLUS ONE, and the value at
     /// index `i` is the sum of the oubound degrees before index `i`. The last element of this
@@ -57,13 +58,13 @@ impl WeightedBitFieldBipartiteGraph {
     /// * `srcs_to_dsts` - The destinations of the edges from keys to grams.
     /// * `dsts_to_srcs` - The sources of the edges from grams to keys.
     pub fn new(
-        srcs_to_dsts_weights: BitFieldVec,
+        srcs_to_dsts_weights: Weights,
         srcs_offsets: EliasFano<SelectFixed2>,
         dsts_offsets: EliasFano<SelectFixed2>,
         srcs_to_dsts: BitFieldVec,
         dsts_to_srcs: BitFieldVec,
     ) -> Self {
-        assert_eq!(srcs_to_dsts.len(), srcs_to_dsts_weights.len());
+        assert_eq!(srcs_to_dsts.len(), srcs_to_dsts_weights.num_weights());
         assert_eq!(srcs_to_dsts.len(), dsts_to_srcs.len());
 
         WeightedBitFieldBipartiteGraph {
@@ -73,11 +74,6 @@ impl WeightedBitFieldBipartiteGraph {
             srcs_to_dsts,
             dsts_to_srcs,
         }
-    }
-
-    /// Iterate across all of the edges of the graph.
-    pub fn edges(&self) -> EdgesIterator<'_> {
-        EdgesIterator::from(self)
     }
 
     /// Returns the comulative outbound degree from a source id.
@@ -138,7 +134,7 @@ impl WeightedBipartiteGraph for WeightedBitFieldBipartiteGraph {
 
     #[inline(always)]
     fn number_of_edges(&self) -> usize {
-        self.srcs_to_dsts_weights.len()
+        self.srcs_to_dsts_weights.num_weights()
     }
 
     #[inline(always)]
@@ -173,20 +169,22 @@ impl WeightedBipartiteGraph for WeightedBitFieldBipartiteGraph {
         self.dsts_to_srcs.iter_range(start, end)
     }
 
-    type WeightsSrc<'a> = BitFieldVecIterator<'a, usize, Vec<usize>>;
+    type WeightsSrc<'a> = crate::weights::Succ<
+        <crate::weights::CursorReaderFactory as crate::weights::ReaderFactory>::Reader<'a>,
+    >;
 
     #[inline(always)]
     fn weights_from_src(&self, src_id: usize) -> Self::WeightsSrc<'_> {
-        let start = self.srcs_offsets.get(src_id);
-        let end = self.srcs_offsets.get(src_id + 1);
-        self.srcs_to_dsts_weights.iter_range(start, end)
+        self.srcs_to_dsts_weights.labels(src_id)
     }
 
-    type Weights<'a> = BitFieldVecIterator<'a, usize, Vec<usize>>;
+    type Weights<'a> = crate::weights::WeightsIter<
+        <crate::weights::CursorReaderFactory as crate::weights::ReaderFactory>::Reader<'a>,
+    >;
 
     #[inline(always)]
     fn weights(&self) -> Self::Weights<'_> {
-        self.srcs_to_dsts_weights.iter()
+        self.srcs_to_dsts_weights.weights()
     }
 
     type Degrees<'a> = Chain<

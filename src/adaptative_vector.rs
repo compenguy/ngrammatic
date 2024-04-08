@@ -1,9 +1,8 @@
 //! Module providing a vector that adaptatively grows in data type.
 
-use sux::bits::BitFieldVec;
 use sux::dict::{EliasFano, EliasFanoBuilder};
 use sux::prelude::SelectFixed2;
-use sux::traits::{BitFieldSliceMut, ConvertTo};
+use sux::traits::ConvertTo;
 
 /// Trait defining a bounded type.
 pub trait Bounded {
@@ -375,113 +374,6 @@ impl AdaptativeVector {
                 }
                 builder.build().convert_to().unwrap()
             }
-        }
-    }
-
-    #[cfg(feature = "rayon")]
-    /// Converts the vector into a bit field vector.
-    pub(crate) fn par_into_bitvec(self, maximum_value: usize) -> BitFieldVec {
-        use rayon::iter::IndexedParallelIterator;
-        use rayon::iter::IntoParallelIterator;
-        use rayon::iter::ParallelIterator;
-        use sux::bits::AtomicBitFieldVec;
-        use sux::traits::bit_field_slice::AtomicHelper;
-
-        let number_of_bits_to_represent_maximum_value =
-            (maximum_value + 1).next_power_of_two().ilog2();
-
-        unsafe {
-            let bit_field = AtomicBitFieldVec::new_uninit(
-                number_of_bits_to_represent_maximum_value as usize,
-                self.len(),
-            );
-            match self {
-                AdaptativeVector::U8(vector) => {
-                    vector
-                        .into_par_iter()
-                        .enumerate()
-                        .for_each(|(index, value)| {
-                            bit_field.set(
-                                index,
-                                value as usize,
-                                std::sync::atomic::Ordering::SeqCst,
-                            );
-                        });
-                }
-                AdaptativeVector::U16(vector) => {
-                    vector
-                        .into_par_iter()
-                        .enumerate()
-                        .for_each(|(index, value)| {
-                            bit_field.set(
-                                index,
-                                value as usize,
-                                std::sync::atomic::Ordering::SeqCst,
-                            );
-                        });
-                }
-                AdaptativeVector::U32(vector) => {
-                    vector
-                        .into_par_iter()
-                        .enumerate()
-                        .for_each(|(index, value)| {
-                            bit_field.set(
-                                index,
-                                value as usize,
-                                std::sync::atomic::Ordering::SeqCst,
-                            );
-                        });
-                }
-                AdaptativeVector::U64(vector) => {
-                    vector
-                        .into_par_iter()
-                        .enumerate()
-                        .for_each(|(index, value)| {
-                            bit_field.set(
-                                index,
-                                value as usize,
-                                std::sync::atomic::Ordering::SeqCst,
-                            );
-                        });
-                }
-            }
-            bit_field.into()
-        }
-    }
-
-    /// Converts the vector into a bit field vector.
-    pub fn into_bitvec(self, maximum_value: usize) -> BitFieldVec {
-        let number_of_bits_to_represent_maximum_value =
-            (maximum_value + 1).next_power_of_two().ilog2();
-
-        unsafe {
-            let mut bit_field = BitFieldVec::new_uninit(
-                number_of_bits_to_represent_maximum_value as usize,
-                self.len(),
-            );
-            match self {
-                AdaptativeVector::U8(vector) => {
-                    for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set(index, value as usize);
-                    }
-                }
-                AdaptativeVector::U16(vector) => {
-                    for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set(index, value as usize);
-                    }
-                }
-                AdaptativeVector::U32(vector) => {
-                    for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set(index, value as usize);
-                    }
-                }
-                AdaptativeVector::U64(vector) => {
-                    for (index, value) in vector.into_iter().enumerate() {
-                        bit_field.set(index, value as usize);
-                    }
-                }
-            }
-            bit_field
         }
     }
 }

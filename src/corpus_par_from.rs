@@ -129,7 +129,6 @@ where
             cooccurrences,
             average_key_length,
             key_offsets,
-            maximal_cooccurrence,
             key_to_ngrams,
         ) = Self::parse_keys(&keys);
 
@@ -140,8 +139,6 @@ where
         // We can now start to compress several of the vectors into BitFieldVecs.
         log::debug!("Compressing key offsets into Elias-Fano.");
         let key_offsets = unsafe { key_offsets.par_into_elias_fano() };
-        log::debug!("Compressing cooccurrence vector into BitFieldVec.");
-        let cooccurrences = cooccurrences.par_into_bitvec(maximal_cooccurrence);
 
         // We create the ngrams vector. Since we are using a btreeset, we already have the
         // ngrams sorted, so we can simply convert the btreeset into a vector.
@@ -227,7 +224,7 @@ where
         // sum of the inbound degrees of the ngrams.
         let mut comulative_sum = 0;
         let mut ngram_offsets_builder =
-            EliasFanoBuilder::new(ngram_degrees.len(), cooccurrences.len());
+            EliasFanoBuilder::new(ngram_degrees.len(), cooccurrences.num_weights());
         unsafe { ngram_offsets_builder.push_unchecked(0) };
 
         // We iterate on the ngram_degrees vector, and we compute the comulative sum of the inbound degrees.
@@ -237,7 +234,7 @@ where
                 "Since all ngrams appear in at least one key, the degree of a ngram should be at least one."
             );
             debug_assert!(
-                ngram_degree <= cooccurrences.len(),
+                ngram_degree <= cooccurrences.num_weights(),
                 "The degree of a ngram should be less than or equal to the number of keys in the corpus."
             );
             comulative_sum += ngram_degree;
@@ -247,7 +244,7 @@ where
         // We check that the total comulative sum is equal to the number of edges from keys to ngrams.
         debug_assert_eq!(
             comulative_sum,
-            cooccurrences.len(),
+            cooccurrences.num_weights(),
             "The comulative sum of the ngram degrees should be equal to the number of edges from keys to ngrams."
         );
 
@@ -259,7 +256,7 @@ where
         // as the cooccurrences vector.
         let mut gram_to_key_edges = BitFieldVec::new(
             (keys.len() + 1).next_power_of_two().ilog2() as usize,
-            cooccurrences.len(),
+            cooccurrences.num_weights(),
         );
 
         // We reset the degrees to zeroes so that we can reuse the ngram_degrees vector.

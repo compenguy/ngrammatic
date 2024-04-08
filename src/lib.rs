@@ -15,7 +15,6 @@ pub use adaptative_vector::*;
 pub mod animals;
 pub mod bit_field_bipartite_graph;
 pub mod corpus_from;
-pub mod iter_bit_field_bipartite_graph;
 pub mod lender_bit_field_bipartite_graph;
 pub mod ngram_search;
 pub mod report;

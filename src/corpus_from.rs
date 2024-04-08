@@ -1,9 +1,11 @@
 //! Submodule implementing the `From` trait for the `Corpus` struct.
 use std::collections::HashSet;
+use std::io::Cursor;
 
 use fxhash::FxBuildHasher;
 use sux::prelude::*;
 
+use crate::weights::{Weights, WeightsBuilder};
 use crate::{
     bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph, traits::*, AdaptativeVector,
 };
@@ -19,21 +21,15 @@ where
 {
     pub(crate) fn parse_keys(
         keys: &KS,
-    ) -> (
-        Vec<NG>,
-        AdaptativeVector,
-        f64,
-        AdaptativeVector,
-        usize,
-        Vec<NG>,
-    ) {
+    ) -> (Vec<NG>, Weights, f64, AdaptativeVector, Vec<NG>) {
         // Sorted vector of ngrams.
         let mut ngrams: HashSet<NG, FxBuildHasher> = HashSet::with_capacity_and_hasher(
             (keys.len() as f32).sqrt() as usize,
             FxBuildHasher::default(),
         );
-        let mut cooccurrences = AdaptativeVector::with_capacity(keys.len(), 0_u8);
-        let mut maximal_cooccurrence: usize = 0;
+
+        let mut cooccurrences_builder = WeightsBuilder::<Cursor<Vec<u8>>>::new();
+        let mut number_of_edges: usize = 0;
         let mut total_key_length: f64 = 0.0;
         let mut key_offsets = AdaptativeVector::with_capacity(keys.len() + 1, keys.len());
         key_offsets.push(0_u8);
@@ -59,6 +55,11 @@ where
             // We sort the ngrams by ngram.
             ngram_counts.sort_unstable_by(|(ngram_a, _), (ngram_b, _)| ngram_a.cmp(ngram_b));
 
+            cooccurrences_builder
+                .push(ngram_counts.iter().map(|(_, count)| count - 1))
+                .unwrap();
+            number_of_edges += ngram_counts.len();
+
             // Then, we digest the sorted array of tuples.
             for (ngram, count) in ngram_counts {
                 // We check that the provided count is greater or equal to one.
@@ -69,19 +70,11 @@ where
                 // We insert the ngram in the sorted btreeset.
                 ngrams.insert(ngram);
                 total_key_length += count as f64;
-                // We store the count of the ngram in the current key in the cooccurrences vector.
-                // Since we know that the count is at least one, we can safely subtract one from it
-                // and encode all values shifted by one. This way, we save one bit per value.
-                cooccurrences.push(count - 1);
-                // We save the maximal co-occurrence.
-                if count - 1 > maximal_cooccurrence {
-                    maximal_cooccurrence = count - 1;
-                }
                 // And finally we store the index of the ngram in the key_to_ngrams vector.
                 key_to_ngrams.push(ngram);
             }
             // We store the number of edges from the current key in the key_offsets vector.
-            key_offsets.push(cooccurrences.len());
+            key_offsets.push(number_of_edges);
         }
 
         assert!(
@@ -92,12 +85,23 @@ where
         // We convert the ngram set into a vector.
         let ngrams: Vec<NG> = ngrams.into_iter().collect();
 
+        let weights = cooccurrences_builder.build();
+
+        debug_assert!(
+            weights.num_weights() == number_of_edges,
+            "The number of edges should be equal to the number of weights."
+        );
+
+        debug_assert!(
+            weights.num_nodes() == keys.len(),
+            "The number of nodes should be equal to the number of keys."
+        );
+
         (
             ngrams,
-            cooccurrences,
+            weights,
             total_key_length / keys.len() as f64,
             key_offsets,
-            maximal_cooccurrence,
             key_to_ngrams,
         )
     }
@@ -118,7 +122,6 @@ where
             cooccurrences,
             average_key_length,
             key_offsets,
-            maximal_cooccurrence,
             key_to_ngrams,
         ) = Self::parse_keys(&keys);
 
@@ -129,8 +132,6 @@ where
         // We can now start to compress several of the vectors into BitFieldVecs.
         log::debug!("Compressing key offsets into Elias-Fano.");
         let key_offsets = unsafe { key_offsets.into_elias_fano() };
-        log::debug!("Compressing cooccurrence vector into BitFieldVec.");
-        let cooccurrences = cooccurrences.into_bitvec(maximal_cooccurrence);
 
         // We create the ngrams vector. Since we are using a btreeset, we already have the
         // ngrams sorted, so we can simply convert the btreeset into a vector.
@@ -198,7 +199,7 @@ where
         // sum of the inbound degrees of the ngrams.
         let mut comulative_sum = 0;
         let mut ngram_offsets_builder =
-            EliasFanoBuilder::new(ngram_degrees.len(), cooccurrences.len());
+            EliasFanoBuilder::new(ngram_degrees.len(), cooccurrences.num_weights());
         unsafe { ngram_offsets_builder.push_unchecked(0) };
 
         // We iterate on the ngram_degrees vector, and we compute the comulative sum of the inbound degrees.
@@ -208,7 +209,7 @@ where
                 "Since all ngrams appear in at least one key, the degree of a ngram should be at least one."
             );
             debug_assert!(
-                ngram_degree <= cooccurrences.len(),
+                ngram_degree <= cooccurrences.num_weights(),
                 "The degree of a ngram should be less than or equal to the number of keys in the corpus."
             );
             comulative_sum += ngram_degree;
@@ -218,7 +219,7 @@ where
         // We check that the total comulative sum is equal to the number of edges from keys to ngrams.
         debug_assert_eq!(
             comulative_sum,
-            cooccurrences.len(),
+            cooccurrences.num_weights(),
             "The comulative sum of the ngram degrees should be equal to the number of edges from keys to ngrams."
         );
 
@@ -230,7 +231,7 @@ where
         // as the cooccurrences vector.
         let mut gram_to_key_edges = BitFieldVec::new(
             (keys.len() + 1).next_power_of_two().ilog2() as usize,
-            cooccurrences.len(),
+            cooccurrences.num_weights(),
         );
 
         // We reset the degrees to zeroes so that we can reuse the ngram_degrees vector.

@@ -1,12 +1,10 @@
 //! Submodule providing a bidirectional weighted bipartite graph implementation based on Webgraph.
-use std::io::Cursor;
 use std::iter::Map;
 
 use crate::bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph;
 use crate::lender_bit_field_bipartite_graph::RaggedListIter;
 use crate::traits::graph::WeightedBipartiteGraph;
 use crate::weights::Weights;
-use crate::weights::WeightsBuilder;
 use crate::Corpus;
 use crate::Key;
 use crate::Keys;
@@ -83,19 +81,11 @@ impl From<WeightedBitFieldBipartiteGraph> for BiWebgraph {
             .load()
             .unwrap();
 
-        let mut weights_builder = WeightsBuilder::new(Cursor::new(Vec::new()));
-
-        Iterator::for_each(graph.iter_ragged_weight_list(), |(_, weights)| {
-            weights_builder.push(weights).unwrap();
-        });
-
-        let srcs_to_dsts_weights = weights_builder.build();
-
         Self {
             graph: gino,
             number_of_source_nodes: graph.number_of_source_nodes(),
             number_of_destination_nodes: graph.number_of_destination_nodes(),
-            srcs_to_dsts_weights,
+            srcs_to_dsts_weights: graph.srcs_to_dsts_weights,
         }
     }
 }
@@ -141,14 +131,18 @@ impl WeightedBipartiteGraph for BiWebgraph {
         self.graph.successors(src_id)
     }
 
-    type WeightsSrc<'a> = crate::weights::Succ<<crate::weights::CursorReaderFactory as crate::weights::ReaderFactory>::Reader<'a>>;
+    type WeightsSrc<'a> = crate::weights::Succ<
+        <crate::weights::CursorReaderFactory as crate::weights::ReaderFactory>::Reader<'a>,
+    >;
 
     #[inline(always)]
     fn weights_from_src(&self, src_id: usize) -> Self::WeightsSrc<'_> {
         self.srcs_to_dsts_weights.labels(src_id)
     }
 
-    type Weights<'a> = crate::weights::WeightsIter<<crate::weights::CursorReaderFactory as crate::weights::ReaderFactory>::Reader<'a>>;
+    type Weights<'a> = crate::weights::WeightsIter<
+        <crate::weights::CursorReaderFactory as crate::weights::ReaderFactory>::Reader<'a>,
+    >;
 
     #[inline(always)]
     fn weights(&self) -> Self::Weights<'_> {
