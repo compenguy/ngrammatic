@@ -9,7 +9,36 @@ To run the memory benchmarks, navigate to the `benchmarks` directory and run the
 cargo run --release
 ```
 
-## Benchmarks 5 April 2023, 08:00 PM
+## Benchmarks 8 April 2024, 08:00 PM
+The seventh benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
+In this benchmark, we are comparing the time and memory required to load the dataset into memory using the old and new implementations of the `Corpus` struct, with arities from 1 to 6.
+
+While the new edition is for arities 1 and 2 faster than the old one, for larger arities it becomes increasingly slower. Still, for all arities, the new edition is using significantly less memory than the old one. This is a significant improvement, as it allows us to scale to much larger dictionaries.
+
+In the new edition we also provide a parallel version, which has the same memory requirements as the non-parallel version, but is significantly faster.
+
+```text
+NEW - Arity: 1, Time (ms): 3_201, memory (B): 292_440_192
+NEWPAR - Arity: 1, Time (ms): 2_862, memory (B): 292_440_192
+OLD - Arity: 1, Time (ms): 11_870, memory (B): 5_603_963_834
+NEW - Arity: 2, Time (ms): 7_113, memory (B): 428_947_776
+NEWPAR - Arity: 2, Time (ms): 5_173, memory (B): 428_947_776
+OLD - Arity: 2, Time (ms): 15_583, memory (B): 8_003_769_656
+NEW - Arity: 3, Time (ms): 39_766, memory (B): 486_899_488
+NEWPAR - Arity: 3, Time (ms): 7_314, memory (B): 486_899_488
+OLD - Arity: 3, Time (ms): 16_554, memory (B): 8_583_476_604
+NEW - Arity: 4, Time (ms): 315_398, memory (B): 530_646_488
+NEWPAR - Arity: 4, Time (ms): 17_582, memory (B): 530_646_488
+OLD - Arity: 4, Time (ms): 18_561, memory (B): 9_036_530_407
+NEW - Arity: 5, Time (ms): 1_194_200, memory (B): 569_522_048
+NEWPAR - Arity: 5, Time (ms): 52_986, memory (B): 569_522_048
+OLD - Arity: 5, Time (ms): 20_336, memory (B): 9_583_720_360
+NEW - Arity: 6, Time (ms): 3_893_922, memory (B): 615_458_920
+NEWPAR - Arity: 6, Time (ms): 163_489, memory (B): 615_458_920
+OLD - Arity: 6, Time (ms): 22_206, memory (B): 10_211_711_214
+```
+
+## Benchmarks 5 April 2024, 08:00 PM
 The sixth benchmark was run on a 6-core machine with 32 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
 The innovation of this run is the use of the `EliasFano` data structure to store the ngrams, which can be more efficient than
 Vec we were using before. The vec does not make any assumptions about the data, while the `EliasFano` data structure does, and
