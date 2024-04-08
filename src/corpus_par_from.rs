@@ -124,13 +124,8 @@ where
     pub fn par_from(keys: KS) -> Self {
         // We start by parsing the keys to extract the ngrams, the cooccurrences, the key offsets,
         // and the maximal cooccurrence.
-        let (
-            mut ngrams,
-            cooccurrences,
-            average_key_length,
-            key_offsets,
-            key_to_ngrams,
-        ) = Self::parse_keys(&keys);
+        let (mut ngrams, cooccurrences, average_key_length, key_offsets, key_to_ngrams) =
+            Self::parse_keys(&keys);
 
         // We sort the ngrams in parallel.
         log::debug!("Sorting ngrams.");

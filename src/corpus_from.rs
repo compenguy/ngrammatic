@@ -19,9 +19,7 @@ where
     KS::K: AsRef<K>,
     K: Key<NG, NG::G> + ?Sized,
 {
-    pub(crate) fn parse_keys(
-        keys: &KS,
-    ) -> (Vec<NG>, Weights, f64, AdaptativeVector, Vec<NG>) {
+    pub(crate) fn parse_keys(keys: &KS) -> (Vec<NG>, Weights, f64, AdaptativeVector, Vec<NG>) {
         // Sorted vector of ngrams.
         let mut ngrams: HashSet<NG, FxBuildHasher> = HashSet::with_capacity_and_hasher(
             (keys.len() as f32).sqrt() as usize,
@@ -117,13 +115,8 @@ where
     fn from(keys: KS) -> Self {
         // We start by parsing the keys to extract the ngrams, the cooccurrences, the key offsets,
         // and the maximal cooccurrence.
-        let (
-            mut ngrams,
-            cooccurrences,
-            average_key_length,
-            key_offsets,
-            key_to_ngrams,
-        ) = Self::parse_keys(&keys);
+        let (mut ngrams, cooccurrences, average_key_length, key_offsets, key_to_ngrams) =
+            Self::parse_keys(&keys);
 
         // We sort the ngrams.
         log::debug!("Sorting ngrams.");
