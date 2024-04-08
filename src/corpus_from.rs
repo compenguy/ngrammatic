@@ -5,7 +5,7 @@ use std::io::Cursor;
 use fxhash::FxBuildHasher;
 use sux::prelude::*;
 
-use crate::weights::{Weights, WeightsBuilder};
+use crate::weights::WeightsBuilder;
 use crate::{
     bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph, traits::*, AdaptativeVector,
 };
@@ -19,9 +19,13 @@ where
     KS::K: AsRef<K>,
     K: Key<NG, NG::G> + ?Sized,
 {
+    /// Runs preliminary keys digestion to extract ngrams, cooccurrences, key offsets, and key to ngrams.
+    ///
+    /// # Arguments
+    /// * `keys` - The keys to digest.
     pub(crate) fn parse_keys(
         keys: &KS,
-    ) -> (Vec<NG>, Weights, f64, AdaptativeVector, Vec<NG>) {
+    ) -> (Vec<NG>, WeightsBuilder, f64, AdaptativeVector, Vec<NG>) {
         // Sorted vector of ngrams.
         let mut ngrams: HashSet<NG, FxBuildHasher> = HashSet::with_capacity_and_hasher(
             (keys.len() as f32).sqrt() as usize,
@@ -85,21 +89,9 @@ where
         // We convert the ngram set into a vector.
         let ngrams: Vec<NG> = ngrams.into_iter().collect();
 
-        let weights = cooccurrences_builder.build();
-
-        debug_assert!(
-            weights.num_weights() == number_of_edges,
-            "The number of edges should be equal to the number of weights."
-        );
-
-        debug_assert!(
-            weights.num_nodes() == keys.len(),
-            "The number of nodes should be equal to the number of keys."
-        );
-
         (
             ngrams,
-            weights,
+            cooccurrences_builder,
             total_key_length / keys.len() as f64,
             key_offsets,
             key_to_ngrams,
@@ -117,13 +109,10 @@ where
     fn from(keys: KS) -> Self {
         // We start by parsing the keys to extract the ngrams, the cooccurrences, the key offsets,
         // and the maximal cooccurrence.
-        let (
-            mut ngrams,
-            cooccurrences,
-            average_key_length,
-            key_offsets,
-            key_to_ngrams,
-        ) = Self::parse_keys(&keys);
+        let (mut ngrams, cooccurrences_builder, average_key_length, key_offsets, key_to_ngrams) =
+            Self::parse_keys(&keys);
+
+        let cooccurrences = cooccurrences_builder.build();
 
         // We sort the ngrams.
         log::debug!("Sorting ngrams.");

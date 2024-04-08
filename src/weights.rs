@@ -47,9 +47,7 @@ impl ReaderFactory for CursorReaderFactory {
     type Reader<'a> = Reader<std::io::Cursor<&'a [u8]>>;
 
     fn get_reader(&self, offset: usize) -> Self::Reader<'_> {
-        let mut reader = std::io::Cursor::new(
-            self.data.as_slice(),
-        );
+        let mut reader = std::io::Cursor::new(self.data.as_slice());
         reader.set_position(offset as u64);
         BufBitReader::<LittleEndian, _>::new(WordAdapter::<u32, _>::new(reader))
     }
@@ -125,6 +123,32 @@ impl WeightsBuilder {
         for offset in self.offsets {
             efb.push(offset).unwrap();
         }
+        let ef = efb.build();
+
+        Weights {
+            num_nodes: self.num_nodes,
+            num_weights: self.num_weights,
+            offsets: ef.convert_to().unwrap(),
+            reader_factory: CursorReaderFactory::new(
+                self.writer.into_inner().unwrap().into_inner().into_inner(),
+            ),
+        }
+    }
+
+    #[cfg(feature = "rayon")]
+    /// Finishes the writing and returns the reader.
+    pub fn par_build(self) -> Weights {
+        use rayon::iter::IndexedParallelIterator;
+        use rayon::iter::IntoParallelIterator;
+        use rayon::iter::ParallelIterator;
+
+        let efb = EliasFanoConcurrentBuilder::new(self.num_nodes, self.len);
+        self.offsets
+            .into_par_iter()
+            .enumerate()
+            .for_each(|(index, offset)| unsafe {
+                efb.set(index, offset, std::sync::atomic::Ordering::SeqCst);
+            });
         let ef = efb.build();
 
         Weights {
@@ -243,16 +267,18 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> lender::Lender for Lend
 /// The iterator over all the weights of the successors of all nodes
 pub struct WeightsIter<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> {
     num_nodes: usize,
-    succ: Succ<R>
+    succ: Succ<R>,
 }
 
 impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> WeightsIter<R> {
     /// Creates a new `WeightsIter` that reads from the given reader.
     pub fn new(reader: R, num_nodes: usize) -> Self {
-        WeightsIter {num_nodes, succ: Succ::new(reader)}
+        WeightsIter {
+            num_nodes,
+            succ: Succ::new(reader),
+        }
     }
 }
-
 
 impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Iterator for WeightsIter<R> {
     type Item = usize;
@@ -272,7 +298,6 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Iterator for WeightsIte
         next
     }
 }
-
 
 /// The iterator over the weights of the successors of a node
 #[derive(Clone, Debug)]
@@ -322,10 +347,15 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Iterator for Succ<R> {
 
     #[inline(always)]
     fn next(&mut self) -> Option<usize> {
-        debug_assert!(self.weights_to_decode >= self.zeros_range, concat!(
-            "Expected weights_to_decode >= zeros_range, but got ",
-            "weights_to_decode = {:?}, zeros_range = {:?}"
-        ), self.weights_to_decode, self.zeros_range);
+        debug_assert!(
+            self.weights_to_decode >= self.zeros_range,
+            concat!(
+                "Expected weights_to_decode >= zeros_range, but got ",
+                "weights_to_decode = {:?}, zeros_range = {:?}"
+            ),
+            self.weights_to_decode,
+            self.zeros_range
+        );
         if self.weights_to_decode == 0 {
             return None;
         }
@@ -389,8 +419,7 @@ impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> RandomA
     }
 }
 
-impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> Weights<RF, OFF>
-{
+impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> Weights<RF, OFF> {
     /// Returns an iterator over all the weights of the successors of all nodes.
     pub fn weights(&self) -> WeightsIter<<RF as ReaderFactory>::Reader<'_>> {
         WeightsIter::new(self.reader_factory.get_reader(0), self.num_nodes)

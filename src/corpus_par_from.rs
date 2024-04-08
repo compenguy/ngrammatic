@@ -126,11 +126,13 @@ where
         // and the maximal cooccurrence.
         let (
             mut ngrams,
-            cooccurrences,
+            cooccurrences_builder,
             average_key_length,
             key_offsets,
             key_to_ngrams,
         ) = Self::parse_keys(&keys);
+
+        let cooccurrences = cooccurrences_builder.par_build();
 
         // We sort the ngrams in parallel.
         log::debug!("Sorting ngrams.");
