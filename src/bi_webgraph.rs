@@ -1,4 +1,5 @@
 //! Submodule providing a bidirectional weighted bipartite graph implementation based on Webgraph.
+use std::io::Cursor;
 use std::iter::Empty;
 use std::iter::Map;
 use std::iter::Take;
@@ -6,13 +7,18 @@ use std::iter::Take;
 use crate::bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph;
 use crate::lender_bit_field_bipartite_graph::RaggedListIter;
 use crate::traits::graph::WeightedBipartiteGraph;
+use crate::weights::Lender;
+use crate::weights::Weights;
+use crate::weights::WeightsBuilder;
 use crate::Corpus;
 use crate::Key;
 use crate::Keys;
 use crate::Ngram;
+use dsi_bitstream::impls::WordAdapter;
 use dsi_bitstream::traits::BigEndian;
 use sux::bits::BitFieldVecIterator;
-use sux::traits::BitFieldSliceCore;
+use sux::dict::EliasFano;
+use sux::rank_sel::SelectFixed2;
 use tempfile::Builder;
 use webgraph::prelude::*;
 
@@ -34,7 +40,7 @@ pub struct BiWebgraph {
     graph: LoadedGraph,
     /// Vector containing the number of times a given gram appears in a given key.
     /// This is a descriptor of an edge from a Key to a Gram.
-    srcs_to_dsts_weights: sux::prelude::BitFieldVec,
+    srcs_to_dsts_weights: Weights<Cursor<Vec<u8>>, EliasFano<SelectFixed2>>,
     /// Number of source nodes.
     number_of_source_nodes: usize,
     /// Number of destination nodes.
@@ -67,6 +73,7 @@ impl From<WeightedBitFieldBipartiteGraph> for BiWebgraph {
             .prefix("CompressSimplified")
             .tempdir()
             .unwrap();
+
         BVComp::parallel_iter::<BigEndian, RaggedListIter>(
             "ngrams",
             graph.iter_fractional_ragged_list(64),
@@ -83,11 +90,19 @@ impl From<WeightedBitFieldBipartiteGraph> for BiWebgraph {
             .load()
             .unwrap();
 
+        let mut weights_builder = WeightsBuilder::new(Cursor::new(Vec::new()));
+
+        Iterator::for_each(graph.iter_ragged_weight_list(), |(_, weights)| {
+            weights_builder.push(weights).unwrap();
+        });
+
+        let srcs_to_dsts_weights = weights_builder.build();
+
         Self {
             graph: gino,
             number_of_source_nodes: graph.number_of_source_nodes(),
             number_of_destination_nodes: graph.number_of_destination_nodes(),
-            srcs_to_dsts_weights: graph.srcs_to_dsts_weights,
+            srcs_to_dsts_weights,
         }
     }
 }
@@ -105,7 +120,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
 
     #[inline(always)]
     fn number_of_edges(&self) -> usize {
-        self.srcs_to_dsts_weights.len()
+        self.srcs_to_dsts_weights.num_weights()
     }
 
     #[inline(always)]
@@ -145,11 +160,11 @@ impl WeightedBipartiteGraph for BiWebgraph {
         todo!()
     }
 
-    type Weights<'a> = BitFieldVecIterator<'a, usize, Vec<usize>>;
+    type Weights<'a> = Succ<std::io::Cursor<Vec<u8>>>;
 
     #[inline(always)]
     fn weights(&self) -> Self::Weights<'_> {
-        self.srcs_to_dsts_weights.iter()
+        self.srcs_to_dsts_weights.iter_from(0)
     }
 
     type Degrees<'a> = Map<

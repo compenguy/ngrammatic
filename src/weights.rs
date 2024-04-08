@@ -9,7 +9,7 @@ use std::io::{Read, Seek, Write};
 use sux::prelude::*;
 use webgraph::prelude::*;
 
-type Writer<W> = BufBitWriter<LittleEndian, WordAdapter<u64, W>>;
+type Writer<W> = BufBitWriter<LittleEndian, WordAdapter<u32, W>>;
 type Reader<R> = BufBitReader<LittleEndian, WordAdapter<u32, R>>;
 type EF = EliasFano<SelectFixed2>;
 
@@ -44,7 +44,10 @@ impl<W: Write> WeightsBuilder<W> {
     }
 
     /// Writes the weights of the given node to the writer.
-    pub fn push(&mut self, weights: &[usize]) -> std::io::Result<usize> {
+    pub fn push<WS>(&mut self, weights: WS) -> std::io::Result<usize>
+    where
+        WS: ExactSizeIterator<Item = usize>,
+    {
         self.num_nodes += 1;
         self.num_weights += weights.len();
         self.offsets.push(self.len);
@@ -52,7 +55,7 @@ impl<W: Write> WeightsBuilder<W> {
         bits_written += self.writer.write_gamma(weights.len() as u64)?;
 
         let mut ones_range = 0;
-        for &weight in weights {
+        for weight in weights {
             if weight == 1 {
                 if ones_range == 0 {
                     bits_written += self.writer.write_unary(0)?;
@@ -118,6 +121,11 @@ impl<R: Read, OFF> Weights<R, OFF> {
         }
     }
 
+    /// Returns the number of weights.
+    pub fn num_weights(&self) -> usize {
+        self.num_weights
+    }
+
     /// Consumes the `Weights` and returns the inner reader and offsets.
     pub fn into_inner(self) -> (R, OFF) {
         (self.reader, self.offsets)
@@ -142,6 +150,7 @@ impl<'lend, R: Read> webgraph::traits::NodeLabelsLender<'lend> for Lender<R> {
 impl<'lend, R: Read> lender::Lending<'lend> for Lender<R> {
     type Lend = (usize, Vec<usize>);
 }
+
 impl<R: Read> lender::Lender for Lender<R> {
     fn next(&mut self) -> Option<lender::prelude::Lend<'_, Self>> {
         if self.start_node == self.num_nodes - 1 {

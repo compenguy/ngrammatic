@@ -273,7 +273,7 @@ where
     pub fn ngrams_and_cooccurrences_from_key(
         &self,
         key_id: usize,
-    ) -> impl ExactSizeIterator<Item = (NG, usize)> + '_ {
+    ) -> impl Iterator<Item = (NG, usize)> + '_ {
         self.ngram_ids_and_cooccurrences_from_key(key_id)
             .map(move |(ngram_id, cooccurrence)| (self.ngram_from_id(ngram_id), cooccurrence))
     }

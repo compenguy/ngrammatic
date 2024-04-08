@@ -13,9 +13,14 @@ mem_dbg = "0.1"
 ngrammatic = { path = "../../ngrammatic", features = ["mem_dbg", "rayon"] }
 rayon = "1.10.0"
 serde_json = "1.0.115"
+# We also use the version of the ngrammatic library before the refactoring
+# to evaluate the changes in performance. The version we refer to is the 0.4.0
+# version of the library.
+ngrammatic_old = { git="https://github.com/LucaCappelletti94/ngrammatic-old.git", branch="main", package="ngrammatic" }
 
 [profile.release]
 overflow-checks = false   # Disable integer overflow checks.
 debug = false            # Include debug info.
 debug-assertions = false  # Enables debug assertions.
 opt-level = 3
+

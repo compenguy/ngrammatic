@@ -39,7 +39,7 @@ where
         key_offsets.push(0_u8);
         let mut key_to_ngrams: Vec<NG> = Vec::with_capacity(keys.len());
 
-        log::info!("Building ngrams from keys.");
+        log::debug!("Building ngrams from keys.");
 
         for key in keys.iter() {
             // First, we get the reference to the inner key.
@@ -123,18 +123,18 @@ where
         ) = Self::parse_keys(&keys);
 
         // We sort the ngrams.
-        log::info!("Sorting ngrams.");
+        log::debug!("Sorting ngrams.");
         ngrams.sort_unstable();
 
         // We can now start to compress several of the vectors into BitFieldVecs.
-        log::info!("Compressing key offsets into Elias-Fano.");
+        log::debug!("Compressing key offsets into Elias-Fano.");
         let key_offsets = unsafe { key_offsets.into_elias_fano() };
-        log::info!("Compressing cooccurrence vector into BitFieldVec.");
+        log::debug!("Compressing cooccurrence vector into BitFieldVec.");
         let cooccurrences = cooccurrences.into_bitvec(maximal_cooccurrence);
 
         // We create the ngrams vector. Since we are using a btreeset, we already have the
         // ngrams sorted, so we can simply convert the btreeset into a vector.
-        log::info!(
+        log::debug!(
             "Storing ngrams into {}.",
             std::any::type_name::<NG::SortedStorage>()
         );
@@ -173,7 +173,7 @@ where
             key_to_ngrams.len(),
         );
 
-        log::info!("Building the key to ngram edges and computing ngram degrees.");
+        log::debug!("Building the key to ngram edges and computing ngram degrees.");
 
         // We iterate on the key_to_ngrams vector. For each ngram we encounter, we find the index of the ngram
         // in the ngram vector by employing a binary search, since we know that the ngrams are sorted.
@@ -192,7 +192,7 @@ where
             }
         }
 
-        log::info!("Computing ngrams degrees comulative sum.");
+        log::debug!("Computing ngrams degrees comulative sum.");
 
         // Now that we have fully populated the ngram_degrees vector, we need to compute the comulative
         // sum of the inbound degrees of the ngrams.
@@ -225,7 +225,7 @@ where
         // We build the ngram_offsets vector.
         let ngram_offsets = ngram_offsets_builder.build().convert_to().unwrap();
 
-        log::info!("Building edges from gram to key.");
+        log::debug!("Building edges from gram to key.");
         // Finally, we can allocate and populate the gram_to_key_edges vector. This vector has the same length
         // as the cooccurrences vector.
         let mut gram_to_key_edges = BitFieldVec::new(
