@@ -73,6 +73,12 @@ pub struct WeightsBuilder<W: Write = std::io::Cursor<Vec<u8>>> {
     num_weights: usize,
 }
 
+impl core::default::Default for WeightsBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl WeightsBuilder {
     /// Creates a new `WeightsBuilder` that writes to the given writer.
     pub fn new() -> WeightsBuilder {
@@ -120,12 +126,17 @@ impl<W: Write> WeightsBuilder<W> {
             }
 
             if zeros_range > 0 {
-                bits_written += self.writer.write_gamma(zeros_range as u64)?;
+                bits_written += self.writer.write_gamma(zeros_range as u64 - 1)?;
                 zeros_range = 0;
             }
 
             bits_written += self.writer.write_unary(weight as u64)?;
         }
+
+        if zeros_range > 0 {
+            bits_written += self.writer.write_gamma(zeros_range as u64 - 1)?;
+        }
+
         self.len += bits_written;
         Ok(bits_written)
     }
@@ -238,15 +249,15 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> lender::Lender for Lend
 
         while weights_to_decode != 0 {
             let weight = self.reader.read_unary().unwrap() as usize;
+            successors.push(weight);
+            weights_to_decode -= 1;
+
             if weight == 0 {
                 let zeros_range = self.reader.read_gamma().unwrap() as usize;
                 successors.resize(successors.len() + zeros_range, 0);
                 weights_to_decode -= zeros_range;
                 continue;
             }
-
-            successors.push(weight);
-            weights_to_decode -= 1;
         }
 
         Some((node, successors))
@@ -356,6 +367,7 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Iterator for Succ<R> {
 
         if self.zeros_range > 0 {
             self.zeros_range -= 1;
+            self.weights_to_decode -= 1;
             return Some(0);
         }
 
@@ -363,7 +375,6 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Iterator for Succ<R> {
 
         if weight == 0 {
             self.zeros_range = self.reader.read_gamma().unwrap() as usize;
-            self.zeros_range -= 1;
         }
 
         self.weights_to_decode -= 1;
@@ -383,6 +394,7 @@ impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> Sequent
     }
 
     fn iter_from(&self, from: usize) -> Self::Lender<'_> {
+        debug_assert!(from < self.num_nodes);
         let offset = self.offsets.get(from);
         Lender {
             reader: self.reader_factory.get_reader(offset),
@@ -402,11 +414,13 @@ impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> RandomA
     }
 
     fn labels(&self, node_id: usize) -> <Self as RandomAccessLabeling>::Labels<'_> {
+        debug_assert!(node_id < self.num_nodes);
         let offset = self.offsets.get(node_id);
         Succ::new(self.reader_factory.get_reader(offset))
     }
 
     fn outdegree(&self, node_id: usize) -> usize {
+        debug_assert!(node_id < self.num_nodes);
         let offset = self.offsets.get(node_id);
         let mut reader = self.reader_factory.get_reader(offset);
         reader.read_gamma().unwrap() as usize
@@ -430,9 +444,10 @@ mod test {
     fn test_weights() {
         let weights = vec![
             vec![1, 2, 3, 4, 5],
+            vec![0, 0, 0, 0, 0],
             vec![1, 1, 1, 1, 1],
-            vec![1, 1, 1, 1, 1],
-            vec![1, 1, 3, 2, 2],
+            vec![1, 0, 3, 2, 2],
+            vec![0],
             vec![],
         ];
 
