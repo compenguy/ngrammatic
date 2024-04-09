@@ -11,7 +11,6 @@ use crate::Keys;
 use crate::Ngram;
 use crate::Offset;
 use crate::Offsettable;
-use crate::Underscored;
 use dsi_bitstream::traits::BigEndian;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -58,7 +57,7 @@ impl<KS, NG, K> TryFrom<Corpus<KS, NG, K, WeightedBitFieldBipartiteGraph>>
 where
     NG: Ngram,
     KS: Keys<NG>,
-    KS::K: AsRef<K>,
+    for<'a> KS::KeyRef<'a>: AsRef<K>,
     K: Key<NG, NG::G> + ?Sized,
 {
     type Error = &'static str;

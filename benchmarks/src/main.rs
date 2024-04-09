@@ -7,11 +7,10 @@
 //! As corpus we use the `./taxons.csv.gz` file, which contains a single column with the scientific names
 //! of the taxons as provided by NCBI Taxonomy.
 use core::fmt::Debug;
-use indicatif::ProgressIterator;
 use mem_dbg::*;
 use ngrammatic::prelude::*;
 use rayon::prelude::*;
-use std::io::Write;
+use sux::dict::rear_coded_list::{RearCodedList, RearCodedListBuilder};
 
 /// Returns an iterator over the taxons in the corpus.
 fn iter_taxons() -> impl Iterator<Item = String> {
@@ -24,12 +23,22 @@ fn iter_taxons() -> impl Iterator<Item = String> {
     reader.lines().map(|line| line.unwrap())
 }
 
-/// Returns bigram corpus.
+/// Returns the built RCL
+fn build_rcl() -> RearCodedList {
+    let mut taxons: Vec<String> = iter_taxons().collect();
+    taxons.par_sort_unstable();
+
+    let mut rcl_builder = RearCodedListBuilder::new(8);
+    for taxon in taxons {
+        rcl_builder.push(&taxon);
+    }
+    rcl_builder.build()
+}
+
 fn load_corpus_new<NG>()
 where
     NG: Ngram<G = ASCIIChar>,
 {
-    let number_of_taxons = 2_571_000;
     let start_time = std::time::Instant::now();
     let taxons: Vec<String> = iter_taxons().collect();
     let corpus: Corpus<Vec<String>, NG, Lowercase<str>> = Corpus::from(taxons);
@@ -48,7 +57,6 @@ where
     );
 }
 
-/// Returns bigram corpus.
 fn load_corpus_par_new<NG>()
 where
     NG: Ngram<G = ASCIIChar>,
@@ -64,11 +72,31 @@ where
     // not get polluted by the log messages of the other dependencies which can, at times
     // be quite significant.
     log::error!(
-        "NEWPAR - Arity: {}, Time (ms): {}, memory (B): {}, memory graph (B): {}",
+        "NEWPAR - Arity: {}, Time (ms): {}, memory (B): {}",
         NG::ARITY,
         duration.underscored(),
         corpus.mem_size(SizeFlags::default()).underscored(),
-        corpus.graph().mem_size(SizeFlags::default()).underscored()
+    );
+}
+
+fn load_corpus_rcl_par_new<NG>()
+where
+    NG: Ngram<G = ASCIIChar>,
+{
+    let start_time = std::time::Instant::now();
+    let corpus: Corpus<_, NG, Lowercase<str>> = Corpus::par_from(build_rcl());
+
+    let end_time = std::time::Instant::now();
+    let duration: usize = (end_time - start_time).as_millis() as usize;
+
+    // While this is a simple info message, we use the error flag so that the log will
+    // not get polluted by the log messages of the other dependencies which can, at times
+    // be quite significant.
+    log::error!(
+        "RCL NEWPAR - Arity: {}, Time (ms): {}, memory (B): {}",
+        NG::ARITY,
+        duration.underscored(),
+        corpus.mem_size(SizeFlags::default()).underscored(),
     );
 }
 
@@ -99,28 +127,12 @@ fn load_corpus_old(arity: usize) -> ngrammatic_old::Corpus {
     corpus
 }
 
-/// Returns bigram corpus.
 fn load_corpus_webgraph<NG>()
 where
     NG: Ngram<G = ASCIIChar> + Debug,
 {
-    // let number_of_taxons = 2_571_000;
-    let number_of_taxons = 2_571_000;
-
-    let loading_bar = indicatif::ProgressBar::new(number_of_taxons as u64);
-
-    let progress_style = indicatif::ProgressStyle::default_bar()
-        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})")
-        .unwrap()
-        .progress_chars("#>-");
-
-    loading_bar.set_style(progress_style);
-
     let start_time = std::time::Instant::now();
-    let taxons: Vec<String> = iter_taxons()
-        .take(number_of_taxons)
-        .progress_with(loading_bar)
-        .collect();
+    let taxons: Vec<String> = iter_taxons().collect();
     let corpus: Corpus<Vec<String>, NG, Lowercase<str>> = Corpus::par_from(taxons);
 
     let corpus_webgraph: Corpus<Vec<String>, NG, Lowercase<str>, BiWebgraph> =
@@ -133,22 +145,40 @@ where
     // not get polluted by the log messages of the other dependencies which can, at times
     // be quite significant.
     log::error!(
-        "WEBGRAPH - Arity: {}, Time (ms): {}, memory (B): {}, memory graph (B): {}",
+        "WEBGRAPH - Arity: {}, Time (ms): {}, memory (B): {}",
         NG::ARITY,
         duration.underscored(),
-        corpus_webgraph.mem_size(SizeFlags::default() | SizeFlags::FOLLOW_REFS).underscored(),
-        corpus_webgraph.graph().mem_size(SizeFlags::default() | SizeFlags::FOLLOW_REFS).underscored()
+        corpus_webgraph
+            .mem_size(SizeFlags::default() | SizeFlags::FOLLOW_REFS)
+            .underscored(),
     );
 }
 
-/// Returns bigram corpus.
-fn bigram_corpus() {
-    load_corpus_new::<BiGram<ASCIIChar>>()
-}
+fn load_corpus_rcl_webgraph<NG>()
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    let start_time = std::time::Instant::now();
 
-/// Returns trigram corpus.
-fn trigram_corpus() {
-    load_corpus_new::<TriGram<ASCIIChar>>()
+    let corpus: Corpus<_, NG, Lowercase<str>> = Corpus::par_from(build_rcl());
+
+    let corpus_webgraph: Corpus<_, NG, Lowercase<str>, BiWebgraph> =
+        Corpus::try_from(corpus).unwrap();
+
+    let end_time = std::time::Instant::now();
+    let duration: usize = (end_time - start_time).as_millis() as usize;
+
+    // While this is a simple info message, we use the error flag so that the log will
+    // not get polluted by the log messages of the other dependencies which can, at times
+    // be quite significant.
+    log::error!(
+        "RCL WEBGRAPH - Arity: {}, Time (ms): {}, memory (B): {}",
+        NG::ARITY,
+        duration.underscored(),
+        corpus_webgraph
+            .mem_size(SizeFlags::default() | SizeFlags::FOLLOW_REFS)
+            .underscored()
+    );
 }
 
 fn experiment<NG>()
@@ -157,7 +187,9 @@ where
 {
     // load_corpus_new::<NG>();
     load_corpus_par_new::<NG>();
+    load_corpus_rcl_par_new::<NG>();
     load_corpus_webgraph::<NG>();
+    load_corpus_rcl_webgraph::<NG>();
     load_corpus_old(NG::ARITY);
 }
 

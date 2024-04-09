@@ -7,53 +7,52 @@ use std::cmp::{Ordering, Reverse};
 use mem_dbg::{MemDbg, MemSize};
 
 /// Holds a collection of search results.
-pub type SearchResults<'a, KS, NG, F> =
-    Vec<SearchResult<'a, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>;
+pub type SearchResults<'a, KS, NG, F> = Vec<SearchResult<<KS as Keys<NG>>::KeyRef<'a>, F>>;
 
 /// Holds a fuzzy match search result string, and its associated similarity
 /// to the query text.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
-pub struct SearchResult<'a, K: ?Sized, F: Float> {
+pub struct SearchResult<K, F: Float> {
     /// The key of a fuzzy match
-    key: &'a K,
+    key: K,
     /// A similarity score value indicating how closely the other term matched
     score: F,
 }
 
-impl<'a, K: ?Sized, F: Float> Eq for SearchResult<'a, K, F> {}
+impl<K, F: Float> Eq for SearchResult<K, F> {}
 
-impl<'a, K: ?Sized, F: Float> Ord for SearchResult<'a, K, F> {
+impl<K, F: Float> Ord for SearchResult<K, F> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.score.partial_cmp(&other.score).unwrap()
     }
 }
 
-impl<'a, K: ?Sized, F: Float> PartialOrd for SearchResult<'a, K, F> {
+impl<K, F: Float> PartialOrd for SearchResult<K, F> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<'a, K: ?Sized, F: Float> PartialEq for SearchResult<'a, K, F> {
+impl<K, F: Float> PartialEq for SearchResult<K, F> {
     fn eq(&self, other: &Self) -> bool {
         self.score == other.score
     }
 }
 
-impl<'a, K: ?Sized, F: Float> SearchResult<'a, K, F> {
+impl<K: Clone, F: Float> SearchResult<K, F> {
     /// Trivial constructor used internally to build search results
     ///
     /// # Arguments
     /// * `key` - The key of a fuzzy match
     /// * `score` - A similarity score value indicating how closely the other term matched
-    pub(crate) fn new(key: &'a K, score: F) -> Self {
+    pub(crate) fn new(key: K, score: F) -> Self {
         Self { key, score }
     }
 
     /// Returns the key of a fuzzy match
-    pub fn key(&self) -> &'a K {
-        self.key
+    pub fn key(&self) -> K {
+        self.key.clone()
     }
 
     /// Returns a similarity score value indicating how closely the other term matched
@@ -63,14 +62,14 @@ impl<'a, K: ?Sized, F: Float> SearchResult<'a, K, F> {
 }
 
 /// Holds the top n best search results.
-pub(crate) struct SearchResultsHeap<'a, K: ?Sized, F: Float> {
+pub(crate) struct SearchResultsHeap<K, F: Float> {
     /// The k best search results
-    heap: std::collections::BinaryHeap<Reverse<SearchResult<'a, K, F>>>,
+    heap: std::collections::BinaryHeap<Reverse<SearchResult<K, F>>>,
     /// The maximum number of results to return
     n: usize,
 }
 
-impl<'a, K: ?Sized, F: Float> SearchResultsHeap<'a, K, F> {
+impl<K, F: Float> SearchResultsHeap<K, F> {
     /// Creates a new `SearchResultsHeap` with a maximum number of results to return
     ///
     /// # Arguments
@@ -86,7 +85,7 @@ impl<'a, K: ?Sized, F: Float> SearchResultsHeap<'a, K, F> {
     ///
     /// # Arguments
     /// * `search_result` - The search result to push onto the heap
-    pub(crate) fn push(&mut self, search_result: SearchResult<'a, K, F>) {
+    pub(crate) fn push(&mut self, search_result: SearchResult<K, F>) {
         if self.heap.len() < self.n {
             self.heap.push(Reverse(search_result));
         } else if let Some(min) = self.heap.peek() {
@@ -98,7 +97,7 @@ impl<'a, K: ?Sized, F: Float> SearchResultsHeap<'a, K, F> {
     }
 
     /// Returns the top n best search results
-    pub(crate) fn into_sorted_vec(self) -> Vec<SearchResult<'a, K, F>> {
+    pub(crate) fn into_sorted_vec(self) -> Vec<SearchResult<K, F>> {
         self.heap
             .into_sorted_vec()
             .into_iter()

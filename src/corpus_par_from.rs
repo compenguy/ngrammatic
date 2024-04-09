@@ -11,7 +11,7 @@ impl<KS, NG, K> Corpus<KS, NG, K, WeightedBitFieldBipartiteGraph>
 where
     NG: Ngram + Send + Sync,
     KS: Keys<NG>,
-    KS::K: AsRef<K>,
+    for<'a> KS::KeyRef<'a>: AsRef<K>,
     K: Key<NG, NG::G> + ?Sized,
 {
     /// Creates a new corpus from a set of keys, in parallel.

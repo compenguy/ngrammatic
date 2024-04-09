@@ -235,42 +235,11 @@ where
     }
 }
 
-impl<NG> Key<NG, char> for &str
-where
-    NG: Ngram<G = char>,
-{
-    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<TrimNull<Trim<std::str::Chars<'a>>>>>> where Self: 'a;
-    type Ref = str;
-
-    #[inline(always)]
-    fn grams(&self) -> Self::Grams<'_> {
-        self.chars()
-            .trim()
-            .trim_null()
-            .alphanumeric()
-            .dedup_spaces()
-            .both_padding::<NG>()
-    }
-}
-
 impl<NG> Key<NG, u8> for String
 where
     NG: Ngram<G = u8>,
 {
     type Grams<'a> = BothPadding<NG, std::str::Bytes<'a>>;
-    type Ref = str;
-
-    #[inline(always)]
-    fn grams(&self) -> Self::Grams<'_> {
-        self.bytes().both_padding::<NG>()
-    }
-}
-
-impl<NG> Key<NG, u8> for &str
-where
-    NG: Ngram<G = u8>,
-{
-    type Grams<'a> = BothPadding<NG, std::str::Bytes<'a>> where Self: 'a;
     type Ref = str;
 
     #[inline(always)]
@@ -298,22 +267,18 @@ where
     }
 }
 
-impl<NG> Key<NG, ASCIIChar> for &str
+impl<R, NG> Key<NG, NG::G> for &R
 where
-    NG: Ngram<G = ASCIIChar>,
+    R: Key<NG, NG::G> + ?Sized,
+    NG: Ngram,
+    Self: AsRef<<R as Key<NG, NG::G>>::Ref>,
 {
-    type Grams<'a> = BothPadding<NG, SpaceNormalizer<Alphanumeric<TrimNull<Trim<ASCIICharIterator<std::str::Chars<'a>>>>>>> where Self: 'a;
-    type Ref = str;
+    type Grams<'a> = R::Grams<'a> where Self: 'a;
+    type Ref = R::Ref;
 
     #[inline(always)]
     fn grams(&self) -> Self::Grams<'_> {
-        self.chars()
-            .ascii()
-            .trim()
-            .trim_null()
-            .alphanumeric()
-            .dedup_spaces()
-            .both_padding::<NG>()
+        (*self).grams()
     }
 }
 

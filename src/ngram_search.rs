@@ -109,7 +109,7 @@ impl<KS, NG, K, G> Corpus<KS, NG, K, G>
 where
     NG: Ngram,
     KS: Keys<NG>,
-    KS::K: AsRef<K>,
+    for<'a> KS::KeyRef<'a>: AsRef<K>,
     K: Key<NG, NG::G> + ?Sized,
     G: WeightedBipartiteGraph,
 {
@@ -266,7 +266,7 @@ where
     <NG as Ngram>::G: Send + Sync,
     <NG as Ngram>::SortedStorage: Send + Sync,
     KS: Keys<NG> + Send + Sync,
-    KS::K: AsRef<K> + Send + Sync,
+    for<'a> KS::KeyRef<'a>: AsRef<K> + Send + Sync,
     <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref: Send + Sync,
     K: Key<NG, NG::G> + ?Sized + Send + Sync,
     G: WeightedBipartiteGraph + Send + Sync,

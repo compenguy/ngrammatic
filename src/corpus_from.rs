@@ -16,7 +16,7 @@ impl<KS, NG, K> Corpus<KS, NG, K, WeightedBitFieldBipartiteGraph>
 where
     NG: Ngram,
     KS: Keys<NG>,
-    KS::K: AsRef<K>,
+    for<'a> KS::KeyRef<'a>: AsRef<K>,
     K: Key<NG, NG::G> + ?Sized,
 {
     /// Runs preliminary keys digestion to extract ngrams, cooccurrences, key offsets, and key to ngrams.
@@ -103,7 +103,7 @@ impl<KS, NG, K> From<KS> for Corpus<KS, NG, K, WeightedBitFieldBipartiteGraph>
 where
     NG: Ngram,
     KS: Keys<NG>,
-    KS::K: AsRef<K>,
+    for<'a> KS::KeyRef<'a>: AsRef<K>,
     K: Key<NG, NG::G> + ?Sized,
 {
     fn from(keys: KS) -> Self {

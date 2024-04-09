@@ -242,7 +242,7 @@ impl<KS, NG, K, G> Corpus<KS, NG, K, G>
 where
     NG: Ngram,
     KS: Keys<NG>,
-    KS::K: AsRef<K>,
+    for<'a> KS::KeyRef<'a>: AsRef<K>,
     K: Key<NG, NG::G> + ?Sized,
     G: WeightedBipartiteGraph,
 {

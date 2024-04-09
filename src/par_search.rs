@@ -15,7 +15,7 @@ where
     <NG as Ngram>::G: Send + Sync,
     <NG as Ngram>::SortedStorage: Send + Sync,
     KS: Keys<NG> + Send + Sync,
-    KS::K: AsRef<K> + Send + Sync,
+    for<'a> KS::KeyRef<'a>: AsRef<K> + Send + Sync,
     K: Key<NG, NG::G> + ?Sized + Send + Sync,
     <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref: Send + Sync,
     G: WeightedBipartiteGraph + Send + Sync,
@@ -77,7 +77,7 @@ where
                 });
                 heap.into_sorted_vec()
             })
-            .collect::<Vec<SearchResult<'_, <<KS as Keys<NG>>::K as Key<NG, <NG as Ngram>::G>>::Ref, F>>>();
+            .collect::<SearchResults<'_, KS, NG, F>>();
 
         // Sort highest similarity to lowest
         matches.par_sort_unstable_by(|a, b| b.partial_cmp(a).unwrap());
