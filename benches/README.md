@@ -40,7 +40,7 @@ test build_corpus_trigram_old       ... bench:  90,324,434 ns/iter (+/- 745,276)
 test build_corpus_trigram_par_new   ... bench:  32,736,639 ns/iter (+/- 405,984)
 ```
 
-The following is the benchmark over the search operations, including both the ngram search and the tfidf search, across the first `100_000` taxons from the dataset. We limit the search to the first `100_000` taxons to avoid running the benchmarks for hours. We observe that the parallel implementation, on the considered benchmark, is slower than the sequential one as the query strings are rather small and the overhead of the parallelism is not compensated by the parallel execution.
+The following is the benchmark over the search operations, including both the ngram search and the tfidf search, across the first `100_000` taxons from the dataset. We limit the search to the first `100_000` taxons to avoid running the benchmarks for hours. We observe that the parallel implementation, on the considered benchmark, is often slower than the sequential one as the query strings are rather small and the overhead of the parallelism is not compensated by the parallel execution.
 
 ```text
 running 40 tests
