@@ -10,7 +10,7 @@ RUSTFLAGS="-C target-cpu=native" cargo bench
 ```
 
 ## Benchmarks 9 April 2024, 01:00 PM
-The fifth benchmark was run on a 32-core machine with 64 threads and with 256 GBs of RAM. In this iteration, we run the benchmarks relative to loading the first `10_000` taxons from the dataset into memory. 
+The fifth benchmark was run on a 32-core machine with 64 threads and with 256 GBs of RAM. In this iteration, we run the benchmarks relative to loading the first `10_000` taxons from the dataset into memory. The novelty of this benchmark is the use of the webgraph data structure as one of the possible underlying graph representations, which requires a significantly smaller memory footprint than the default graph representation. 
 
 ```text
 running 40 tests
