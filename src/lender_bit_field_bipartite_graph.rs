@@ -11,7 +11,8 @@
 //! neighbours of a given node several times without having to execute expensive
 //! operations, but it is required by the current implementation of Webgraph.
 
-use crate::{bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph, WeightedBipartiteGraph};
+use crate::bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph;
+use crate::traits::*;
 use lender::prelude::*;
 use sux::prelude::BitFieldVecIterator;
 use webgraph::traits::NodeLabelsLender;
@@ -27,49 +28,6 @@ pub trait FromGraphRange {
         start: usize,
         end: usize,
     ) -> Self::Iter<'_>;
-}
-
-/// A struct handling the offsetting of ngram nodes in the WeightedBitFieldBipartiteGraph.
-pub struct Offset<'a> {
-    /// The offset to apply to the nodes. It is expected to be zero for
-    /// the source nodes representing the keys and equal to the number of
-    /// source nodes for the destination nodes representing the ngrams.
-    offset: usize,
-    /// The iterator over the nodes.
-    iterator: BitFieldVecIterator<'a, usize, Vec<usize>>,
-}
-
-impl<'a> From<BitFieldVecIterator<'a, usize, Vec<usize>>> for Offset<'a> {
-    fn from(iterator: BitFieldVecIterator<'a, usize, Vec<usize>>) -> Self {
-        Self::new(0, iterator)
-    }
-}
-
-impl<'a> Offset<'a> {
-    /// Returns a new Offset struct.
-    pub fn new(offset: usize, iterator: BitFieldVecIterator<'a, usize, Vec<usize>>) -> Self {
-        Offset { offset, iterator }
-    }
-}
-
-impl<'a> Iterator for Offset<'a> {
-    type Item = usize;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iterator.next().map(|node| node + self.offset)
-    }
-}
-
-impl<'a> DoubleEndedIterator for Offset<'a> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iterator.next_back().map(|node| node + self.offset)
-    }
-}
-
-impl<'a> ExactSizeIterator for Offset<'a> {
-    fn len(&self) -> usize {
-        self.iterator.len()
-    }
 }
 
 /// A struct iterating across the nodes and their neighbours in a ragged list.
@@ -102,7 +60,7 @@ impl<'a> From<&'a WeightedBitFieldBipartiteGraph> for RaggedListIter<'a> {
 }
 
 impl<'a> Iterator for RaggedListIter<'a> {
-    type Item = (usize, Offset<'a>);
+    type Item = (usize, Offset<BitFieldVecIterator<'a, usize, Vec<usize>>>);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.start >= self.end {
@@ -110,7 +68,7 @@ impl<'a> Iterator for RaggedListIter<'a> {
         }
         if self.start < self.graph.number_of_source_nodes() {
             let offset = Offset::new(
-                self.graph.number_of_source_nodes(),
+                self.graph.number_of_source_nodes() as isize,
                 self.graph.dsts_from_src(self.start),
             );
             self.start += 1;
@@ -134,7 +92,7 @@ impl<'a> DoubleEndedIterator for RaggedListIter<'a> {
         self.end -= 1;
         if self.end < self.graph.number_of_source_nodes() {
             let offset = Offset::new(
-                self.graph.number_of_source_nodes(),
+                self.graph.number_of_source_nodes() as isize,
                 self.graph.dsts_from_src(self.end),
             );
             Some((self.end, offset))
@@ -177,8 +135,8 @@ impl<'a> ExactSizeLender for RaggedListIter<'a> {
 }
 
 impl<'a, 'b> NodeLabelsLender<'b> for RaggedListIter<'a> {
-    type Label = <Offset<'a> as Iterator>::Item;
-    type IntoIterator = Offset<'a>;
+    type Label = <Offset<BitFieldVecIterator<'a, usize, Vec<usize>>> as Iterator>::Item;
+    type IntoIterator = Offset<BitFieldVecIterator<'a, usize, Vec<usize>>>;
 }
 
 /// A struct iterating across the nodes and their neighbours in a ragged list.

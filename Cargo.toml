@@ -29,6 +29,7 @@ dsi-bitstream = "0.4.2"
 epserde = "0.4.0"
 log = "0.4.21"
 lender = "0.2.9"
+rand = "0.8.5"
 
 [dev-dependencies]
 flate2 = "1.0.28"

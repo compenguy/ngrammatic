@@ -292,7 +292,7 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> lender::Lender for Lend
 
 /// The iterator over all the weights of the successors of all nodes
 pub struct WeightsIter<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> {
-   len: usize,
+    len: usize,
     succ: Succ<R>,
 }
 

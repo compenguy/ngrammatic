@@ -324,8 +324,7 @@ where
     ///
     /// let config = NgramSearchConfig::default().set_warp(2.5).unwrap();
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
-    ///     corpus.ngram_par_search_with_warp("Cat", config);
+    /// let results: Vec<SearchResult<'_, str, f32>> = corpus.ngram_par_search_with_warp("Cat", config);
     ///
     /// assert_eq!(results[0].key(), "Cat");
     /// ```

@@ -115,22 +115,22 @@ where
     ///
     /// let bigram_corpus: Corpus<&[&str], BiGram<char>, Lowercase<str>> = Corpus::par_from(&animals);
     /// let trigram_corpus: Corpus<&[&str], TriGram<char>, Lowercase<str>> = Corpus::par_from(&animals);
-    /// let tetragram_corpus: Corpus<&[&str], TetraGram<char>, Lowercase<str>> = Corpus::par_from(&animals);
-    /// let pentagram_corpus: Corpus<&[&str], PentaGram<char>, Lowercase<str>> = Corpus::par_from(&animals);
-    /// let hexagram_corpus: Corpus<&[&str], HexaGram<char>, Lowercase<str>> = Corpus::par_from(&animals);
-    /// let heptagram_corpus: Corpus<&[&str], HeptaGram<char>, Lowercase<str>> = Corpus::par_from(&animals);
-    /// let octagram_corpus: Corpus<&[&str], OctaGram<char>, Lowercase<str>> = Corpus::par_from(&animals);
+    /// let tetragram_corpus: Corpus<&[&str], TetraGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(&animals);
+    /// let pentagram_corpus: Corpus<&[&str], PentaGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(&animals);
+    /// let hexagram_corpus: Corpus<&[&str], HexaGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(&animals);
+    /// let heptagram_corpus: Corpus<&[&str], HeptaGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(&animals);
+    /// let octagram_corpus: Corpus<&[&str], OctaGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(&animals);
     /// ```
     pub fn par_from(keys: KS) -> Self {
         // We start by parsing the keys to extract the ngrams, the cooccurrences, the key offsets,
         // and the maximal cooccurrence.
-        let (
-            mut ngrams,
-            cooccurrences_builder,
-            average_key_length,
-            key_offsets,
-            key_to_ngrams,
-        ) = Self::parse_keys(&keys);
+        let (mut ngrams, cooccurrences_builder, average_key_length, key_offsets, key_to_ngrams) =
+            Self::parse_keys(&keys);
 
         let cooccurrences = cooccurrences_builder.par_build();
 

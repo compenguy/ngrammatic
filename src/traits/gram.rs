@@ -201,7 +201,7 @@ impl<NG: Ngram> ConcurrentSortedNgramStorageBuilder<NG> for SharedVec<NG> {
 }
 
 /// Trait defined a sorted storage for Ngrams.
-pub trait SortedNgramStorage<NG: Ngram>: Send + Sync {
+pub trait SortedNgramStorage<NG: Ngram>: Send + Sync + Clone {
     /// The builder to use to build this storage.
     type Builder: SortedNgramStorageBuilder<NG, Storage = Self>;
 
