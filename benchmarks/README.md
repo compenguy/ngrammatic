@@ -9,6 +9,39 @@ To run the memory benchmarks, navigate to the `benchmarks` directory and run the
 RUST_LOG=info RUSTFLAGS="-C target-cpu=native" cargo run --release
 ```
 
+## Benchmarks 9 April 2024, 04:00 PM
+The ninth benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
+The novelty of this benchmark is the introduction of the Webgraph datastructure to store the graph itself. **At this time the MemSize trait is not available in the published version of webgraph, so this is solely obtained by using a nightly version - it should be available in the public version soon.**
+
+There is a significant reduction in memory requirements for the version which uses webgraph. 
+
+```text
+NEWPAR - Arity: 1, Time (ms): 3_005, memory (B): 282_604_340, memory graph (B): 154_219_212
+WEBGRAPH - Arity: 1, Time (ms): 4_613, memory (B): 172_145_376, memory graph (B): 43_760_288
+OLD - Arity: 1, Time (ms): 11_757, memory (B): 5_603_963_834
+NEWPAR - Arity: 2, Time (ms): 5_053, memory (B): 407_237_104, memory graph (B): 278_850_808
+WEBGRAPH - Arity: 2, Time (ms): 7_936, memory (B): 204_590_560, memory graph (B): 76_204_304
+OLD - Arity: 2, Time (ms): 15_033, memory (B): 8_003_769_656
+NEWPAR - Arity: 3, Time (ms): 6_733, memory (B): 469_848_532, memory graph (B): 341_406_636
+WEBGRAPH - Arity: 3, Time (ms): 9_328, memory (B): 239_354_272, memory graph (B): 110_912_416
+OLD - Arity: 3, Time (ms): 16_011, memory (B): 8_583_476_604
+NEWPAR - Arity: 4, Time (ms): 14_349, memory (B): 512_214_744, memory graph (B): 382_971_848
+WEBGRAPH - Arity: 4, Time (ms): 15_666, memory (B): 274_258_696, memory graph (B): 145_015_840
+OLD - Arity: 4, Time (ms): 17_557, memory (B): 9_036_530_407
+NEWPAR - Arity: 5, Time (ms): 40_938, memory (B): 550_135_192, memory graph (B): 416_714_136
+WEBGRAPH - Arity: 5, Time (ms): 41_779, memory (B): 312_453_544, memory graph (B): 179_032_528
+OLD - Arity: 5, Time (ms): 19_575, memory (B): 9_583_720_360
+NEWPAR - Arity: 6, Time (ms): 117_498, memory (B): 595_148_528, memory graph (B): 451_993_064
+WEBGRAPH - Arity: 6, Time (ms): 119_641, memory (B): 355_163_860, memory graph (B): 212_008_444
+OLD - Arity: 6, Time (ms): 22_782, memory (B): 10_211_711_214
+NEWPAR - Arity: 7, Time (ms): 145_084, memory (B): 626_829_580, memory graph (B): 468_310_228
+WEBGRAPH - Arity: 7, Time (ms): 147_303, memory (B): 402_532_964, memory graph (B): 244_013_660
+OLD - Arity: 7, Time (ms): 27_476, memory (B): 11_052_721_209
+NEWPAR - Arity: 8, Time (ms): 258_349, memory (B): 675_743_136, memory graph (B): 495_062_184
+WEBGRAPH - Arity: 8, Time (ms): 260_305, memory (B): 458_193_816, memory graph (B): 277_512_928
+OLD - Arity: 8, Time (ms): 26_892, memory (B): 11_496_992_467
+```
+
 ## Benchmarks 9 April 2024, 09:00 AM
 The eighth benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
 The novelty of this benchmark is the introduction of a new datastructure for the weights, which is now similar to how a Webgraph is stored.

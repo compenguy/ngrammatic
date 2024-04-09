@@ -8,3 +8,4 @@ cooccurrences.json
 cooccurrences.json.gz
 cooccurrences.ragged
 cooccurrences.ragged.gz
+*.graph

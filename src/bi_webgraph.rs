@@ -11,14 +11,15 @@ use crate::Keys;
 use crate::Ngram;
 use crate::Offset;
 use crate::Offsettable;
+use crate::Underscored;
 use dsi_bitstream::traits::BigEndian;
 use std::hash::Hash;
 use std::hash::Hasher;
 use tempfile::Builder;
 use webgraph::prelude::*;
 
-// #[cfg(feature = "mem_dbg")]
-// use mem_dbg::{MemDbg, MemSize};
+#[cfg(feature = "mem_dbg")]
+use mem_dbg::MemSize;
 
 #[cfg(feature = "rayon")]
 fn num_threads() -> usize {
@@ -38,7 +39,7 @@ type DecoderFactoryType = DynCodesDecoderFactory<
 
 type LoadedGraph = BVGraph<DecoderFactoryType>;
 
-// #[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
+#[cfg_attr(feature = "mem_dbg", derive(MemSize))]
 /// A weighted bipartite graph implementation based on Webgraph.
 pub struct BiWebgraph {
     /// Webgraph graph.

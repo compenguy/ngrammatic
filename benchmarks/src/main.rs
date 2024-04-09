@@ -37,7 +37,10 @@ where
     let end_time = std::time::Instant::now();
     let duration: usize = (end_time - start_time).as_millis() as usize;
 
-    log::info!(
+    // While this is a simple info message, we use the error flag so that the log will
+    // not get polluted by the log messages of the other dependencies which can, at times
+    // be quite significant.
+    log::error!(
         "NEW - Arity: {}, Time (ms): {}, memory (B): {}",
         NG::ARITY,
         duration.underscored(),
@@ -57,11 +60,15 @@ where
     let end_time = std::time::Instant::now();
     let duration: usize = (end_time - start_time).as_millis() as usize;
 
-    log::info!(
-        "NEWPAR - Arity: {}, Time (ms): {}, memory (B): {}",
+    // While this is a simple info message, we use the error flag so that the log will
+    // not get polluted by the log messages of the other dependencies which can, at times
+    // be quite significant.
+    log::error!(
+        "NEWPAR - Arity: {}, Time (ms): {}, memory (B): {}, memory graph (B): {}",
         NG::ARITY,
         duration.underscored(),
-        corpus.mem_size(SizeFlags::default()).underscored()
+        corpus.mem_size(SizeFlags::default()).underscored(),
+        corpus.graph().mem_size(SizeFlags::default()).underscored()
     );
 }
 
@@ -79,7 +86,10 @@ fn load_corpus_old(arity: usize) -> ngrammatic_old::Corpus {
     let end_time = std::time::Instant::now();
     let duration: usize = (end_time - start_time).as_millis() as usize;
 
-    log::info!(
+    // While this is a simple info message, we use the error flag so that the log will
+    // not get polluted by the log messages of the other dependencies which can, at times
+    // be quite significant.
+    log::error!(
         "OLD - Arity: {}, Time (ms): {}, memory (B): {}",
         arity,
         duration.underscored(),
@@ -113,17 +123,22 @@ where
         .collect();
     let corpus: Corpus<Vec<String>, NG, Lowercase<str>> = Corpus::par_from(taxons);
 
-    let corpus_webgraph: Corpus<Vec<String>, NG, Lowercase<str>, BiWebgraph> = Corpus::from(corpus);
+    let corpus_webgraph: Corpus<Vec<String>, NG, Lowercase<str>, BiWebgraph> =
+        Corpus::try_from(corpus).unwrap();
 
     let end_time = std::time::Instant::now();
     let duration: usize = (end_time - start_time).as_millis() as usize;
 
-    // log::info!(
-    //     "OLD - Arity: {}, Time (ms): {}, memory (B): {}",
-    //     NG::ARITY,
-    //     duration.underscored(),
-    //     corpus_webgraph.mem_size(SizeFlags::default()).underscored()
-    // );
+    // While this is a simple info message, we use the error flag so that the log will
+    // not get polluted by the log messages of the other dependencies which can, at times
+    // be quite significant.
+    log::error!(
+        "WEBGRAPH - Arity: {}, Time (ms): {}, memory (B): {}, memory graph (B): {}",
+        NG::ARITY,
+        duration.underscored(),
+        corpus_webgraph.mem_size(SizeFlags::default() | SizeFlags::FOLLOW_REFS).underscored(),
+        corpus_webgraph.graph().mem_size(SizeFlags::default() | SizeFlags::FOLLOW_REFS).underscored()
+    );
 }
 
 /// Returns bigram corpus.
@@ -136,32 +151,24 @@ fn trigram_corpus() {
     load_corpus_new::<TriGram<ASCIIChar>>()
 }
 
+fn experiment<NG>()
+where
+    NG: Ngram<G = ASCIIChar>,
+{
+    // load_corpus_new::<NG>();
+    load_corpus_par_new::<NG>();
+    load_corpus_webgraph::<NG>();
+    load_corpus_old(NG::ARITY);
+}
+
 fn main() {
     env_logger::builder().try_init().unwrap();
-    load_corpus_new::<MonoGram<ASCIIChar>>();
-    load_corpus_par_new::<MonoGram<ASCIIChar>>();
-    // load_corpus_webgraph::<MonoGram<ASCIIChar>>();
-    load_corpus_old(1);
-    load_corpus_new::<BiGram<ASCIIChar>>();
-    load_corpus_par_new::<BiGram<ASCIIChar>>();
-    // load_corpus_webgraph::<BiGram<ASCIIChar>>();
-    load_corpus_old(2);
-    load_corpus_new::<TriGram<ASCIIChar>>();
-    load_corpus_par_new::<TriGram<ASCIIChar>>();
-    load_corpus_old(3);
-    load_corpus_new::<TetraGram<ASCIIChar>>();
-    load_corpus_par_new::<TetraGram<ASCIIChar>>();
-    load_corpus_old(4);
-    load_corpus_new::<PentaGram<ASCIIChar>>();
-    load_corpus_par_new::<PentaGram<ASCIIChar>>();
-    load_corpus_old(5);
-    load_corpus_new::<HexaGram<ASCIIChar>>();
-    load_corpus_par_new::<HexaGram<ASCIIChar>>();
-    load_corpus_old(6);
-    load_corpus_new::<HeptaGram<ASCIIChar>>();
-    load_corpus_par_new::<HeptaGram<ASCIIChar>>();
-    load_corpus_old(7);
-    load_corpus_new::<OctaGram<ASCIIChar>>();
-    load_corpus_par_new::<OctaGram<ASCIIChar>>();
-    load_corpus_old(8);
+    experiment::<MonoGram<ASCIIChar>>();
+    experiment::<BiGram<ASCIIChar>>();
+    experiment::<TriGram<ASCIIChar>>();
+    experiment::<TetraGram<ASCIIChar>>();
+    experiment::<PentaGram<ASCIIChar>>();
+    experiment::<HexaGram<ASCIIChar>>();
+    experiment::<HeptaGram<ASCIIChar>>();
+    experiment::<OctaGram<ASCIIChar>>();
 }
