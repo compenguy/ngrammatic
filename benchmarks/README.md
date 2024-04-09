@@ -13,48 +13,48 @@ RUST_LOG=info RUSTFLAGS="-C target-cpu=native" cargo run --release
 The tenth benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
 The novelty of this benchmark is the use of a RCL data structure to store the strings associated with the dataset. The savings in memory requirements are significant.
 
-```text
-NEWPAR - Arity: 1, Time (ms): 2_977, memory (B): 282_604_340
-RCL NEWPAR - Arity: 1, Time (ms): 3_349, memory (B): 183_503_767
-WEBGRAPH - Arity: 1, Time (ms): 4_517, memory (B): 172_145_420
-RCL WEBGRAPH - Arity: 1, Time (ms): 4_803, memory (B): 72_340_935
-OLD - Arity: 1, Time (ms): 11_650, memory (B): 5_603_963_834
-NEWPAR - Arity: 2, Time (ms): 5_011, memory (B): 407_237_104
-RCL NEWPAR - Arity: 2, Time (ms): 5_423, memory (B): 308_136_531
-WEBGRAPH - Arity: 2, Time (ms): 7_827, memory (B): 204_590_616
-RCL WEBGRAPH - Arity: 2, Time (ms): 8_135, memory (B): 103_757_115
-OLD - Arity: 2, Time (ms): 15_450, memory (B): 8_003_769_656
-NEWPAR - Arity: 3, Time (ms): 6_821, memory (B): 469_848_532
-RCL NEWPAR - Arity: 3, Time (ms): 7_155, memory (B): 370_747_959
-WEBGRAPH - Arity: 3, Time (ms): 9_358, memory (B): 239_354_844
-RCL WEBGRAPH - Arity: 3, Time (ms): 9_554, memory (B): 137_803_367
-OLD - Arity: 3, Time (ms): 16_051, memory (B): 8_583_476_604
-NEWPAR - Arity: 4, Time (ms): 14_487, memory (B): 512_214_744
-RCL NEWPAR - Arity: 4, Time (ms): 14_836, memory (B): 413_114_171
-WEBGRAPH - Arity: 4, Time (ms): 15_645, memory (B): 274_258_752
-RCL WEBGRAPH - Arity: 4, Time (ms): 16_061, memory (B): 172_842_803
-OLD - Arity: 4, Time (ms): 18_326, memory (B): 9_036_530_407
-NEWPAR - Arity: 5, Time (ms): 40_051, memory (B): 550_135_192
-RCL NEWPAR - Arity: 5, Time (ms): 40_956, memory (B): 451_034_619
-WEBGRAPH - Arity: 5, Time (ms): 41_663, memory (B): 312_453_624
-RCL WEBGRAPH - Arity: 5, Time (ms): 42_173, memory (B): 211_403_363
-OLD - Arity: 5, Time (ms): 20_883, memory (B): 9_583_720_360
-NEWPAR - Arity: 6, Time (ms): 118_058, memory (B): 595_148_528
-RCL NEWPAR - Arity: 6, Time (ms): 120_697, memory (B): 496_047_955
-WEBGRAPH - Arity: 6, Time (ms): 119_848, memory (B): 355_163_944
-RCL WEBGRAPH - Arity: 6, Time (ms): 122_529, memory (B): 254_433_459
-OLD - Arity: 6, Time (ms): 22_219, memory (B): 10_211_711_214
-NEWPAR - Arity: 7, Time (ms): 145_731, memory (B): 626_829_580
-RCL NEWPAR - Arity: 7, Time (ms): 150_171, memory (B): 527_729_007
-WEBGRAPH - Arity: 7, Time (ms): 147_696, memory (B): 402_533_060
-RCL WEBGRAPH - Arity: 7, Time (ms): 152_126, memory (B): 301_929_695
-OLD - Arity: 7, Time (ms): 27_087, memory (B): 11_052_721_209
-NEWPAR - Arity: 8, Time (ms): 260_231, memory (B): 675_743_136
-RCL NEWPAR - Arity: 8, Time (ms): 266_866, memory (B): 576_642_563
-WEBGRAPH - Arity: 8, Time (ms): 262_128, memory (B): 458_193_928
-RCL WEBGRAPH - Arity: 8, Time (ms): 265_629, memory (B): 357_589_579
-OLD - Arity: 8, Time (ms): 26_739, memory (B): 11_496_992_467
-```
+| Test                    | Arity | Time (ms) | Memory (B)    |
+|-------------------------|-------|-----------|---------------|
+| NEWPAR                  | 1     | 2,977     | 282,604,340   |
+| RCL NEWPAR              | 1     | 3,349     | 183,503,767   |
+| WEBGRAPH                | 1     | 4,517     | 172,145,420   |
+| RCL WEBGRAPH            | 1     | 4,803     | 72,340,935    |
+| OLD                     | 1     | 11,650    | 5,603,963,834 |
+| NEWPAR                  | 2     | 5,011     | 407,237,104   |
+| RCL NEWPAR              | 2     | 5,423     | 308,136,531   |
+| WEBGRAPH                | 2     | 7,827     | 204,590,616   |
+| RCL WEBGRAPH            | 2     | 8,135     | 103,757,115   |
+| OLD                     | 2     | 15,450    | 8,003,769,656 |
+| NEWPAR                  | 3     | 6,821     | 469,848,532   |
+| RCL NEWPAR              | 3     | 7,155     | 370,747,959   |
+| WEBGRAPH                | 3     | 9,358     | 239,354,844   |
+| RCL WEBGRAPH            | 3     | 9,554     | 137,803,367   |
+| OLD                     | 3     | 16,051    | 8,583,476,604 |
+| NEWPAR                  | 4     | 14,487    | 512,214,744   |
+| RCL NEWPAR              | 4     | 14,836    | 413,114,171   |
+| WEBGRAPH                | 4     | 15,645    | 274,258,752   |
+| RCL WEBGRAPH            | 4     | 16,061    | 172,842,803   |
+| OLD                     | 4     | 18,326    | 9,036,530,407 |
+| NEWPAR                  | 5     | 40,051    | 550,135,192   |
+| RCL NEWPAR              | 5     | 40,956    | 451,034,619   |
+| WEBGRAPH                | 5     | 41,663    | 312,453,624   |
+| RCL WEBGRAPH            | 5     | 42,173    | 211,403,363   |
+| OLD                     | 5     | 20,883    | 9,583,720,360 |
+| NEWPAR                  | 6     | 118,058   | 595,148,528   |
+| RCL NEWPAR              | 6     | 120,697   | 496,047,955   |
+| WEBGRAPH                | 6     | 119,848   | 355,163,944   |
+| RCL WEBGRAPH            | 6     | 122,529   | 254,433,459   |
+| OLD                     | 6     | 22,219    | 10,211,711,214|
+| NEWPAR                  | 7     | 145,731   | 626,829,580   |
+| RCL NEWPAR              | 7     | 150,171   | 527,729,007   |
+| WEBGRAPH                | 7     | 147,696   | 402,533,060   |
+| RCL WEBGRAPH            | 7     | 152,126   | 301,929,695   |
+| OLD                     | 7     | 27,087    | 11,052,721,209|
+| NEWPAR                  | 8     | 260,231   | 675,743,136   |
+| RCL NEWPAR              | 8     | 266,866   | 576,642,563   |
+| WEBGRAPH                | 8     | 262,128   | 458,193,928   |
+| RCL WEBGRAPH            | 8     | 265,629   | 357,589,579   |
+| OLD                     | 8     | 26,739    | 11,496,992,467|
 
 ## Benchmarks 9 April 2024, 04:00 PM
 The ninth benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
@@ -62,32 +62,32 @@ The novelty of this benchmark is the introduction of the Webgraph datastructure 
 
 There is a significant reduction in memory requirements for the version which uses webgraph. 
 
-```text
-NEWPAR - Arity: 1, Time (ms): 3_005, memory (B): 282_604_340, memory graph (B): 154_219_212
-WEBGRAPH - Arity: 1, Time (ms): 4_613, memory (B): 172_145_376, memory graph (B): 43_760_288
-OLD - Arity: 1, Time (ms): 11_757, memory (B): 5_603_963_834
-NEWPAR - Arity: 2, Time (ms): 5_053, memory (B): 407_237_104, memory graph (B): 278_850_808
-WEBGRAPH - Arity: 2, Time (ms): 7_936, memory (B): 204_590_560, memory graph (B): 76_204_304
-OLD - Arity: 2, Time (ms): 15_033, memory (B): 8_003_769_656
-NEWPAR - Arity: 3, Time (ms): 6_733, memory (B): 469_848_532, memory graph (B): 341_406_636
-WEBGRAPH - Arity: 3, Time (ms): 9_328, memory (B): 239_354_272, memory graph (B): 110_912_416
-OLD - Arity: 3, Time (ms): 16_011, memory (B): 8_583_476_604
-NEWPAR - Arity: 4, Time (ms): 14_349, memory (B): 512_214_744, memory graph (B): 382_971_848
-WEBGRAPH - Arity: 4, Time (ms): 15_666, memory (B): 274_258_696, memory graph (B): 145_015_840
-OLD - Arity: 4, Time (ms): 17_557, memory (B): 9_036_530_407
-NEWPAR - Arity: 5, Time (ms): 40_938, memory (B): 550_135_192, memory graph (B): 416_714_136
-WEBGRAPH - Arity: 5, Time (ms): 41_779, memory (B): 312_453_544, memory graph (B): 179_032_528
-OLD - Arity: 5, Time (ms): 19_575, memory (B): 9_583_720_360
-NEWPAR - Arity: 6, Time (ms): 117_498, memory (B): 595_148_528, memory graph (B): 451_993_064
-WEBGRAPH - Arity: 6, Time (ms): 119_641, memory (B): 355_163_860, memory graph (B): 212_008_444
-OLD - Arity: 6, Time (ms): 22_782, memory (B): 10_211_711_214
-NEWPAR - Arity: 7, Time (ms): 145_084, memory (B): 626_829_580, memory graph (B): 468_310_228
-WEBGRAPH - Arity: 7, Time (ms): 147_303, memory (B): 402_532_964, memory graph (B): 244_013_660
-OLD - Arity: 7, Time (ms): 27_476, memory (B): 11_052_721_209
-NEWPAR - Arity: 8, Time (ms): 258_349, memory (B): 675_743_136, memory graph (B): 495_062_184
-WEBGRAPH - Arity: 8, Time (ms): 260_305, memory (B): 458_193_816, memory graph (B): 277_512_928
-OLD - Arity: 8, Time (ms): 26_892, memory (B): 11_496_992_467
-```
+| Test    | Arity | Time (ms) | Memory (B)    | Memory Graph (B) |
+|---------|-------|-----------|---------------|------------------|
+| NEWPAR  | 1     | 3,005     | 282,604,340   | 154,219,212      |
+| WEBGRAPH| 1     | 4,613     | 172,145,376   | 43,760,288       |
+| OLD     | 1     | 11,757    | 5,603,963,834| -                |
+| NEWPAR  | 2     | 5,053     | 407,237,104   | 278,850,808      |
+| WEBGRAPH| 2     | 7,936     | 204,590,560   | 76,204,304       |
+| OLD     | 2     | 15,033    | 8,003,769,656| -                |
+| NEWPAR  | 3     | 6,733     | 469,848,532   | 341,406,636      |
+| WEBGRAPH| 3     | 9,328     | 239,354,272   | 110,912,416      |
+| OLD     | 3     | 16,011    | 8,583,476,604| -                |
+| NEWPAR  | 4     | 14,349    | 512,214,744   | 382,971,848      |
+| WEBGRAPH| 4     | 15,666    | 274,258,696   | 145,015,840      |
+| OLD     | 4     | 17,557    | 9,036,530,407| -                |
+| NEWPAR  | 5     | 40,938    | 550,135,192   | 416,714,136      |
+| WEBGRAPH| 5     | 41,779    | 312,453,544   | 179,032,528      |
+| OLD     | 5     | 19,575    | 9,583,720,360| -                |
+| NEWPAR  | 6     | 117,498   | 595,148,528   | 451,993,064      |
+| WEBGRAPH| 6     | 119,641   | 355,163,860   | 212,008,444      |
+| OLD     | 6     | 22,782    | 10,211,711,214| -                |
+| NEWPAR  | 7     | 145,084   | 626,829,580   | 468,310,228      |
+| WEBGRAPH| 7     | 147,303   | 402,532,964   | 244,013,660      |
+| OLD     | 7     | 27,476    | 11,052,721,209| -                |
+| NEWPAR  | 8     | 258,349   | 675,743,136   | 495,062,184      |
+| WEBGRAPH| 8     | 260,305   | 458,193,816   | 277,512,928      |
+| OLD     | 8     | 26,892    | 11,496,992,467| -                |
 
 ## Benchmarks 9 April 2024, 09:00 AM
 The eighth benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
@@ -95,32 +95,32 @@ The novelty of this benchmark is the introduction of a new datastructure for the
 
 We observe, in average a reduction of memory requirements of about `10MBs` x arity. Also, the time requirements are reduced, expecially for larger arities.
 
-```text
-NEW - Arity: 1, Time (ms): 3_256, memory (B): 282_604_340
-NEWPAR - Arity: 1, Time (ms): 2_958, memory (B): 282_604_340
-OLD - Arity: 1, Time (ms): 11_624, memory (B): 5_603_963_834
-NEW - Arity: 2, Time (ms): 6_989, memory (B): 407_237_104
-NEWPAR - Arity: 2, Time (ms): 5_098, memory (B): 407_237_104
-OLD - Arity: 2, Time (ms): 15_231, memory (B): 8_003_769_656
-NEW - Arity: 3, Time (ms): 32_827, memory (B): 469_848_532
-NEWPAR - Arity: 3, Time (ms): 6_937, memory (B): 469_848_532
-OLD - Arity: 3, Time (ms): 16_480, memory (B): 8_583_476_604
-NEW - Arity: 4, Time (ms): 229_491, memory (B): 512_214_744
-NEWPAR - Arity: 4, Time (ms): 14_390, memory (B): 512_214_744
-OLD - Arity: 4, Time (ms): 17_782, memory (B): 9_036_530_407
-NEW - Arity: 5, Time (ms): 910_467, memory (B): 550_135_192
-NEWPAR - Arity: 5, Time (ms): 40_371, memory (B): 550_135_192
-OLD - Arity: 5, Time (ms): 19_549, memory (B): 9_583_720_360
-NEW - Arity: 6, Time (ms): 2_953_288, memory (B): 595_148_528
-NEWPAR - Arity: 6, Time (ms): 118_846, memory (B): 595_148_528
-OLD - Arity: 6, Time (ms): 20_655, memory (B): 10_211_711_214
-NEW - Arity: 7, Time (ms): 3_650_896, memory (B): 626_829_580
-NEWPAR - Arity: 7, Time (ms): 147_647, memory (B): 626_829_580
-OLD - Arity: 7, Time (ms): 23_734, memory (B): 11_052_721_209
-NEW - Arity: 8, Time (ms): 6_733_734, memory (B): 675_743_136
-NEWPAR - Arity: 8, Time (ms): 256_439, memory (B): 675_743_136
-OLD - Arity: 8, Time (ms): 26_134, memory (B): 11_496_992_467
-```
+| Test    | Arity | Time (ms) | Memory (B)    |
+|---------|-------|-----------|---------------|
+| NEW     | 1     | 3,256     | 282,604,340   |
+| NEWPAR  | 1     | 2,958     | 282,604,340   |
+| OLD     | 1     | 11,624    | 5,603,963,834 |
+| NEW     | 2     | 6,989     | 407,237,104   |
+| NEWPAR  | 2     | 5,098     | 407,237,104   |
+| OLD     | 2     | 15,231    | 8,003,769,656 |
+| NEW     | 3     | 32,827    | 469,848,532   |
+| NEWPAR  | 3     | 6,937     | 469,848,532   |
+| OLD     | 3     | 16,480    | 8,583,476,604 |
+| NEW     | 4     | 229,491   | 512,214,744   |
+| NEWPAR  | 4     | 14,390    | 512,214,744   |
+| OLD     | 4     | 17,782    | 9,036,530,407 |
+| NEW     | 5     | 910,467   | 550,135,192   |
+| NEWPAR  | 5     | 40,371    | 550,135,192   |
+| OLD     | 5     | 19,549    | 9,583,720,360 |
+| NEW     | 6     | 2,953,288 | 595,148,528   |
+| NEWPAR  | 6     | 118,846   | 595,148,528   |
+| OLD     | 6     | 20,655    | 10,211,711,214|
+| NEW     | 7     | 3,650,896 | 626,829,580   |
+| NEWPAR  | 7     | 147,647   | 626,829,580   |
+| OLD     | 7     | 23,734    | 11,052,721,209|
+| NEW     | 8     | 6,733,734 | 675,743,136   |
+| NEWPAR  | 8     | 256,439   | 675,743,136   |
+| OLD     | 8     | 26,134    | 11,496,992,467|
 
 ## Benchmarks 8 April 2024, 08:00 AM
 The seventh benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
@@ -130,26 +130,26 @@ While the new edition is for arities 1 and 2 faster than the old one, for larger
 
 In the new edition we also provide a parallel version, which has the same memory requirements as the non-parallel version, but is significantly faster.
 
-```text
-NEW - Arity: 1, Time (ms): 3_201, memory (B): 292_440_192
-NEWPAR - Arity: 1, Time (ms): 2_862, memory (B): 292_440_192
-OLD - Arity: 1, Time (ms): 11_870, memory (B): 5_603_963_834
-NEW - Arity: 2, Time (ms): 7_113, memory (B): 428_947_776
-NEWPAR - Arity: 2, Time (ms): 5_173, memory (B): 428_947_776
-OLD - Arity: 2, Time (ms): 15_583, memory (B): 8_003_769_656
-NEW - Arity: 3, Time (ms): 39_766, memory (B): 486_899_488
-NEWPAR - Arity: 3, Time (ms): 7_314, memory (B): 486_899_488
-OLD - Arity: 3, Time (ms): 16_554, memory (B): 8_583_476_604
-NEW - Arity: 4, Time (ms): 315_398, memory (B): 530_646_488
-NEWPAR - Arity: 4, Time (ms): 17_582, memory (B): 530_646_488
-OLD - Arity: 4, Time (ms): 18_561, memory (B): 9_036_530_407
-NEW - Arity: 5, Time (ms): 1_194_200, memory (B): 569_522_048
-NEWPAR - Arity: 5, Time (ms): 52_986, memory (B): 569_522_048
-OLD - Arity: 5, Time (ms): 20_336, memory (B): 9_583_720_360
-NEW - Arity: 6, Time (ms): 3_893_922, memory (B): 615_458_920
-NEWPAR - Arity: 6, Time (ms): 163_489, memory (B): 615_458_920
-OLD - Arity: 6, Time (ms): 22_206, memory (B): 10_211_711_214
-```
+| Test    | Arity | Time (ms) | Memory (B)    |
+|---------|-------|-----------|---------------|
+| NEW     | 1     | 3,201     | 292,440,192   |
+| NEWPAR  | 1     | 2,862     | 292,440,192   |
+| OLD     | 1     | 11,870    | 5,603,963,834 |
+| NEW     | 2     | 7,113     | 428,947,776   |
+| NEWPAR  | 2     | 5,173     | 428,947,776   |
+| OLD     | 2     | 15,583    | 8,003,769,656 |
+| NEW     | 3     | 39,766    | 486,899,488   |
+| NEWPAR  | 3     | 7,314     | 486,899,488   |
+| OLD     | 3     | 16,554    | 8,583,476,604 |
+| NEW     | 4     | 315,398   | 530,646,488   |
+| NEWPAR  | 4     | 17,582    | 530,646,488   |
+| OLD     | 4     | 18,561    | 9,036,530,407 |
+| NEW     | 5     | 1,194,200 | 569,522,048   |
+| NEWPAR  | 5     | 52,986    | 569,522,048   |
+| OLD     | 5     | 20,336    | 9,583,720,360 |
+| NEW     | 6     | 3,893,922 | 615,458,920   |
+| NEWPAR  | 6     | 163,489   | 615,458,920   |
+| OLD     | 6     | 22,206    | 10,211,711,214|
 
 ## Benchmarks 5 April 2024, 08:00 PM
 The sixth benchmark was run on a 6-core machine with 32 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
