@@ -16,6 +16,7 @@ fn iter_taxons() -> impl Iterator<Item = String> {
     reader.lines().take(100_000).map(|line| line.unwrap())
 }
 
+/// Returns ngram corpus.
 fn new_load_corpus<NG>() -> Corpus<Vec<String>, NG, Lowercase<str>>
 where
     NG: Ngram<G = ASCIIChar> + Debug,
@@ -26,6 +27,7 @@ where
     corpus
 }
 
+/// Returns ngram par-corpus.
 fn new_par_load_corpus<NG>() -> Corpus<Vec<String>, NG, Lowercase<str>>
 where
     NG: Ngram<G = ASCIIChar> + Debug,
@@ -36,6 +38,7 @@ where
     corpus
 }
 
+/// Returns old ngram corpus.
 fn old_load_corpus(arity: usize) -> ngrammatic_old::Corpus {
     let mut corpus = ngrammatic_old::CorpusBuilder::new()
         .arity(arity)
@@ -50,7 +53,7 @@ fn old_load_corpus(arity: usize) -> ngrammatic_old::Corpus {
 }
 
 #[bench]
-fn ngram_search_corpus_monogram_new(b: &mut Bencher) {
+fn monogram_ngram_search_new(b: &mut Bencher) {
     let corpus = new_load_corpus::<MonoGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -64,12 +67,33 @@ fn ngram_search_corpus_monogram_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_monogram_par_new(b: &mut Bencher) {
+fn monogram_tfidf_search_new(b: &mut Bencher) {
+    let corpus = new_load_corpus::<MonoGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        // The old approach by default returned 10 results, so
+        // to better compare the two, we set the same limit here.
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = corpus.tf_idf_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn monogram_ngram_search_par_new(b: &mut Bencher) {
     let corpus = new_load_corpus::<MonoGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -83,12 +107,33 @@ fn ngram_search_corpus_monogram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_par_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_par_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_monogram_old(b: &mut Bencher) {
+fn monogram_tfidf_search_par_new(b: &mut Bencher) {
+    let corpus = new_par_load_corpus::<MonoGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        // The old approach by default returned 10 results, so
+        // to better compare the two, we set the same limit here.
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = corpus.tf_idf_par_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_par_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn monogram_ngram_search_old(b: &mut Bencher) {
     let corpus = old_load_corpus(1);
 
     b.iter(|| {
@@ -96,12 +141,13 @@ fn ngram_search_corpus_monogram_old(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.search("Felis Caninus", 0.6);
+            let _ = corpus.search("Doggus Lionenus", 0.6);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_bigram_new(b: &mut Bencher) {
+fn bigram_ngram_search_new(b: &mut Bencher) {
     let corpus = new_load_corpus::<BiGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -115,12 +161,33 @@ fn ngram_search_corpus_bigram_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_bigram_par_new(b: &mut Bencher) {
+fn bigram_tfidf_search_new(b: &mut Bencher) {
+    let corpus = new_load_corpus::<BiGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        // The old approach by default returned 10 results, so
+        // to better compare the two, we set the same limit here.
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = corpus.tf_idf_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn bigram_ngram_search_par_new(b: &mut Bencher) {
     let corpus = new_par_load_corpus::<BiGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -134,12 +201,29 @@ fn ngram_search_corpus_bigram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_par_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_par_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_bigram_old(b: &mut Bencher) {
+fn bigram_tfidf_search_par_new(b: &mut Bencher) {
+    let corpus = new_par_load_corpus::<BiGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_par_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_par_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn bigram_ngram_search_old(b: &mut Bencher) {
     let corpus = old_load_corpus(2);
 
     b.iter(|| {
@@ -147,12 +231,13 @@ fn ngram_search_corpus_bigram_old(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.search("Felis Caninus", 0.6);
+            let _ = corpus.search("Doggus Lionenus", 0.6);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_trigram_new(b: &mut Bencher) {
+fn trigram_ngram_search_new(b: &mut Bencher) {
     let corpus = new_load_corpus::<TriGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -166,31 +251,61 @@ fn ngram_search_corpus_trigram_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_trigram_par_new(b: &mut Bencher) {
+fn trigram_tf_idf_search_new(b: &mut Bencher) {
+    let corpus = new_load_corpus::<TriGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn trigram_ngram_search_par_new(b: &mut Bencher) {
     let corpus = new_par_load_corpus::<TriGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
         .unwrap()
-        // The old approach by default returned 10 results, so
-        // to better compare the two, we set the same limit here.
         .set_maximum_number_of_results(10);
 
     b.iter(|| {
-        // Then we measure the time it takes to recreate
-        // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_par_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_par_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_trigram_old(b: &mut Bencher) {
+fn trigram_tf_idf_search_par_new(b: &mut Bencher) {
+    let corpus = new_par_load_corpus::<TriGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_par_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_par_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn trigram_ngram_search_old(b: &mut Bencher) {
     let corpus = old_load_corpus(3);
 
     b.iter(|| {
@@ -198,12 +313,13 @@ fn ngram_search_corpus_trigram_old(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.search("Felis Caninus", 0.6);
+            let _ = corpus.search("Doggus Lionenus", 0.6);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_tetragram_new(b: &mut Bencher) {
+fn tetragram_ngram_search_new(b: &mut Bencher) {
     let corpus = new_load_corpus::<TetraGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -217,12 +333,29 @@ fn ngram_search_corpus_tetragram_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_tetragram_par_new(b: &mut Bencher) {
+fn tetragram_tf_idf_search_new(b: &mut Bencher) {
+    let corpus = new_load_corpus::<TetraGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn tetragram_ngram_search_par_new(b: &mut Bencher) {
     let corpus = new_par_load_corpus::<TetraGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -236,12 +369,29 @@ fn ngram_search_corpus_tetragram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_par_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_par_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_tetragram_old(b: &mut Bencher) {
+fn tetragram_tf_idf_search_par_new(b: &mut Bencher) {
+    let corpus = new_par_load_corpus::<TetraGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_par_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_par_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn tetragram_ngram_search_old(b: &mut Bencher) {
     let corpus = old_load_corpus(4);
 
     b.iter(|| {
@@ -249,12 +399,13 @@ fn ngram_search_corpus_tetragram_old(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.search("Felis Caninus", 0.6);
+            let _ = corpus.search("Doggus Lionenus", 0.6);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_pentagram_new(b: &mut Bencher) {
+fn pentagram_ngram_search_new(b: &mut Bencher) {
     let corpus = new_load_corpus::<PentaGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -268,12 +419,29 @@ fn ngram_search_corpus_pentagram_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_pentagram_par_new(b: &mut Bencher) {
+fn pentagram_tf_idf_search_new(b: &mut Bencher) {
+    let corpus = new_load_corpus::<PentaGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn pentagram_ngram_search_par_new(b: &mut Bencher) {
     let corpus = new_par_load_corpus::<PentaGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -287,12 +455,29 @@ fn ngram_search_corpus_pentagram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_par_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_par_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_pentagram_old(b: &mut Bencher) {
+fn pentagram_tf_idf_search_par_new(b: &mut Bencher) {
+    let corpus = new_par_load_corpus::<PentaGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_par_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_par_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn pentagram_ngram_search_old(b: &mut Bencher) {
     let corpus = old_load_corpus(5);
 
     b.iter(|| {
@@ -300,12 +485,13 @@ fn ngram_search_corpus_pentagram_old(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.search("Felis Caninus", 0.6);
+            let _ = corpus.search("Doggus Lionenus", 0.6);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_hexagram_new(b: &mut Bencher) {
+fn hexagram_ngram_search_new(b: &mut Bencher) {
     let corpus = new_load_corpus::<HexaGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -319,12 +505,29 @@ fn ngram_search_corpus_hexagram_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_hexagram_par_new(b: &mut Bencher) {
+fn hexagram_tf_idf_search_new(b: &mut Bencher) {
+    let corpus = new_load_corpus::<HexaGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn hexagram_ngram_search_par_new(b: &mut Bencher) {
     let corpus = new_par_load_corpus::<HexaGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -338,12 +541,29 @@ fn ngram_search_corpus_hexagram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_par_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_par_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_hexagram_old(b: &mut Bencher) {
+fn hexagram_tf_idf_search_par_new(b: &mut Bencher) {
+    let corpus = new_par_load_corpus::<HexaGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_par_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_par_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn hexagram_ngram_search_old(b: &mut Bencher) {
     let corpus = old_load_corpus(6);
 
     b.iter(|| {
@@ -351,12 +571,13 @@ fn ngram_search_corpus_hexagram_old(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.search("Felis Caninus", 0.6);
+            let _ = corpus.search("Doggus Lionenus", 0.6);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_heptagram_new(b: &mut Bencher) {
+fn heptagram_ngram_search_new(b: &mut Bencher) {
     let corpus = new_load_corpus::<HeptaGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -370,12 +591,29 @@ fn ngram_search_corpus_heptagram_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_heptagram_par_new(b: &mut Bencher) {
+fn heptagram_tf_idf_search_new(b: &mut Bencher) {
+    let corpus = new_load_corpus::<HeptaGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn heptagram_ngram_search_par_new(b: &mut Bencher) {
     let corpus = new_par_load_corpus::<HeptaGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -389,12 +627,29 @@ fn ngram_search_corpus_heptagram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_par_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_par_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_heptagram_old(b: &mut Bencher) {
+fn heptagram_tf_idf_search_par_new(b: &mut Bencher) {
+    let corpus = new_par_load_corpus::<HeptaGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_par_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_par_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn heptagram_ngram_search_old(b: &mut Bencher) {
     let corpus = old_load_corpus(7);
 
     b.iter(|| {
@@ -402,12 +657,13 @@ fn ngram_search_corpus_heptagram_old(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.search("Felis Caninus", 0.6);
+            let _ = corpus.search("Doggus Lionenus", 0.6);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_octagram_new(b: &mut Bencher) {
+fn octagram_ngram_search_new(b: &mut Bencher) {
     let corpus = new_load_corpus::<OctaGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -421,12 +677,29 @@ fn ngram_search_corpus_octagram_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_octagram_par_new(b: &mut Bencher) {
+fn octagram_tf_idf_search_new(b: &mut Bencher) {
+    let corpus = new_load_corpus::<OctaGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn octagram_ngram_search_par_new(b: &mut Bencher) {
     let corpus = new_par_load_corpus::<OctaGram<ASCIIChar>>();
     let search_config = NgramSearchConfig::default()
         .set_minimum_similarity_score(0.6)
@@ -440,12 +713,29 @@ fn ngram_search_corpus_octagram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.ngram_par_search("Felis Caninus", search_config);
+            let _ = corpus.ngram_par_search("Doggus Lionenus", search_config);
         });
     });
 }
 
 #[bench]
-fn ngram_search_corpus_octagram_old(b: &mut Bencher) {
+fn octagram_tf_idf_search_par_new(b: &mut Bencher) {
+    let corpus = new_par_load_corpus::<OctaGram<ASCIIChar>>();
+    let search_config = TFIDFSearchConfig::default()
+        .set_minimum_similarity_score(0.6)
+        .unwrap()
+        .set_maximum_number_of_results(10);
+
+    b.iter(|| {
+        black_box({
+            let _ = corpus.tf_idf_par_search("Felis Caninus", search_config);
+            let _ = corpus.tf_idf_par_search("Doggus Lionenus", search_config);
+        });
+    });
+}
+
+#[bench]
+fn octagram_ngram_search_old(b: &mut Bencher) {
     let corpus = old_load_corpus(8);
 
     b.iter(|| {
@@ -453,6 +743,7 @@ fn ngram_search_corpus_octagram_old(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = corpus.search("Felis Caninus", 0.6);
+            let _ = corpus.search("Doggus Lionenus", 0.6);
         });
     });
 }
