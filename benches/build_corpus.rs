@@ -40,6 +40,30 @@ where
     corpus
 }
 
+fn new_load_corpus_webgraph<NG>() -> Corpus<Vec<String>, NG, Lowercase<str>, BiWebgraph>
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    let taxons: Vec<String> = iter_taxons().collect();
+    let corpus: Corpus<Vec<String>, NG, Lowercase<str>> = Corpus::from(taxons);
+    let corpus_webgraph: Corpus<Vec<String>, NG, Lowercase<str>, BiWebgraph> =
+        Corpus::try_from(corpus).unwrap();
+
+    corpus_webgraph
+}
+
+fn new_par_load_corpus_webgraph<NG>() -> Corpus<Vec<String>, NG, Lowercase<str>, BiWebgraph>
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    let taxons: Vec<String> = iter_taxons().collect();
+    let corpus: Corpus<Vec<String>, NG, Lowercase<str>> = Corpus::par_from(taxons);
+    let corpus_webgraph: Corpus<Vec<String>, NG, Lowercase<str>, BiWebgraph> =
+        Corpus::try_from(corpus).unwrap();
+
+    corpus_webgraph
+}
+
 fn old_load_corpus(arity: usize) -> ngrammatic_old::Corpus {
     let mut corpus = ngrammatic_old::CorpusBuilder::new()
         .arity(arity)
@@ -70,6 +94,22 @@ fn build_corpus_monogram_new(b: &mut Bencher) {
 }
 
 #[bench]
+fn build_corpus_monogram_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_load_corpus_webgraph::<MonoGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_load_corpus_webgraph::<MonoGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
 fn build_corpus_monogram_par_new(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
@@ -81,6 +121,22 @@ fn build_corpus_monogram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = new_par_load_corpus::<MonoGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
+fn build_corpus_monogram_par_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_par_load_corpus_webgraph::<MonoGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_par_load_corpus_webgraph::<MonoGram<ASCIIChar>>();
         });
     });
 }
@@ -118,6 +174,22 @@ fn build_corpus_bigram_new(b: &mut Bencher) {
 }
 
 #[bench]
+fn build_corpus_bigram_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_load_corpus_webgraph::<BiGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_load_corpus_webgraph::<BiGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
 fn build_corpus_bigram_par_new(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
@@ -129,6 +201,22 @@ fn build_corpus_bigram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = new_par_load_corpus::<BiGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
+fn build_corpus_bigram_par_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_par_load_corpus_webgraph::<BiGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_par_load_corpus_webgraph::<BiGram<ASCIIChar>>();
         });
     });
 }
@@ -166,6 +254,22 @@ fn build_corpus_trigram_new(b: &mut Bencher) {
 }
 
 #[bench]
+fn build_corpus_trigram_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_load_corpus_webgraph::<TriGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_load_corpus_webgraph::<TriGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
 fn build_corpus_trigram_par_new(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
@@ -177,6 +281,22 @@ fn build_corpus_trigram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = new_par_load_corpus::<TriGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
+fn build_corpus_trigram_par_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_par_load_corpus_webgraph::<TriGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_par_load_corpus_webgraph::<TriGram<ASCIIChar>>();
         });
     });
 }
@@ -214,6 +334,22 @@ fn build_corpus_tetragram_new(b: &mut Bencher) {
 }
 
 #[bench]
+fn build_corpus_tetragram_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_load_corpus_webgraph::<TetraGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_load_corpus_webgraph::<TetraGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
 fn build_corpus_tetragram_par_new(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
@@ -225,6 +361,22 @@ fn build_corpus_tetragram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = new_par_load_corpus::<TetraGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
+fn build_corpus_tetragram_par_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_par_load_corpus_webgraph::<TetraGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_par_load_corpus_webgraph::<TetraGram<ASCIIChar>>();
         });
     });
 }
@@ -262,6 +414,22 @@ fn build_corpus_pentagram_new(b: &mut Bencher) {
 }
 
 #[bench]
+fn build_corpus_pentagram_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_load_corpus_webgraph::<PentaGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_load_corpus_webgraph::<PentaGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
 fn build_corpus_pentagram_par_new(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
@@ -273,6 +441,22 @@ fn build_corpus_pentagram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = new_par_load_corpus::<PentaGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
+fn build_corpus_pentagram_par_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_par_load_corpus_webgraph::<PentaGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_par_load_corpus_webgraph::<PentaGram<ASCIIChar>>();
         });
     });
 }
@@ -310,6 +494,22 @@ fn build_corpus_hexagram_new(b: &mut Bencher) {
 }
 
 #[bench]
+fn build_corpus_hexagram_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_load_corpus_webgraph::<HexaGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_load_corpus_webgraph::<HexaGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
 fn build_corpus_hexagram_par_new(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
@@ -321,6 +521,22 @@ fn build_corpus_hexagram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = new_par_load_corpus::<HexaGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
+fn build_corpus_hexagram_par_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_par_load_corpus_webgraph::<HexaGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_par_load_corpus_webgraph::<HexaGram<ASCIIChar>>();
         });
     });
 }
@@ -358,6 +574,22 @@ fn build_corpus_heptagram_new(b: &mut Bencher) {
 }
 
 #[bench]
+fn build_corpus_heptagram_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_load_corpus_webgraph::<HeptaGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_load_corpus_webgraph::<HeptaGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
 fn build_corpus_heptagram_par_new(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
@@ -369,6 +601,22 @@ fn build_corpus_heptagram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = new_par_load_corpus::<HeptaGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
+fn build_corpus_heptagram_par_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_par_load_corpus_webgraph::<HeptaGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_par_load_corpus_webgraph::<HeptaGram<ASCIIChar>>();
         });
     });
 }
@@ -406,6 +654,22 @@ fn build_corpus_octagram_new(b: &mut Bencher) {
 }
 
 #[bench]
+fn build_corpus_octagram_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_load_corpus_webgraph::<OctaGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_load_corpus_webgraph::<OctaGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
 fn build_corpus_octagram_par_new(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
@@ -417,6 +681,22 @@ fn build_corpus_octagram_par_new(b: &mut Bencher) {
         // the corpus from scratch several times.
         black_box({
             let _ = new_par_load_corpus::<OctaGram<ASCIIChar>>();
+        });
+    });
+}
+
+#[bench]
+fn build_corpus_octagram_par_new_webgraph(b: &mut Bencher) {
+    // We load it first once outside the benchmark
+    // to avoid the noise related to not having the
+    // textual file loaded in memory.
+    let _ = new_par_load_corpus_webgraph::<OctaGram<ASCIIChar>>();
+
+    b.iter(|| {
+        // Then we measure the time it takes to recreate
+        // the corpus from scratch several times.
+        black_box({
+            let _ = new_par_load_corpus_webgraph::<OctaGram<ASCIIChar>>();
         });
     });
 }

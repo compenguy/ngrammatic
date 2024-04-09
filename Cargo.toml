@@ -1,15 +1,15 @@
 [package]
 name = "ngrammatic"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
-authors = ["Will Page <compenguy@gmail.com>"]
-description = "Character-oriented ngram generator and fuzzy matching library."
+authors = ["Will Page <compenguy@gmail.com>", "Luca Cappelletti <luca@ironprism.com>"]
+description = "Scalable n-gram generator for fuzzy similarity search with TF-IDF & efficient data structures."
 homepage = "https://github.com/compenguy/ngrammatic"
 repository = "https://github.com/compenguy/ngrammatic"
 documentation = "https://docs.rs/ngrammatic"
 readme = "README.md"
-categories = ["text-processing"]
-keywords = ["fuzzy", "ngrams", "shingles"]
+categories = ["algorithms", "text-processing", "data-structures"]
+keywords = ["fuzzy", "ngrams", "shingles", "tf-idf", "search"]
 license = "MIT"
 
 [lib]
