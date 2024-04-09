@@ -113,34 +113,17 @@ where
         .collect();
     let corpus: Corpus<Vec<String>, NG, Lowercase<str>> = Corpus::par_from(taxons);
 
+    let corpus_webgraph: Corpus<Vec<String>, NG, Lowercase<str>, BiWebgraph> = Corpus::from(corpus);
+
     let end_time = std::time::Instant::now();
     let duration: usize = (end_time - start_time).as_millis() as usize;
 
-    log::info!("Time taken to load corpus: {:?}", duration);
-
-    log::info!("\n{}", corpus.report());
-
-    log::info!("The 5 most frequent ngrams are:");
-    let top_k_ngram = corpus.top_k_ngrams(5);
-    top_k_ngram
-        .iter()
-        .for_each(|(degree, ngram)| log::info!("{}: {:?}", degree.underscored(), ngram));
-
-    log::info!("The following are 10 keys associated to the most frequent ngram:");
-    let top_k_ngram = top_k_ngram[0].1.clone();
-    for key in corpus.keys_from_ngram(top_k_ngram).unwrap().take(10) {
-        log::info!("{}", key);
-    }
-
-    corpus
-        .mem_dbg(DbgFlags::HUMANIZE | DbgFlags::PERCENTAGE | DbgFlags::TYPE_NAME)
-        .unwrap();
-
-    log::info!("Creating webgraph from corpus");
-
-    let corpus_webgraph: Corpus<Vec<String>, NG, Lowercase<str>, BiWebgraph> = Corpus::from(corpus);
-
-    log::info!("Created webgraph from corpus");
+    // log::info!(
+    //     "OLD - Arity: {}, Time (ms): {}, memory (B): {}",
+    //     NG::ARITY,
+    //     duration.underscored(),
+    //     corpus_webgraph.mem_size(SizeFlags::default()).underscored()
+    // );
 }
 
 /// Returns bigram corpus.
@@ -157,9 +140,11 @@ fn main() {
     env_logger::builder().try_init().unwrap();
     load_corpus_new::<MonoGram<ASCIIChar>>();
     load_corpus_par_new::<MonoGram<ASCIIChar>>();
+    // load_corpus_webgraph::<MonoGram<ASCIIChar>>();
     load_corpus_old(1);
     load_corpus_new::<BiGram<ASCIIChar>>();
     load_corpus_par_new::<BiGram<ASCIIChar>>();
+    // load_corpus_webgraph::<BiGram<ASCIIChar>>();
     load_corpus_old(2);
     load_corpus_new::<TriGram<ASCIIChar>>();
     load_corpus_par_new::<TriGram<ASCIIChar>>();

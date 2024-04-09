@@ -6,10 +6,43 @@ The taxons dataset contains the `2_571_000` taxons from NCBI Taxons. While compr
 To run the memory benchmarks, navigate to the `benchmarks` directory and run the following command:
 
 ```bash
-cargo run --release
+RUST_LOG=info RUSTFLAGS="-C target-cpu=native" cargo run --release
 ```
 
-## Benchmarks 8 April 2024, 08:00 PM
+## Benchmarks 9 April 2024, 09:00 AM
+The eighth benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
+The novelty of this benchmark is the introduction of a new datastructure for the weights, which is now similar to how a Webgraph is stored.
+
+We observe, in average a reduction of memory requirements of about `10MBs` x arity. Also, the time requirements are reduced, expecially for larger arities.
+
+```text
+NEW - Arity: 1, Time (ms): 3_256, memory (B): 282_604_340
+NEWPAR - Arity: 1, Time (ms): 2_958, memory (B): 282_604_340
+OLD - Arity: 1, Time (ms): 11_624, memory (B): 5_603_963_834
+NEW - Arity: 2, Time (ms): 6_989, memory (B): 407_237_104
+NEWPAR - Arity: 2, Time (ms): 5_098, memory (B): 407_237_104
+OLD - Arity: 2, Time (ms): 15_231, memory (B): 8_003_769_656
+NEW - Arity: 3, Time (ms): 32_827, memory (B): 469_848_532
+NEWPAR - Arity: 3, Time (ms): 6_937, memory (B): 469_848_532
+OLD - Arity: 3, Time (ms): 16_480, memory (B): 8_583_476_604
+NEW - Arity: 4, Time (ms): 229_491, memory (B): 512_214_744
+NEWPAR - Arity: 4, Time (ms): 14_390, memory (B): 512_214_744
+OLD - Arity: 4, Time (ms): 17_782, memory (B): 9_036_530_407
+NEW - Arity: 5, Time (ms): 910_467, memory (B): 550_135_192
+NEWPAR - Arity: 5, Time (ms): 40_371, memory (B): 550_135_192
+OLD - Arity: 5, Time (ms): 19_549, memory (B): 9_583_720_360
+NEW - Arity: 6, Time (ms): 2_953_288, memory (B): 595_148_528
+NEWPAR - Arity: 6, Time (ms): 118_846, memory (B): 595_148_528
+OLD - Arity: 6, Time (ms): 20_655, memory (B): 10_211_711_214
+NEW - Arity: 7, Time (ms): 3_650_896, memory (B): 626_829_580
+NEWPAR - Arity: 7, Time (ms): 147_647, memory (B): 626_829_580
+OLD - Arity: 7, Time (ms): 23_734, memory (B): 11_052_721_209
+NEW - Arity: 8, Time (ms): 6_733_734, memory (B): 675_743_136
+NEWPAR - Arity: 8, Time (ms): 256_439, memory (B): 675_743_136
+OLD - Arity: 8, Time (ms): 26_134, memory (B): 11_496_992_467
+```
+
+## Benchmarks 8 April 2024, 08:00 AM
 The seventh benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
 In this benchmark, we are comparing the time and memory required to load the dataset into memory using the old and new implementations of the `Corpus` struct, with arities from 1 to 6.
 
