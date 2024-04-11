@@ -334,3 +334,8 @@ for search_result in search_results {
 }
 
 ```
+
+## Contributing
+Contributions from the community are highly appreciated and can help improve this project. If you have any suggestions, feature requests, or bugs to report, please open an issue on GitHub. Additionally, if you want to contribute to the project, you can open a pull request with your proposed changes. Before making any substantial changes, please discuss them with the project maintainers in the issue tracker.
+
+If you appreciate this project and would like to support its development, you can star the repository on GitHub. 
