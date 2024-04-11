@@ -1,7 +1,7 @@
 //! Trait to convert objects into usize, occasionally with zero padding on the left side.
 
 use crate::{
-    ASCIIChar, BiGram, HeptaGram, HexaGram, MonoGram, OctaGram, PentaGram, TetraGram, TriGram,
+    ASCIIChar, BiGram, HeptaGram, HexaGram, UniGram, OctaGram, PentaGram, TetraGram, TriGram,
 };
 
 /// Trait to convert objects into usize, occasionally with zero padding on the left side.
@@ -50,7 +50,7 @@ impl IntoUsize for char {
     }
 }
 
-impl IntoUsize for MonoGram<u8> {
+impl IntoUsize for UniGram<u8> {
     #[inline(always)]
     fn into_usize(self) -> usize {
         self[0] as usize
@@ -62,7 +62,7 @@ impl IntoUsize for MonoGram<u8> {
     }
 }
 
-impl IntoUsize for MonoGram<ASCIIChar> {
+impl IntoUsize for UniGram<ASCIIChar> {
     #[inline(always)]
     fn into_usize(self) -> usize {
         self[0].into_usize()
@@ -74,7 +74,7 @@ impl IntoUsize for MonoGram<ASCIIChar> {
     }
 }
 
-impl IntoUsize for MonoGram<char> {
+impl IntoUsize for UniGram<char> {
     #[inline(always)]
     fn into_usize(self) -> usize {
         self[0] as usize
@@ -440,7 +440,7 @@ mod tests {
         let expected = 42;
         assert_eq!(converted, expected);
         let value = 42;
-        let converted = MonoGram::<u8>::from_usize(value);
+        let converted = UniGram::<u8>::from_usize(value);
         let expected = [42_u8];
         assert_eq!(converted, expected);
     }
@@ -452,7 +452,7 @@ mod tests {
         let expected = 42;
         assert_eq!(converted, expected);
         let value = 42;
-        let converted = MonoGram::<ASCIIChar>::from_usize(value);
+        let converted = UniGram::<ASCIIChar>::from_usize(value);
         let expected = [ASCIIChar::from(42_u8)];
         assert_eq!(converted, expected);
     }
@@ -464,7 +464,7 @@ mod tests {
         let expected = 97;
         assert_eq!(converted, expected);
         let value = 97;
-        let converted = MonoGram::<char>::from_usize(value);
+        let converted = UniGram::<char>::from_usize(value);
         let expected = ['a'];
         assert_eq!(converted, expected);
     }

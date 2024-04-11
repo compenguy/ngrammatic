@@ -171,6 +171,22 @@ impl<W: Copy, F: Float> TFIDFSearchConfig<W, F> {
     ///
     /// # Raises
     /// * If the K1 constant is not a valid float or is not in the range 1.2 to 2.0.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let config = TFIDFSearchConfig::default();
+    /// assert_eq!(config.k1(), 1.2_f32);
+    /// assert_eq!(
+    ///     config.set_k1(f32::NAN),
+    ///     Err("The K1 constant must be a float in the range 1.2 to 2.0.")
+    /// );
+    /// let config = config.set_k1(1.5_f32).unwrap();
+    ///
+    /// assert_eq!(config.k1(), 1.5_f32);
+    /// ```
     pub fn set_k1(mut self, k1: F) -> Result<Self, &'static str> {
         if k1.is_nan() || !(1.2..=2.0).contains(&k1.to_f64()) {
             return Err("The K1 constant must be a float in the range 1.2 to 2.0.");
@@ -181,6 +197,15 @@ impl<W: Copy, F: Float> TFIDFSearchConfig<W, F> {
 
     #[inline(always)]
     /// Returns the K1 constant.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let config: TFIDFSearchConfig<i32, f32> = TFIDFSearchConfig::default();
+    /// assert_eq!(config.k1(), 1.2_f32);
+    /// ```
     pub fn k1(&self) -> F {
         self.k1
     }
@@ -193,6 +218,22 @@ impl<W: Copy, F: Float> TFIDFSearchConfig<W, F> {
     ///
     /// # Raises
     /// * If the B constant is not a valid float or is not in the range 0.0 to 1.0.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let config: TFIDFSearchConfig<i32, f32> = TFIDFSearchConfig::default();
+    /// assert_eq!(config.b(), 0.75_f32);
+    /// assert_eq!(
+    ///     config.set_b(f32::NAN),
+    ///     Err("The B constant must be a float in the range 0.0 to 1.0.")
+    /// );
+    /// let config = config.set_b(0.5_f32).unwrap();
+    ///
+    /// assert_eq!(config.b(), 0.5_f32);
+    /// ```
     pub fn set_b(mut self, b: F) -> Result<Self, &'static str> {
         if b.is_nan() || !(0.0..=1.0).contains(&b.to_f64()) {
             return Err("The B constant must be a float in the range 0.0 to 1.0.");
@@ -203,6 +244,15 @@ impl<W: Copy, F: Float> TFIDFSearchConfig<W, F> {
 
     #[inline(always)]
     /// Returns the B constant.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let config: TFIDFSearchConfig<i32, f32> = TFIDFSearchConfig::default();
+    /// assert_eq!(config.b(), 0.75_f32);
+    /// ```
     pub fn b(&self) -> F {
         self.b
     }
@@ -418,7 +468,7 @@ where
     where
         KR: AsRef<K>,
         W: Copy + TryInto<Warp<W>, Error = &'static str>,
-        Warp<W>: TrigramSimilarity + Copy,
+        Warp<W>: NgramSimilarity + Copy,
     {
         let k1 = config.k1().to_f64();
         let b = config.b().to_f64();
@@ -524,7 +574,7 @@ where
     where
         KR: AsRef<K> + Send + Sync,
         W: Copy + TryInto<Warp<W>, Error = &'static str>,
-        Warp<W>: TrigramSimilarity + Copy + Send + Sync,
+        Warp<W>: NgramSimilarity + Copy + Send + Sync,
     {
         let k1 = config.k1().to_f64();
         let b = config.b().to_f64();

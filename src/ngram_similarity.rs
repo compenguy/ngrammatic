@@ -145,7 +145,7 @@ pub(crate) fn ngram_similarity<I, W, F>(warp: Warp<W>, query: &QueryHashmap, ngr
 where
     I: Iterator<Item = (usize, usize)>,
     F: Float,
-    Warp<W>: TrigramSimilarity + One + Zero + Three + PartialOrd,
+    Warp<W>: NgramSimilarity + One + Zero + Three + PartialOrd,
 {
     debug_assert!(
         warp.is_between_one_and_three(),
@@ -211,7 +211,7 @@ impl<W: Display> Display for Warp<W> {
 }
 
 /// Trait defining the similarity calculation.
-pub trait TrigramSimilarity {
+pub trait NgramSimilarity {
     /// Calculate the power of a value.
     fn pow(&self, value: f64) -> f64;
 
@@ -222,7 +222,7 @@ pub trait TrigramSimilarity {
         F: Float;
 }
 
-impl TrigramSimilarity for Warp<i32> {
+impl NgramSimilarity for Warp<i32> {
     #[inline(always)]
     fn pow(&self, value: f64) -> f64 {
         value.powi(self.value)
@@ -238,7 +238,7 @@ impl TrigramSimilarity for Warp<i32> {
     }
 }
 
-impl TrigramSimilarity for Warp<f64> {
+impl NgramSimilarity for Warp<f64> {
     #[inline(always)]
     fn pow(&self, value: f64) -> f64 {
         value.powf(self.value)

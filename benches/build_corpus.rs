@@ -82,13 +82,13 @@ fn build_corpus_monogram_new(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
     // textual file loaded in memory.
-    let _ = new_load_corpus::<MonoGram<ASCIIChar>>();
+    let _ = new_load_corpus::<UniGram<ASCIIChar>>();
 
     b.iter(|| {
         // Then we measure the time it takes to recreate
         // the corpus from scratch several times.
         black_box({
-            let _ = new_load_corpus::<MonoGram<ASCIIChar>>();
+            let _ = new_load_corpus::<UniGram<ASCIIChar>>();
         });
     });
 }
@@ -98,13 +98,13 @@ fn build_corpus_monogram_new_webgraph(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
     // textual file loaded in memory.
-    let _ = new_load_corpus_webgraph::<MonoGram<ASCIIChar>>();
+    let _ = new_load_corpus_webgraph::<UniGram<ASCIIChar>>();
 
     b.iter(|| {
         // Then we measure the time it takes to recreate
         // the corpus from scratch several times.
         black_box({
-            let _ = new_load_corpus_webgraph::<MonoGram<ASCIIChar>>();
+            let _ = new_load_corpus_webgraph::<UniGram<ASCIIChar>>();
         });
     });
 }
@@ -114,13 +114,13 @@ fn build_corpus_monogram_par_new(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
     // textual file loaded in memory.
-    let _ = new_par_load_corpus::<MonoGram<ASCIIChar>>();
+    let _ = new_par_load_corpus::<UniGram<ASCIIChar>>();
 
     b.iter(|| {
         // Then we measure the time it takes to recreate
         // the corpus from scratch several times.
         black_box({
-            let _ = new_par_load_corpus::<MonoGram<ASCIIChar>>();
+            let _ = new_par_load_corpus::<UniGram<ASCIIChar>>();
         });
     });
 }
@@ -130,13 +130,13 @@ fn build_corpus_monogram_par_new_webgraph(b: &mut Bencher) {
     // We load it first once outside the benchmark
     // to avoid the noise related to not having the
     // textual file loaded in memory.
-    let _ = new_par_load_corpus_webgraph::<MonoGram<ASCIIChar>>();
+    let _ = new_par_load_corpus_webgraph::<UniGram<ASCIIChar>>();
 
     b.iter(|| {
         // Then we measure the time it takes to recreate
         // the corpus from scratch several times.
         black_box({
-            let _ = new_par_load_corpus_webgraph::<MonoGram<ASCIIChar>>();
+            let _ = new_par_load_corpus_webgraph::<UniGram<ASCIIChar>>();
         });
     });
 }

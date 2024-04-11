@@ -168,7 +168,7 @@ where
                 ngram_index
             });
         }
-        
+
         // We create the ngrams vector. Since we are using a btreeset, we already have the
         // ngrams sorted, so we can simply convert the btreeset into a vector.
         log::debug!(

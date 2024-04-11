@@ -22,7 +22,7 @@ use sux::{
 use crate::{ASCIIChar, IntoUsize, Paddable};
 
 /// Type alias for a monogram.
-pub type MonoGram<T> = [T; 1];
+pub type UniGram<T> = [T; 1];
 /// Type alias for a bigram.
 pub type BiGram<T> = [T; 2];
 /// Type alias for a trigram.
@@ -368,7 +368,7 @@ pub trait Ngram:
     fn rotate_left(&mut self);
 }
 
-impl Ngram for MonoGram<u8> {
+impl Ngram for UniGram<u8> {
     const ARITY: usize = 1;
     type G = u8;
     type SortedStorage = EliasFano<SelectFixed2>;
@@ -382,7 +382,7 @@ impl Ngram for MonoGram<u8> {
     }
 }
 
-impl Ngram for MonoGram<ASCIIChar> {
+impl Ngram for UniGram<ASCIIChar> {
     const ARITY: usize = 1;
     type G = ASCIIChar;
     type SortedStorage = EliasFano<SelectFixed2>;
@@ -396,7 +396,7 @@ impl Ngram for MonoGram<ASCIIChar> {
     }
 }
 
-impl Ngram for MonoGram<char> {
+impl Ngram for UniGram<char> {
     const ARITY: usize = 1;
     type G = char;
     type SortedStorage = EliasFano<SelectFixed2>;

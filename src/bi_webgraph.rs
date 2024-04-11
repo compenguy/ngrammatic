@@ -41,14 +41,12 @@ struct LoadedGraph {
 
 impl MemSize for LoadedGraph {
     fn mem_size(&self, _flags: mem_dbg::SizeFlags) -> usize {
-        todo!(
-            concat!(
-                "The trait MemSize is not yet implemented for the ",
-                "published version of webgraph. When the new version ",
-                "is published, we can replace this todo with a simple ",
-                "derive of the MemSize and MemDbg traits." 
-            )
-        )
+        todo!(concat!(
+            "The trait MemSize is not yet implemented for the ",
+            "published version of webgraph. When the new version ",
+            "is published, we can replace this todo with a simple ",
+            "derive of the MemSize and MemDbg traits."
+        ))
     }
 }
 

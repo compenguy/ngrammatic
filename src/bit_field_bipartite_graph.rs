@@ -20,8 +20,7 @@ use webgraph::traits::RandomAccessLabeling;
 use crate::weights::Weights;
 use crate::WeightedBipartiteGraph;
 
-#[derive(MemSize, MemDbg)]
-#[derive(Debug, Clone)]
+#[derive(MemSize, MemDbg, Debug, Clone)]
 /// A bipartite graph stored in two CSR-like structures composed of bitfields.
 pub struct WeightedBitFieldBipartiteGraph {
     /// Vector containing the number of times a given gram appears in a given key.

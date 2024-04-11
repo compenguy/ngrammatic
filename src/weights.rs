@@ -24,8 +24,7 @@ pub trait ReaderFactory {
 }
 
 /// A factory that creates a reader from vec of u8.
-#[derive(Clone, Debug)]
-#[derive(MemSize, MemDbg)]
+#[derive(Clone, Debug, MemSize, MemDbg)]
 pub struct CursorReaderFactory {
     data: Vec<u8>,
 }
@@ -57,8 +56,7 @@ impl ReaderFactory for CursorReaderFactory {
 /// A builder on which you can push the weights of a document.
 /// The compression is highly dependent on **our** weights distribution and thus
 /// it's not recommended to use this builder for other purposes.
-#[derive(Debug)]
-#[derive(MemSize, MemDbg)]
+#[derive(Debug, MemSize, MemDbg)]
 pub struct WeightsBuilder<W: Write = std::io::Cursor<Vec<u8>>> {
     /// The bitstream
     writer: Writer<W>,
@@ -489,7 +487,6 @@ mod test {
         );
 
         // test weights iter
-        println!("Testing weights iter");
         let mut iter = reader.weights();
         for row in weights.iter() {
             for weight in row.iter() {
@@ -500,7 +497,6 @@ mod test {
         assert_eq!(None, iter.next());
 
         // test random access iter
-        println!("Testing random access iter");
         for (i, row) in weights.iter().enumerate() {
             let mut iter = reader.labels(i);
             for weight in row.iter() {
@@ -510,13 +506,11 @@ mod test {
         }
 
         // test random access degrees
-        println!("Testing random access degrees");
         for (i, row) in weights.iter().enumerate() {
             assert_eq!(row.len(), reader.outdegree(i));
         }
 
         // test sequenital iter
-        println!("Testing sequential iter");
         let mut iter = reader.iter();
         for row in weights.iter() {
             let (_node_id, weights) = iter.next().unwrap();

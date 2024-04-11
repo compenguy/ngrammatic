@@ -19,6 +19,17 @@ impl<W: Copy, F: Float> From<NgramSearchConfig<W, F>> for SearchConfig<F> {
     }
 }
 
+impl<F: Float> From<SearchConfig<F>> for NgramSearchConfig<i32, F> {
+    #[inline(always)]
+    /// Returns the ngram search configuration.
+    fn from(search_config: SearchConfig<F>) -> Self {
+        Self {
+            search_config,
+            warp: Warp::try_from(2).unwrap(),
+        }
+    }
+}
+
 impl<F: Float> Default for NgramSearchConfig<i32, F> {
     #[inline(always)]
     /// Returns the default search configuration.
@@ -259,7 +270,7 @@ where
     ) -> SearchResults<'_, KS, NG, F>
     where
         KR: AsRef<K>,
-        Warp<W>: TrigramSimilarity + Copy,
+        Warp<W>: NgramSimilarity + Copy,
     {
         let warp: Warp<W> = config.warp();
         self.search(
@@ -349,7 +360,7 @@ where
     where
         KR: AsRef<K> + Send + Sync,
         W: Copy + TryInto<Warp<W>, Error = &'static str>,
-        Warp<W>: TrigramSimilarity + Copy + Send + Sync,
+        Warp<W>: NgramSimilarity + Copy + Send + Sync,
     {
         let warp: Warp<W> = config.warp();
         self.par_search(

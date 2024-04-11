@@ -176,10 +176,7 @@ where
     /// assert_eq!(animals.key_from_id(1), &"Abyssinian");
     /// assert_eq!(animals.key_from_id(20), &"Alligator");
     /// ```
-    pub fn key_from_id(
-        &self,
-        key_id: usize,
-    ) -> KS::KeyRef<'_> {
+    pub fn key_from_id(&self, key_id: usize) -> KS::KeyRef<'_> {
         self.keys.get_ref(key_id)
     }
 
@@ -501,9 +498,7 @@ where
     pub fn keys_from_ngram_id(
         &self,
         ngram_id: usize,
-    ) -> impl ExactSizeIterator<
-        Item = <KS as Keys<NG>>::KeyRef<'_>,
-    > + '_ {
+    ) -> impl ExactSizeIterator<Item = <KS as Keys<NG>>::KeyRef<'_>> + '_ {
         self.key_ids_from_ngram_id(ngram_id)
             .map(move |key_id| self.key_from_id(key_id))
     }
@@ -587,11 +582,7 @@ where
     pub fn keys_from_ngram(
         &self,
         ngram: NG,
-    ) -> Option<
-        impl ExactSizeIterator<
-                Item = <KS as Keys<NG>>::KeyRef<'_>,
-            > + '_,
-    > {
+    ) -> Option<impl ExactSizeIterator<Item = <KS as Keys<NG>>::KeyRef<'_>> + '_> {
         self.ngram_id_from_ngram(ngram)
             .map(move |ngram_id| self.keys_from_ngram_id(ngram_id))
     }

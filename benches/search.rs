@@ -3,7 +3,6 @@ extern crate test;
 use ngrammatic::prelude::*;
 use rayon::slice::ParallelSliceMut;
 use std::fmt::Debug;
-use sux::dict::rear_coded_list::{RearCodedList, RearCodedListBuilder};
 use test::{black_box, Bencher};
 
 /// Returns an iterator over the taxons in the corpus.
@@ -432,7 +431,7 @@ macro_rules! make_bench {
     };
 }
 
-make_bench!(monogram, MonoGram<ASCIIChar>);
+make_bench!(monogram, UniGram<ASCIIChar>);
 make_bench!(bigram, BiGram<ASCIIChar>);
 make_bench!(trigram, TriGram<ASCIIChar>);
 make_bench!(tetragram, TetraGram<ASCIIChar>);

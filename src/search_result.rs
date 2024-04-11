@@ -10,8 +10,7 @@ pub type SearchResults<'a, KS, NG, F> = Vec<SearchResult<<KS as Keys<NG>>::KeyRe
 
 /// Holds a fuzzy match search result string, and its associated similarity
 /// to the query text.
-#[derive(Debug, Clone)]
-#[derive(MemSize, MemDbg)]
+#[derive(Debug, Clone, MemSize, MemDbg)]
 pub struct SearchResult<K, F: Float> {
     /// The key of a fuzzy match
     key: K,

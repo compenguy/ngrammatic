@@ -1,4 +1,4 @@
-//!#![doc = include_str!("../README.md")]
+#![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
 
 pub mod traits;
@@ -41,6 +41,7 @@ pub mod prelude {
     pub use crate::animals::*;
     pub use crate::bi_webgraph::*;
     pub use crate::ngram_search::*;
-    pub use crate::tfidf::*;
     pub use crate::search::*;
+    pub use crate::tfidf::*;
+    pub use sux::dict::rear_coded_list::{RearCodedList, RearCodedListBuilder};
 }

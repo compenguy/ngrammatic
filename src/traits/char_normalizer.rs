@@ -8,7 +8,7 @@ use std::iter::Peekable;
 /// Struct defining an iterator to lowercase.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(transparent)]
-pub struct Lowercase<I: ?Sized>(I);
+pub struct Lowercase<I: ?Sized = str>(I);
 
 impl<E: ?Sized, I: ?Sized> AsRef<I> for Lowercase<E>
 where

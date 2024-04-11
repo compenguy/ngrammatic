@@ -12,8 +12,7 @@ use crate::{Corpus, Float, Keys, Ngram, SearchResult, WeightedBipartiteGraph};
 
 use mem_dbg::{MemDbg, MemSize};
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
-#[derive(MemSize, MemDbg)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq, MemSize, MemDbg)]
 /// A struct representing a query hashmap, with several values precomputed.
 pub struct QueryHashmap {
     /// The hashmap with the identified ngram ids as keys and their counts as values.
@@ -34,7 +33,7 @@ pub type NgramIds<'a> = Map<Iter<'a, (usize, usize)>, fn(&(usize, usize)) -> usi
 /// Test that ngram_similarity works correctly.
 #[cfg(test)]
 mod test_ngram_similarity {
-    use crate::{TrigramSimilarity, Warp};
+    use crate::{NgramSimilarity, Warp};
 
     use super::*;
 

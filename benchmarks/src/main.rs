@@ -199,7 +199,7 @@ where
 
 fn main() {
     env_logger::builder().try_init().unwrap();
-    experiment::<MonoGram<ASCIIChar>>();
+    experiment::<UniGram<ASCIIChar>>();
     experiment::<BiGram<ASCIIChar>>();
     experiment::<TriGram<ASCIIChar>>();
     experiment::<TetraGram<ASCIIChar>>();

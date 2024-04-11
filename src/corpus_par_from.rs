@@ -22,7 +22,7 @@ where
     /// # Examples
     /// In the following example, we create a corpus from the set of keys
     /// defined by the `ANIMALS` constant array. We provide several synonims
-    /// for arrays, such as MonoGrams, BiGrams, TriGrams, and so on. This is
+    /// for arrays, such as UniGrams, BiGrams, TriGrams, and so on. This is
     /// solely done for the sake of better readability. The Ngrams are implemented
     /// up to the cardidality of 8, which is the maximum number of `u8`-based grams that can
     /// be stored in a single u64.
