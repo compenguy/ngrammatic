@@ -19,7 +19,7 @@ where
     /// # Arguments
     /// * `keys` - The keys to create the corpus from.
     ///
-    /// # Example
+    /// # Examples
     /// In the following example, we create a corpus from the set of keys
     /// defined by the `ANIMALS` constant array. We provide several synonims
     /// for arrays, such as MonoGrams, BiGrams, TriGrams, and so on. This is
@@ -64,13 +64,13 @@ where
     ///
     /// let animals = vec!["cat", "dog", "bird", "fish", "lion"];
     ///
-    /// let bigram_corpus: Corpus<&[&str], BiGram<char>> = Corpus::par_from(&animals);
-    /// let trigram_corpus: Corpus<&[&str], TriGram<char>> = Corpus::par_from(&animals);
-    /// let tetragram_corpus: Corpus<&[&str], TetraGram<char>> = Corpus::par_from(&animals);
-    /// let pentagram_corpus: Corpus<&[&str], PentaGram<char>> = Corpus::par_from(&animals);
-    /// let hexagram_corpus: Corpus<&[&str], HexaGram<char>> = Corpus::par_from(&animals);
-    /// let heptagram_corpus: Corpus<&[&str], HeptaGram<char>> = Corpus::par_from(&animals);
-    /// let octagram_corpus: Corpus<&[&str], OctaGram<char>> = Corpus::par_from(&animals);
+    /// let bigram_corpus: Corpus<Vec<&str>, BiGram<char>> = Corpus::par_from(animals.clone());
+    /// let trigram_corpus: Corpus<Vec<&str>, TriGram<char>> = Corpus::par_from(animals.clone());
+    /// let tetragram_corpus: Corpus<Vec<&str>, TetraGram<char>> = Corpus::par_from(animals.clone());
+    /// let pentagram_corpus: Corpus<Vec<&str>, PentaGram<char>> = Corpus::par_from(animals.clone());
+    /// let hexagram_corpus: Corpus<Vec<&str>, HexaGram<char>> = Corpus::par_from(animals.clone());
+    /// let heptagram_corpus: Corpus<Vec<&str>, HeptaGram<char>> = Corpus::par_from(animals.clone());
+    /// let octagram_corpus: Corpus<Vec<&str>, OctaGram<char>> = Corpus::par_from(animals.clone());
     /// ```
     ///
     /// And references of arrays:
@@ -80,13 +80,13 @@ where
     ///
     /// let animals = ["cat", "dog", "bird", "fish", "lion"];
     ///
-    /// let bigram_corpus: Corpus<&[&str; 5], BiGram<char>> = Corpus::par_from(&animals);
-    /// let trigram_corpus: Corpus<&[&str; 5], TriGram<char>> = Corpus::par_from(&animals);
-    /// let tetragram_corpus: Corpus<&[&str; 5], TetraGram<char>> = Corpus::par_from(&animals);
-    /// let pentagram_corpus: Corpus<&[&str; 5], PentaGram<char>> = Corpus::par_from(&animals);
-    /// let hexagram_corpus: Corpus<&[&str; 5], HexaGram<char>> = Corpus::par_from(&animals);
-    /// let heptagram_corpus: Corpus<&[&str; 5], HeptaGram<char>> = Corpus::par_from(&animals);
-    /// let octagram_corpus: Corpus<&[&str; 5], OctaGram<char>> = Corpus::par_from(&animals);
+    /// let bigram_corpus: Corpus<[&str; 5], BiGram<char>> = Corpus::par_from(animals);
+    /// let trigram_corpus: Corpus<[&str; 5], TriGram<char>> = Corpus::par_from(animals);
+    /// let tetragram_corpus: Corpus<[&str; 5], TetraGram<char>> = Corpus::par_from(animals);
+    /// let pentagram_corpus: Corpus<[&str; 5], PentaGram<char>> = Corpus::par_from(animals);
+    /// let hexagram_corpus: Corpus<[&str; 5], HexaGram<char>> = Corpus::par_from(animals);
+    /// let heptagram_corpus: Corpus<[&str; 5], HeptaGram<char>> = Corpus::par_from(animals);
+    /// let octagram_corpus: Corpus<[&str; 5], OctaGram<char>> = Corpus::par_from(animals);
     /// ```
     ///
     /// In all of these examples, we have used char-based grams. We can also use u8-based grams:
@@ -96,13 +96,13 @@ where
     ///
     /// let animals = vec!["cat", "dog", "bird", "fish", "lion"];
     ///
-    /// let bigram_corpus: Corpus<&[&str], BiGram<u8>> = Corpus::par_from(&animals);
-    /// let trigram_corpus: Corpus<&[&str], TriGram<u8>> = Corpus::par_from(&animals);
-    /// let tetragram_corpus: Corpus<&[&str], TetraGram<u8>> = Corpus::par_from(&animals);
-    /// let pentagram_corpus: Corpus<&[&str], PentaGram<u8>> = Corpus::par_from(&animals);
-    /// let hexagram_corpus: Corpus<&[&str], HexaGram<u8>> = Corpus::par_from(&animals);
-    /// let heptagram_corpus: Corpus<&[&str], HeptaGram<u8>> = Corpus::par_from(&animals);
-    /// let octagram_corpus: Corpus<&[&str], OctaGram<u8>> = Corpus::par_from(&animals);
+    /// let bigram_corpus: Corpus<Vec<&str>, BiGram<u8>> = Corpus::par_from(animals.clone());
+    /// let trigram_corpus: Corpus<Vec<&str>, TriGram<u8>> = Corpus::par_from(animals.clone());
+    /// let tetragram_corpus: Corpus<Vec<&str>, TetraGram<u8>> = Corpus::par_from(animals.clone());
+    /// let pentagram_corpus: Corpus<Vec<&str>, PentaGram<u8>> = Corpus::par_from(animals.clone());
+    /// let hexagram_corpus: Corpus<Vec<&str>, HexaGram<u8>> = Corpus::par_from(animals.clone());
+    /// let heptagram_corpus: Corpus<Vec<&str>, HeptaGram<u8>> = Corpus::par_from(animals.clone());
+    /// let octagram_corpus: Corpus<Vec<&str>, OctaGram<u8>> = Corpus::par_from(animals.clone());
     /// ```
     ///
     /// It is also pretty easy to define normalizations for the keys. For instance, you can
@@ -113,18 +113,18 @@ where
     ///
     /// let animals = vec!["cat", "dog", "bIrd", "Fish", "Lion"];
     ///
-    /// let bigram_corpus: Corpus<&[&str], BiGram<char>, Lowercase<str>> = Corpus::par_from(&animals);
-    /// let trigram_corpus: Corpus<&[&str], TriGram<char>, Lowercase<str>> = Corpus::par_from(&animals);
-    /// let tetragram_corpus: Corpus<&[&str], TetraGram<char>, Lowercase<str>> =
-    ///     Corpus::par_from(&animals);
-    /// let pentagram_corpus: Corpus<&[&str], PentaGram<char>, Lowercase<str>> =
-    ///     Corpus::par_from(&animals);
-    /// let hexagram_corpus: Corpus<&[&str], HexaGram<char>, Lowercase<str>> =
-    ///     Corpus::par_from(&animals);
-    /// let heptagram_corpus: Corpus<&[&str], HeptaGram<char>, Lowercase<str>> =
-    ///     Corpus::par_from(&animals);
-    /// let octagram_corpus: Corpus<&[&str], OctaGram<char>, Lowercase<str>> =
-    ///     Corpus::par_from(&animals);
+    /// let bigram_corpus: Corpus<Vec<&str>, BiGram<char>, Lowercase<str>> = Corpus::par_from(animals.clone());
+    /// let trigram_corpus: Corpus<Vec<&str>, TriGram<char>, Lowercase<str>> = Corpus::par_from(animals.clone());
+    /// let tetragram_corpus: Corpus<Vec<&str>, TetraGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(animals.clone());
+    /// let pentagram_corpus: Corpus<Vec<&str>, PentaGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(animals.clone());
+    /// let hexagram_corpus: Corpus<Vec<&str>, HexaGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(animals.clone());
+    /// let heptagram_corpus: Corpus<Vec<&str>, HeptaGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(animals.clone());
+    /// let octagram_corpus: Corpus<Vec<&str>, OctaGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(animals.clone());
     /// ```
     pub fn par_from(keys: KS) -> Self {
         // We start by parsing the keys to extract the ngrams, the cooccurrences, the key offsets,

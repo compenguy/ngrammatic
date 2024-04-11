@@ -182,8 +182,14 @@ impl<F: Float> SearchConfig<F> {
     ///
     /// # Arguments
     /// * `number_of_keys` - The number of keys in the corpus.
-    pub(crate) fn max_ngram_degree(&self, number_of_keys: usize) -> usize {
+    pub(crate) fn compute_max_ngram_degree(&self, number_of_keys: usize) -> usize {
         self.max_ngram_degree.max_ngram_degree(number_of_keys)
+    }
+
+    #[inline(always)]
+    /// Returns the max ngram degree.
+    pub fn max_ngram_degree(&self) -> MaxNgramDegree {
+        self.max_ngram_degree
     }
 
     #[inline(always)]
@@ -314,7 +320,7 @@ where
 
         let query_hashmap_ref = &query_hashmap;
         let mut heap = SearchResultsHeap::new(config.maximum_number_of_results());
-        let max_ngram_degree = config.max_ngram_degree(self.number_of_keys());
+        let max_ngram_degree = config.compute_max_ngram_degree(self.number_of_keys());
 
         // We identify all of the ngrams to be considered in the search, which
         // are the set of ngrams that contain any of the grams in the ngram

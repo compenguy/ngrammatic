@@ -97,7 +97,7 @@ where
 
     /// Returns a reference to underlying graph.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -127,7 +127,7 @@ where
     #[inline(always)]
     /// Returns the number of keys in the corpus.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -145,7 +145,7 @@ where
     #[inline(always)]
     /// Returns the number of ngrams in the corpus.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -166,16 +166,16 @@ where
     /// # Arguments
     /// * `key_id` - The id of the key to get.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
     ///
     /// let animals: Corpus<_, TriGram<ASCIIChar>> = Corpus::from(ANIMALS);
     ///
-    /// assert_eq!(animals.key_from_id(0), "Aardvark");
-    /// assert_eq!(animals.key_from_id(1), "Abyssinian");
-    /// assert_eq!(animals.key_from_id(20), "Alligator");
+    /// assert_eq!(animals.key_from_id(0), &"Aardvark");
+    /// assert_eq!(animals.key_from_id(1), &"Abyssinian");
+    /// assert_eq!(animals.key_from_id(20), &"Alligator");
     /// ```
     pub fn key_from_id(
         &self,
@@ -190,7 +190,7 @@ where
     /// # Arguments
     /// * `ngram_id` - The id of the ngram to get.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -218,7 +218,7 @@ where
     /// # Arguments
     /// * `ngram` - The ngram to get the id from.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -245,7 +245,7 @@ where
     /// # Arguments
     /// * `key_id` - The id of the key to get the number of ngrams from.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -266,7 +266,7 @@ where
     /// # Arguments
     /// * `ngram_id` - The id of the ngram to get the number of keys from.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -287,7 +287,7 @@ where
     /// # Arguments
     /// * `ngram_id` - The id of the ngram to get the key ids from.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -308,7 +308,7 @@ where
     /// # Arguments
     /// * `key_id` - The id of the key to get the ngram ids from.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -329,7 +329,7 @@ where
     /// # Arguments
     /// * `key_id` - The id of the key to get the ngram co-occurrences from.
     ///
-    /// # Example
+    /// # Examples
     /// We check that all values are greater than 0.
     ///
     /// ```rust
@@ -355,7 +355,7 @@ where
     #[inline(always)]
     /// Returns all co-occurrences.
     ///
-    /// # Example
+    /// # Examples
     /// We check that all values are greater than 0.
     ///
     /// ```rust
@@ -376,7 +376,7 @@ where
     /// # Arguments
     /// * `key_id` - The id of the key to get the ngrams and their co-occurrences from.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -401,7 +401,7 @@ where
     /// # Arguments
     /// * `key_id` - The id of the key to get the ngrams and their co-occurrences from.
     ///
-    /// # Example
+    /// # Examples
     /// We check that all of the ngrams returned appear in the corpus and
     /// that all of the co-occurrences are greater than 0.
     ///
@@ -442,7 +442,7 @@ where
     /// # Arguments
     /// * `key_id` - The id of the key to get the ngrams from.
     ///
-    /// # Example
+    /// # Examples
     /// We check that all of the ngrams returned appear in the corpus.
     ///
     /// ```rust
@@ -480,7 +480,7 @@ where
     /// # Returns
     /// An iterator over the keys associated to the ngram.
     ///
-    /// # Example
+    /// # Examples
     /// We check that the keys returned by the keys_from_ngram_id method are the
     /// exactly same keys returned keys_from_ngram method.
     ///
@@ -515,7 +515,7 @@ where
     /// # Arguments
     /// * `ngram` - The ngram to get the number of keys from.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -568,7 +568,7 @@ where
     /// # Returns
     /// An iterator over the keys associated to the ngram.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -606,7 +606,7 @@ where
     /// # Implementative details
     /// This function is implemented using a Binary Heap.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;

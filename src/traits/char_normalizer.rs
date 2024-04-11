@@ -620,7 +620,7 @@ where
     #[inline(always)]
     /// Trims spaces from the left of the iterator.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to trim spaces from the left of a string
     /// composed of `char`:
@@ -662,7 +662,7 @@ where
     #[inline(always)]
     /// Trims spaces from the right of the iterator.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to trim spaces from the right of a string
     /// composed of `char`:
@@ -707,7 +707,7 @@ where
     #[inline(always)]
     /// Trims spaces from both sides of the iterator.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to trim spaces from both sides of a string
     /// composed of `char`:
@@ -752,7 +752,7 @@ where
     #[inline(always)]
     /// Trims null characters from the left of the iterator.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to trim null characters from the left of a string
     /// composed of `char`:
@@ -794,7 +794,7 @@ where
     #[inline(always)]
     /// Trims null characters from the right of the iterator.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to trim null characters from the right of a string
     /// composed of `char`:
@@ -839,7 +839,7 @@ where
     #[inline(always)]
     /// Trims null characters from both sides of the iterator.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to trim null characters from both sides of a string
     /// composed of `char`:
@@ -884,7 +884,7 @@ where
     #[inline(always)]
     /// Converts all characters to lowercase.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to convert all characters to lowercase
     /// of a string composed of `char`:
@@ -927,7 +927,7 @@ where
     #[inline(always)]
     /// Converts all non-alphanumerical characters to spaces.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to convert all non-alphanumerical characters to spaces
     /// of a string composed of `char`:
@@ -972,7 +972,7 @@ where
     #[inline(always)]
     /// Normalizes spaces, removing subsequent spaces.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to normalize spaces, removing subsequent spaces
     /// of a string composed of `char`:

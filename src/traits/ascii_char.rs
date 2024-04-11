@@ -77,7 +77,7 @@ impl ASCIIChar {
     #[inline(always)]
     /// Returns the lowercase version of the character.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -95,7 +95,7 @@ impl ASCIIChar {
     #[inline(always)]
     /// Returns the uppercase version of the character.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -113,7 +113,7 @@ impl ASCIIChar {
     #[inline(always)]
     /// Returns whether the current character is a space-like.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -130,7 +130,7 @@ impl ASCIIChar {
     #[inline(always)]
     /// Returns whether the current character is alphanumeric.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
@@ -214,7 +214,7 @@ where
 pub trait ToASCIICharIterator: IntoIterator<Item = char> {
     /// Converts the iterator to an `ASCIICharIterator`.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;

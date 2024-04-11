@@ -1,9 +1,6 @@
 //! Submodule providing the trigram search implementation.
 
-use crate::{
-    prelude::*,
-    search::{MaxNgramDegree, QueryHashmap, SearchConfig},
-};
+use crate::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 /// Struct providing an ngram search configuration.
@@ -84,6 +81,22 @@ impl<W: Copy, F: Float> NgramSearchConfig<W, F> {
     }
 
     #[inline(always)]
+    /// Returns the maximum degree of the ngrams to consider in the search.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let config: NgramSearchConfig<i32, f32> = NgramSearchConfig::default();
+    ///
+    /// assert_eq!(config.max_ngram_degree(), MaxNgramDegree::Default);
+    /// ```
+    pub fn max_ngram_degree(&self) -> MaxNgramDegree {
+        self.search_config.max_ngram_degree()
+    }
+
+    #[inline(always)]
     /// Set the warp factor to use in the trigram similarity calculation.
     ///
     /// # Arguments
@@ -123,7 +136,7 @@ where
     /// * `limit` - The maximum number of results to return.
     /// * `max_counts` - Excludes ngrams with counts above this value. By default, equal to the maximum between 1/10 of the number of keys and 100.
     ///
-    /// # Example
+    /// # Examples
     /// We can use the ANIMALS dataset shipped with the library to search for similar keys.
     /// We use as unit of the ngram a `char`, and we search for trigrams similar to the key "cat".
     /// Using a `char` is an `u32`, so four times more expensive than using a `u8` or a `ASCIIChar`,
@@ -136,10 +149,10 @@ where
     ///
     /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::from(&ANIMALS);
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.ngram_search("Cat", NgramSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     /// ```
     ///
     /// Now let's proceed with an example to highlight the importance of normalizing the input.
@@ -153,7 +166,7 @@ where
     ///
     /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::from(&ANIMALS);
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.ngram_search("catt", NgramSearchConfig::default());
     ///
     /// assert!(results.is_empty());
@@ -169,10 +182,10 @@ where
     ///
     /// let corpus: Corpus<&[&str; 699], BiGram<char>, Lowercase<str>> = Corpus::from(&ANIMALS);
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.ngram_search("catt", NgramSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     /// ```
     ///
     /// In the next example we will see how to use `ASCIIChar` as ngram unit. When
@@ -184,10 +197,10 @@ where
     ///
     /// let corpus: Corpus<&[&str; 699], BiGram<ASCIIChar>> = Corpus::from(&ANIMALS);
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.ngram_search("Cat", NgramSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     /// ```
     ///
     /// In the next example we will see how to use `u8` as ngram unit. The key difference between
@@ -200,10 +213,10 @@ where
     ///
     /// let corpus: Corpus<&[&str; 699], BiGram<u8>> = Corpus::from(&ANIMALS);
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.ngram_search("Cat", NgramSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     /// ```
     pub fn ngram_search<KR, F: Float>(
         &self,
@@ -224,7 +237,7 @@ where
     /// * `key` - The key to search for in the corpus
     /// * `config` - The configuration for the search.
     ///
-    /// # Example
+    /// # Examples
     /// In this example we use the ANIMALS dataset shipped with the library to search for similar keys,
     /// using the version of the search with a custom warp factor.
     ///
@@ -235,9 +248,9 @@ where
     ///
     /// let config = NgramSearchConfig::default().set_warp(2.5).unwrap();
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> = corpus.ngram_search_with_warp("Cat", config);
+    /// let results: Vec<SearchResult<&&str, f32>> = corpus.ngram_search_with_warp("Cat", config);
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     /// ```
     pub fn ngram_search_with_warp<KR, W: Copy, F: Float>(
         &self,
@@ -278,7 +291,7 @@ where
     /// * `key` - The key to search for in the corpus
     /// * `config` - The configuration for the search.
     ///
-    /// # Example
+    /// # Examples
     /// This is the concurrent version of the `ngram_search` method.
     /// Please look at the documentation of the `ngram_search` method for the extended
     /// documentation.
@@ -288,10 +301,10 @@ where
     ///
     /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::par_from(&ANIMALS);
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.ngram_par_search("Cat", NgramSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     /// ```
     pub fn ngram_par_search<KR, F: Float>(
         &self,
@@ -312,7 +325,7 @@ where
     /// * `key` - The key to search for in the corpus
     /// * `config` - The configuration for the search.
     ///
-    /// # Example
+    /// # Examples
     /// This is the concurrent version of the `ngram_search_with_warp` method.
     /// Please look at the documentation of the `ngram_search_with_warp` method for the extended
     /// documentation.
@@ -324,9 +337,9 @@ where
     ///
     /// let config = NgramSearchConfig::default().set_warp(2.5).unwrap();
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> = corpus.ngram_par_search_with_warp("Cat", config);
+    /// let results: Vec<SearchResult<&&str, f32>> = corpus.ngram_par_search_with_warp("Cat", config);
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     /// ```
     pub fn ngram_par_search_with_warp<KR, W, F: Float>(
         &self,

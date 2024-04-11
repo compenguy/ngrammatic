@@ -1,8 +1,5 @@
 //! Submodule providing a term frequency-inverse document frequency (TF-IDF) implementation.
-use crate::{
-    prelude::*,
-    search::{MaxNgramDegree, QueryHashmap, SearchConfig},
-};
+use crate::prelude::*;
 use std::cmp::Ordering;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -39,12 +36,34 @@ impl<F: Float> Default for TFIDFSearchConfig<i32, F> {
 impl<W: Copy, F: Float> TFIDFSearchConfig<W, F> {
     #[inline(always)]
     /// Returns the minimum similarity value for a result to be included in the output.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let config = TFIDFSearchConfig::default();
+    /// let minimum_similarity_score: f32 = config.minimum_similarity_score();
+    ///
+    /// assert_eq!(minimum_similarity_score, 0.7_f32);
+    /// ```
     pub fn minimum_similarity_score(&self) -> F {
         self.search_config.minimum_similarity_score()
     }
 
     #[inline(always)]
     /// Returns the maximum number of results to return.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let config: TFIDFSearchConfig<i32, f32> = TFIDFSearchConfig::default();
+    /// let maximum_number_of_results = config.maximum_number_of_results();
+    ///
+    /// assert_eq!(maximum_number_of_results, 10);
+    /// ```
     pub fn maximum_number_of_results(&self) -> usize {
         self.search_config.maximum_number_of_results()
     }
@@ -54,6 +73,25 @@ impl<W: Copy, F: Float> TFIDFSearchConfig<W, F> {
     ///
     /// # Arguments
     /// * `minimum_similarity_score` - The minimum similarity value for a result to be included in the output.
+    ///
+    /// # Raises
+    /// * If the minimum similarity score is not a valid float or is not in the range 0.0 to 1.0.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let config = TFIDFSearchConfig::default();
+    /// assert_eq!(config.minimum_similarity_score(), 0.7_f32);
+    /// assert_eq!(
+    ///     config.set_minimum_similarity_score(f32::NAN),
+    ///     Err("The minimum similarity score must not be NaN")
+    /// );
+    /// let config = config.set_minimum_similarity_score(0.5_f32).unwrap();
+    ///
+    /// assert_eq!(config.minimum_similarity_score(), 0.5_f32);
+    /// ```
     pub fn set_minimum_similarity_score(
         mut self,
         minimum_similarity_score: F,
@@ -69,6 +107,18 @@ impl<W: Copy, F: Float> TFIDFSearchConfig<W, F> {
     ///
     /// # Arguments
     /// * `maximum_number_of_results` - The maximum number of results to return.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let config: TFIDFSearchConfig<i32, f32> = TFIDFSearchConfig::default();
+    /// assert_eq!(config.maximum_number_of_results(), 10);
+    /// let config = config.set_maximum_number_of_results(5);
+    ///
+    /// assert_eq!(config.maximum_number_of_results(), 5);
+    /// ```
     pub fn set_maximum_number_of_results(mut self, maximum_number_of_results: usize) -> Self {
         self.search_config = self
             .search_config
@@ -81,9 +131,36 @@ impl<W: Copy, F: Float> TFIDFSearchConfig<W, F> {
     ///
     /// # Arguments
     /// * `max_ngram_degree` - The maximum degree of the ngrams to consider in the search.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let config: TFIDFSearchConfig<i32, f32> = TFIDFSearchConfig::default();
+    /// assert_eq!(config.max_ngram_degree(), MaxNgramDegree::Default);
+    /// let config = config.set_max_ngram_degree(MaxNgramDegree::None);
+    ///
+    /// assert_eq!(config.max_ngram_degree(), MaxNgramDegree::None);
+    /// ```
     pub fn set_max_ngram_degree(mut self, max_ngram_degree: MaxNgramDegree) -> Self {
         self.search_config = self.search_config.set_max_ngram_degree(max_ngram_degree);
         self
+    }
+
+    #[inline(always)]
+    /// Returns the maximum degree of the ngrams to consider in the search.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ngrammatic::prelude::*;
+    ///
+    /// let config: TFIDFSearchConfig<i32, f32> = TFIDFSearchConfig::default();
+    /// assert_eq!(config.max_ngram_degree(), MaxNgramDegree::Default);
+    /// ```
+    pub fn max_ngram_degree(&self) -> MaxNgramDegree {
+        self.search_config.max_ngram_degree()
     }
 
     #[inline(always)]
@@ -188,7 +265,7 @@ where
     #[inline(always)]
     /// Returns the average document length of the corpus.
     ///
-    /// # Example
+    /// # Examples
     /// ```rust
     /// use ngrammatic::prelude::*;
     ///
@@ -264,7 +341,7 @@ where
     /// * `key` - The key to search for in the corpus.
     /// * `config` - The TF-IDF search configuration.
     ///
-    /// # Example
+    /// # Examples
     /// We can use the ANIMALS dataset shipped with the library to search for similar keys using
     /// the TF-IDF similarity metric.
     /// We use as unit of the ngram a `char`, and we search for trigrams similar to the key "cat".
@@ -279,15 +356,15 @@ where
     ///
     /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::from(&ANIMALS);
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.tf_idf_search("Cat", TFIDFSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.tf_idf_search("Catt", TFIDFSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     /// ```
     pub fn tf_idf_search<KR, F: Float>(
         &self,
@@ -316,22 +393,22 @@ where
     /// * `key` - The key to search for in the corpus.
     /// * `config` - The TF-IDF search configuration.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;
     ///
     /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::par_from(&ANIMALS);
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.warped_tf_idf_search("Cat", TFIDFSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.warped_tf_idf_search("Catt", TFIDFSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     /// ```
     pub fn warped_tf_idf_search<KR, W, F: Float>(
         &self,
@@ -378,7 +455,7 @@ where
     /// * `key` - The key to search for in the corpus.
     /// * `config` - The TF-IDF search configuration.
     ///
-    /// # Example
+    /// # Examples
     /// This is the concurrent version of the example in the `tf_idf_search` method.
     /// If you need a more detailed version of the example, please refer to the documentation of the
     /// sequential `tf_idf_search` method.
@@ -388,15 +465,15 @@ where
     ///
     /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::from(&ANIMALS);
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.tf_idf_par_search("Cat", TFIDFSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.tf_idf_par_search("Catt", TFIDFSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     /// ```
     pub fn tf_idf_par_search<KR, F: Float>(
         &self,
@@ -429,15 +506,15 @@ where
     ///
     /// let corpus: Corpus<&[&str; 699], BiGram<char>> = Corpus::par_from(&ANIMALS);
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.warped_tf_idf_par_search("Cat", TFIDFSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     ///
-    /// let results: Vec<SearchResult<'_, str, f32>> =
+    /// let results: Vec<SearchResult<&&str, f32>> =
     ///     corpus.warped_tf_idf_par_search("Catt", TFIDFSearchConfig::default());
     ///
-    /// assert_eq!(results[0].key(), "Cat");
+    /// assert_eq!(results[0].key(), &"Cat");
     /// ```
     pub fn warped_tf_idf_par_search<KR, W, F: Float>(
         &self,

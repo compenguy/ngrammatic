@@ -146,7 +146,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     #[inline(always)]
     /// Returns the number of source nodes.
     ///
-    /// # Example
+    /// # Examples
     /// In this example, we create the trigram corpus associated
     /// to the ANIMALS dataset which we provide within this crate,
     /// and then we convert it to webgraph format. Secondarily,
@@ -171,7 +171,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     #[inline(always)]
     /// Returns the number of destination nodes.
     ///
-    /// # Example
+    /// # Examples
     /// In this example, we create the trigram corpus associated
     /// to the ANIMALS dataset which we provide within this crate,
     /// and then we convert it to webgraph format. Secondarily,
@@ -196,7 +196,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     #[inline(always)]
     /// Returns the number of edges.
     ///
-    /// # Example
+    /// # Examples
     /// In this example, we create the trigram corpus associated
     /// to the ANIMALS dataset which we provide within this crate,
     /// and then we convert it to webgraph format. Secondarily,
@@ -224,7 +224,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     /// # Arguments
     /// * `src_id`: A `usize` which is the source node identifier.
     ///
-    /// # Example
+    /// # Examples
     /// In this example, we create the trigram corpus associated
     /// to the ANIMALS dataset which we provide within this crate,
     /// and then we convert it to webgraph format. Secondarily,
@@ -257,7 +257,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     /// # Arguments
     /// * `dst_id`: A `usize` which is the destination node identifier.
     ///
-    /// # Example
+    /// # Examples
     /// In this example, we create the trigram corpus associated
     /// to the ANIMALS dataset which we provide within this crate,
     /// and then we convert it to webgraph format. Secondarily,
@@ -292,7 +292,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     /// # Arguments
     /// * `dst_id`: A `usize` which is the destination node identifier.
     ///
-    /// # Example
+    /// # Examples
     /// In this example, we create the trigram corpus associated
     /// to the ANIMALS dataset which we provide within this crate,
     /// and then we convert it to webgraph format. Secondarily,
@@ -330,7 +330,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     /// # Arguments
     /// * `src_id`: A `usize` which is the source node identifier.
     ///
-    /// # Example
+    /// # Examples
     /// In this example, we create the trigram corpus associated
     /// to the ANIMALS dataset which we provide within this crate,
     /// and then we convert it to webgraph format. Secondarily,
@@ -371,7 +371,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     /// # Arguments
     /// * `dst_id`: A `usize` which is the destination node identifier.
     ///
-    /// # Example
+    /// # Examples
     /// In this example, we create the trigram corpus associated
     /// to the ANIMALS dataset which we provide within this crate,
     /// and then we convert it to webgraph format. Secondarily,
@@ -407,7 +407,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     #[inline(always)]
     /// Returns the weights of the edges.
     ///
-    /// # Example
+    /// # Examples
     /// In this example, we create the trigram corpus associated
     /// to the ANIMALS dataset which we provide within this crate,
     /// and then we convert it to webgraph format. Secondarily,
@@ -442,7 +442,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     #[inline(always)]
     /// Returns the degrees of the nodes.
     ///
-    /// # Example
+    /// # Examples
     /// In this example, we create the trigram corpus associated
     /// to the ANIMALS dataset which we provide within this crate,
     /// and then we convert it to webgraph format. Secondarily,

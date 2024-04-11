@@ -68,7 +68,7 @@ where
     #[inline(always)]
     /// Converts an iterator of grams to an iterator of n-grams.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// An example for when using an iterator of `u8` bigrams:
     /// ```rust

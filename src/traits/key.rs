@@ -22,7 +22,7 @@ pub trait Key<NG: Ngram<G = G>, G: Gram>: AsRef<<Self as Key<NG, G>>::Ref> {
 
     /// Returns an iterator over the grams of the key.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to get the grams of a key
     /// represented by a string, composed of `u8`:
@@ -66,7 +66,7 @@ pub trait Key<NG: Ngram<G = G>, G: Gram>: AsRef<<Self as Key<NG, G>>::Ref> {
 
     /// Returns the counts of the ngrams.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to get the counts of the ngrams
     /// of a key represented by a string, composed of `u8`:

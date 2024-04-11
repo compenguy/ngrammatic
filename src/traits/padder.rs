@@ -20,7 +20,7 @@ where
 {
     /// Adds padding to the left (beginning) of the iterator.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// An example for when using an iterator of `u8`:
     /// ```rust
@@ -68,7 +68,7 @@ where
 
     /// Adds padding to the right (end) of the iterator.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// An example for when using an iterator of `u8`:
     /// ```rust
@@ -116,7 +116,7 @@ where
 
     /// Adds padding to both sides of the iterator.
     ///
-    /// # Example
+    /// # Examples
     /// An example for when using an iterator of `u8`:
     /// ```rust
     /// use ngrammatic::prelude::*;

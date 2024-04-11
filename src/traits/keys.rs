@@ -95,7 +95,7 @@ impl<NG: Ngram, K: Key<NG, NG::G>> Keys<NG> for [K] {
 
 impl<R, NG: Ngram> Keys<NG> for &R
 where
-    R: Keys<NG>,
+    R: Keys<NG> + ?Sized,
 {
     type K = R::K;
     type KeyRef<'a> = R::KeyRef<'a> where Self: 'a;
@@ -131,6 +131,6 @@ where
     }
 
     fn iter(&self) -> Self::IterKeys<'_> {
-        self.into_iter_from(0)
+        self.iter_from(0)
     }
 }

@@ -42,4 +42,5 @@ pub mod prelude {
     pub use crate::bi_webgraph::*;
     pub use crate::ngram_search::*;
     pub use crate::tfidf::*;
+    pub use crate::search::*;
 }

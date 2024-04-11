@@ -6,7 +6,7 @@
 pub trait Underscored {
     /// Returns the integer formatted with underscores.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to format an integer with underscores:
     /// ```rust

@@ -47,7 +47,7 @@ where
 {
     /// Returns a report of the corpus.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use ngrammatic::prelude::*;

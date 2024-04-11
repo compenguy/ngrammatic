@@ -42,7 +42,7 @@ where
         let key: &K = key.as_ref();
         let query_hashmap = self.ngram_ids_from_ngram_counts(key.counts());
         let query_hashmap_ref = &query_hashmap;
-        let max_ngram_degree = config.max_ngram_degree(self.number_of_keys());
+        let max_ngram_degree = config.compute_max_ngram_degree(self.number_of_keys());
 
         // We identify all of the ngrams to be considered in the search, which
         // are the set of ngrams that contain any of the grams in the ngram

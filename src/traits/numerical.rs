@@ -28,7 +28,7 @@ pub trait Three {
 pub trait BetweenOneAndThree: PartialOrd + One + Three + Sized {
     /// Check if the value is between one and three.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// The following example demonstrates how to check if a value is between one and three:
     /// ```rust
