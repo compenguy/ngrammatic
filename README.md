@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/ngrammatic/badge.svg)](https://docs.rs/ngrammatic/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-Rust crate providin n-gram based fuzzy matching, with support for [Okapi BM25 TF-IDF](https://en.wikipedia.org/wiki/Okapi_BM25) search, cutting-edge memory efficient data structures such as Rear Coded Lists and Elias-Fano baked in, plus [Rayon](https://github.com/rayon-rs/rayon)-based parallelism.
+Rust crate providin n-gram based fuzzy matching, with support for [Okapi BM25 TF-IDF](https://en.wikipedia.org/wiki/Okapi_BM25) search, cutting-edge memory efficient data structures such as [Rear Coded Lists](https://docs.rs/sux/0.3.1/sux/dict/rear_coded_list/struct.RearCodedList.html), [BVGraph](https://github.com/vigna/webgraph-rs) and [Elias-Fano](https://docs.rs/sux/latest/sux/dict/elias_fano/struct.EliasFano.html) baked in, plus [Rayon](https://github.com/rayon-rs/rayon)-based parallelism.
 
 ## Installation
 
