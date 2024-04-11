@@ -35,7 +35,7 @@ fn build_rcl() -> RearCodedList {
     rcl_builder.build()
 }
 
-fn load_corpus_new<NG>()
+fn load_corpus_new<NG>() -> Corpus<Vec<String>, NG, Lowercase<str>>
 where
     NG: Ngram<G = ASCIIChar>,
 {
@@ -55,6 +55,8 @@ where
         duration.underscored(),
         corpus.mem_size(SizeFlags::default()).underscored()
     );
+
+    corpus
 }
 
 fn load_corpus_par_new<NG>()
@@ -185,7 +187,8 @@ fn experiment<NG>()
 where
     NG: Ngram<G = ASCIIChar>,
 {
-    // load_corpus_new::<NG>();
+    let corpus = load_corpus_new::<NG>();
+    log::error!("Edges: {}, Ngrams: {}", corpus.graph().number_of_edges() * 2, corpus.number_of_ngrams());
     load_corpus_par_new::<NG>();
     load_corpus_rcl_par_new::<NG>();
     load_corpus_webgraph::<NG>();

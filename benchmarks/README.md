@@ -9,6 +9,106 @@ To run the memory benchmarks, navigate to the `benchmarks` directory and run the
 RUST_LOG=info RUSTFLAGS="-C target-cpu=native" cargo run --release
 ```
 
+## Benchmarks 11 April 2024, 02:00 PM
+The ileventh benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
+The novelty of this benchmark is to use the Vec data structure of ngrams for the initial indexof conversion, and only afterwards compressing it into an Elias-Fano. This has lead to a massive improvement in construction time, while not impacting the memory requirements of the built corpus.
+
+### Arity 1
+Edges: 78_571_966, Ngrams: 37
+
+| Operation   | Time (ms)  | Memory (B)   |
+|-------------|------------|--------------|
+| NEW         | 3,209      | 282,604,340  |
+| NEWPAR      | 2,988      | 282,604,340  |
+| RCL NEWPAR  | 3,347      | 183,503,767  |
+| WEBGRAPH    | 4,500      | 172,145,420  |
+| RCL WEBGRAPH| 4,841      | 72,340,935   |
+| OLD         | 11,819     | 5,603,963,834|
+
+### Arity 2
+Edges: 129_014_720, Ngrams: 1_437
+
+| Operation   | Time (ms)  | Memory (B)   |
+|-------------|------------|--------------|
+| NEW         | 6,265      | 407,237,104  |
+| NEWPAR      | 5,009      | 407,237,104  |
+| RCL NEWPAR  | 5,451      | 308,136,531  |
+| WEBGRAPH    | 7,965      | 204,590,616  |
+| RCL WEBGRAPH| 8,282      | 103,757,115  |
+| OLD         | 15,346     | 8,003,769,656|
+
+### Arity 3
+Edges: 138_978_258, Ngrams: 47_111
+
+| Operation   | Time (ms)  | Memory (B)   |
+|-------------|------------|--------------|
+| NEW         | 8,303      | 469,848,532  |
+| NEWPAR      | 5,945      | 469,848,532  |
+| RCL NEWPAR  | 6,361      | 370,747,959  |
+| WEBGRAPH    | 8,514      | 239,354,844  |
+| RCL WEBGRAPH| 8,878      | 137,803,367  |
+| OLD         | 16,382     | 8,583,476,604|
+
+### Arity 4
+Edges: 144_931_790, Ngrams: 47_7806
+
+| Operation   | Time (ms)  | Memory (B)   |
+|-------------|------------|--------------|
+| NEW         | 11,449     | 512,214,744  |
+| NEWPAR      | 7,014      | 512,214,744  |
+| RCL NEWPAR  | 7,266      | 413,114,171  |
+| WEBGRAPH    | 8,222      | 274,258,752  |
+| RCL WEBGRAPH| 8,538      | 172,842,803  |
+| OLD         | 18,036     | 9,036,530,407|
+
+### Arity 5
+Edges: 150_243_064, Ngrams: 1_982_191
+
+| Operation   | Time (ms)  | Memory (B)   |
+|-------------|------------|--------------|
+| NEW         | 15,549     | 550,135,192  |
+| NEWPAR      | 9,135      | 550,135,192  |
+| RCL NEWPAR  | 9,691      | 451,034,619  |
+| WEBGRAPH    | 10,444     | 312,453,624  |
+| RCL WEBGRAPH| 10,854     | 211,403,363  |
+| OLD         | 21,367     | 9,583,720,360|
+
+### Arity 6
+Edges: 155_497_150, Ngrams: 4_351_054
+
+| Operation   | Time (ms)  | Memory (B)   |
+|-------------|------------|--------------|
+| NEW         | 20,219     | 595,148,528  |
+| NEWPAR      | 11,230     | 595,148,528  |
+| RCL NEWPAR  | 11,962     | 496,047,955  |
+| WEBGRAPH    | 12,744     | 355,163,944  |
+| RCL WEBGRAPH| 13,219     | 254,433,459  |
+| OLD         | 23,004     | 10,211,711,214|
+
+### Arity 7
+Edges: 160_731_872, Ngrams: 6_995_796
+
+| Operation   | Time (ms)  | Memory (B)   |
+|-------------|------------|--------------|
+| NEW         | 27,834     | 626,829,580  |
+| NEWPAR      | 14,441     | 626,829,580  |
+| RCL NEWPAR  | 15,143     | 527,729,007  |
+| WEBGRAPH    | 16,119     | 402,533,060  |
+| RCL WEBGRAPH| 16,592     | 301,929,695  |
+| OLD         | 26,075     | 11,052,721,209|
+
+### Arity 8
+Edges: 165_946_588, Ngrams: 9_979_870
+
+| Operation   | Time (ms)  | Memory (B)   |
+|-------------|------------|--------------|
+| NEW         | 27,796     | 675,743,136  |
+| NEWPAR      | 15,483     | 675,743,136  |
+| RCL NEWPAR  | 16,644     | 576,642,563  |
+| WEBGRAPH    | 17,418     | 458,193,928  |
+| RCL WEBGRAPH| 18,063     | 357,589,579  |
+| OLD         | 27,606     | 11,496,992,467|
+
 ## Benchmarks 9 April 2024, 06:00 PM
 The tenth benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
 The novelty of this benchmark is the use of a RCL data structure to store the strings associated with the dataset. The savings in memory requirements are significant.

@@ -4,6 +4,7 @@ use std::io::Cursor;
 
 use fxhash::FxBuildHasher;
 use sux::prelude::*;
+use sux::traits::bit_field_slice::BitFieldSliceApply;
 
 use crate::weights::WeightsBuilder;
 use crate::{
@@ -122,20 +123,6 @@ where
         log::debug!("Compressing key offsets into Elias-Fano.");
         let key_offsets = unsafe { key_offsets.into_elias_fano() };
 
-        // We create the ngrams vector. Since we are using a btreeset, we already have the
-        // ngrams sorted, so we can simply convert the btreeset into a vector.
-        log::debug!(
-            "Storing ngrams into {}.",
-            std::any::type_name::<NG::SortedStorage>()
-        );
-        let mut ngram_builder = <<<NG as Ngram>::SortedStorage as SortedNgramStorage<NG>>::Builder>::new_storage_builder(ngrams.len(), *ngrams.last().unwrap());
-
-        for ngram in ngrams {
-            unsafe { ngram_builder.push_unchecked(ngram) };
-        }
-
-        let ngrams: NG::SortedStorage = ngram_builder.build();
-
         // We now create the various required bitvectors, knowing all of their characteristics
         // such as the capacity and the largest value to fit in the bitvector, i.e. the number
         // of bits necessary to store the largest value in the vector.
@@ -165,22 +152,36 @@ where
 
         log::debug!("Building the key to ngram edges and computing ngram degrees.");
 
-        // We iterate on the key_to_ngrams vector. For each ngram we encounter, we find the index of the ngram
-        // in the ngram vector by employing a binary search, since we know that the ngrams are sorted.
-        for (edge_id, ngram) in key_to_ngrams.into_iter().enumerate() {
-            // We find the index of the ngram in the ngrams vector.
-            // We can always unwrap since we know that the ngram is in the ngrams vector.
-            let ngram_index = unsafe { ngrams.index_of_unchecked(ngram) };
-            // We store the index in the key_to_ngram_edges vector.
-            unsafe { key_to_ngram_edges.set_unchecked(edge_id, ngram_index) };
-            // We increment the inbound degree of the ngram.
-            unsafe {
+        let mut keys_iter = key_to_ngrams.into_iter();
+
+        unsafe {
+            key_to_ngram_edges.apply_inplace_unchecked(|_| {
+                let ngram = keys_iter.next().unwrap();
+                // We find the index of the ngram in the ngrams vector.
+                // We can always unwrap since we know that the ngram is in the ngrams vector.
+                let ngram_index = ngrams.index_of_unchecked(ngram);
+                // We increment the inbound degree of the ngram.
                 ngram_degrees.set_unchecked(
                     ngram_index + 1,
                     ngram_degrees.get_unchecked(ngram_index + 1) + 1,
-                )
-            }
+                );
+                ngram_index
+            });
         }
+        
+        // We create the ngrams vector. Since we are using a btreeset, we already have the
+        // ngrams sorted, so we can simply convert the btreeset into a vector.
+        log::debug!(
+            "Storing ngrams into {}.",
+            std::any::type_name::<NG::SortedStorage>()
+        );
+        let mut ngram_builder = <<<NG as Ngram>::SortedStorage as SortedNgramStorage<NG>>::Builder>::new_storage_builder(ngrams.len(), *ngrams.last().unwrap());
+
+        for ngram in ngrams {
+            unsafe { ngram_builder.push_unchecked(ngram) };
+        }
+
+        let ngrams: NG::SortedStorage = ngram_builder.build();
 
         log::debug!("Computing ngrams degrees comulative sum.");
 
@@ -189,10 +190,9 @@ where
         let mut comulative_sum = 0;
         let mut ngram_offsets_builder =
             EliasFanoBuilder::new(ngram_degrees.len(), cooccurrences.num_weights());
-        unsafe { ngram_offsets_builder.push_unchecked(0) };
 
         // We iterate on the ngram_degrees vector, and we compute the comulative sum of the inbound degrees.
-        for ngram_degree in ngram_degrees.iter_from(1) {
+        for ngram_degree in ngram_degrees.iter() {
             debug_assert!(
                 ngram_degree > 0,
                 "Since all ngrams appear in at least one key, the degree of a ngram should be at least one."

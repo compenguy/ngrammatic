@@ -113,8 +113,10 @@ where
     ///
     /// let animals = vec!["cat", "dog", "bIrd", "Fish", "Lion"];
     ///
-    /// let bigram_corpus: Corpus<Vec<&str>, BiGram<char>, Lowercase<str>> = Corpus::par_from(animals.clone());
-    /// let trigram_corpus: Corpus<Vec<&str>, TriGram<char>, Lowercase<str>> = Corpus::par_from(animals.clone());
+    /// let bigram_corpus: Corpus<Vec<&str>, BiGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(animals.clone());
+    /// let trigram_corpus: Corpus<Vec<&str>, TriGram<char>, Lowercase<str>> =
+    ///     Corpus::par_from(animals.clone());
     /// let tetragram_corpus: Corpus<Vec<&str>, TetraGram<char>, Lowercase<str>> =
     ///     Corpus::par_from(animals.clone());
     /// let pentagram_corpus: Corpus<Vec<&str>, PentaGram<char>, Lowercase<str>> =
@@ -141,23 +143,6 @@ where
         // We can now start to compress several of the vectors into BitFieldVecs.
         log::debug!("Compressing key offsets into Elias-Fano.");
         let key_offsets = unsafe { key_offsets.par_into_elias_fano() };
-
-        // We create the ngrams vector. Since we are using a btreeset, we already have the
-        // ngrams sorted, so we can simply convert the btreeset into a vector.
-        log::debug!(
-            "Storing ngrams into {}.",
-            std::any::type_name::<NG::SortedStorage>()
-        );
-        let ngram_builder = <<<NG as Ngram>::SortedStorage as SortedNgramStorage<NG>>::ConcurrentBuilder>::new_storage_builder(ngrams.len(), *ngrams.last().unwrap());
-
-        ngrams
-            .into_par_iter()
-            .enumerate()
-            .for_each(|(index, ngram)| unsafe {
-                ngram_builder.set_unchecked(ngram, index);
-            });
-
-        let ngrams: NG::SortedStorage = ngram_builder.build();
 
         // We now create the various required bitvectors, knowing all of their characteristics
         // such as the capacity and the largest value to fit in the bitvector, i.e. the number
@@ -207,6 +192,23 @@ where
 
         // We reconvert the key_to_ngram_edges vector to a non-atomic BitFieldVec.
         let key_to_ngram_edges: BitFieldVec = key_to_ngram_edges.into();
+
+        // We create the ngrams vector. Since we are using a btreeset, we already have the
+        // ngrams sorted, so we can simply convert the btreeset into a vector.
+        log::debug!(
+            "Storing ngrams into {}.",
+            std::any::type_name::<NG::SortedStorage>()
+        );
+        let ngram_builder = <<<NG as Ngram>::SortedStorage as SortedNgramStorage<NG>>::ConcurrentBuilder>::new_storage_builder(ngrams.len(), *ngrams.last().unwrap());
+
+        ngrams
+            .into_par_iter()
+            .enumerate()
+            .for_each(|(index, ngram)| unsafe {
+                ngram_builder.set_unchecked(ngram, index);
+            });
+
+        let ngrams: NG::SortedStorage = ngram_builder.build();
 
         log::debug!("Computing ngrams degrees.");
 
