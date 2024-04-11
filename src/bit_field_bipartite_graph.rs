@@ -5,7 +5,6 @@ use std::iter::Chain;
 use std::iter::Map;
 use std::iter::Zip;
 
-#[cfg(feature = "mem_dbg")]
 use mem_dbg::{MemDbg, MemSize};
 
 use sux::bits::BitFieldVec;
@@ -21,7 +20,7 @@ use webgraph::traits::RandomAccessLabeling;
 use crate::weights::Weights;
 use crate::WeightedBipartiteGraph;
 
-#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
+#[derive(MemSize, MemDbg)]
 #[derive(Debug, Clone)]
 /// A bipartite graph stored in two CSR-like structures composed of bitfields.
 pub struct WeightedBitFieldBipartiteGraph {

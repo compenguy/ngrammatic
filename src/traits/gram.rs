@@ -354,7 +354,6 @@ pub trait Ngram:
     /// The padding value.
     const PADDING: Self::Pad;
 
-    #[cfg(feature = "mem_dbg")]
     /// The type of structure to use to store the ngrams.
     /// This should be selected depending on the arity of the ngram,
     /// and the type of the gram. For example, any u8-based gram with an arity
@@ -364,17 +363,6 @@ pub trait Ngram:
     /// between 1 and 2, and store these as well within an elias fano data structure.
     /// Larger ngrams need to be stored into vectors.
     type SortedStorage: SortedNgramStorage<Self> + mem_dbg::MemDbg + mem_dbg::MemSize;
-
-    #[cfg(not(feature = "mem_dbg"))]
-    /// The type of structure to use to store the ngrams.
-    /// This should be selected depending on the arity of the ngram,
-    /// and the type of the gram. For example, any u8-based gram with an arity
-    /// between 1 and 8 can be easily stored in an elias fano data structure
-    /// since we can exploit the information that the ngram is sorted.
-    /// Similarly, we can store within an u64 char-based grams with an arity
-    /// between 1 and 2, and store these as well within an elias fano data structure.
-    /// Larger ngrams need to be stored into vectors.
-    type SortedStorage: SortedNgramStorage<Self>;
 
     /// Rotate the ngram to the left.
     fn rotate_left(&mut self);

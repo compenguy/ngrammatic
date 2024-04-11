@@ -3,7 +3,6 @@
 //! it's not recommended to use this module for other purposes.
 
 use dsi_bitstream::prelude::*;
-#[cfg(feature = "mem_dbg")]
 use mem_dbg::{MemDbg, MemSize};
 use std::io::{Cursor, Write};
 use sux::prelude::*;
@@ -26,7 +25,7 @@ pub trait ReaderFactory {
 
 /// A factory that creates a reader from vec of u8.
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
+#[derive(MemSize, MemDbg)]
 pub struct CursorReaderFactory {
     data: Vec<u8>,
 }
@@ -59,7 +58,7 @@ impl ReaderFactory for CursorReaderFactory {
 /// The compression is highly dependent on **our** weights distribution and thus
 /// it's not recommended to use this builder for other purposes.
 #[derive(Debug)]
-#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
+#[derive(MemSize, MemDbg)]
 pub struct WeightsBuilder<W: Write = std::io::Cursor<Vec<u8>>> {
     /// The bitstream
     writer: Writer<W>,
@@ -191,8 +190,7 @@ impl WeightsBuilder {
 /// A builder on which you can push the weights of a document.
 /// The compression is highly dependent on **our** weights distribution and thus
 /// it's not recommended to use this builder for other purposes.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
+#[derive(Clone, Debug, MemSize, MemDbg)]
 pub struct Weights<RF = CursorReaderFactory, OFF = EF> {
     /// The factory of bitstream readers
     reader_factory: RF,

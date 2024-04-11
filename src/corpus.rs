@@ -4,12 +4,11 @@
 
 use std::{cmp::Reverse, iter::Map};
 
-#[cfg(feature = "mem_dbg")]
 use mem_dbg::{MemDbg, MemSize};
 
 use crate::{bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph, traits::*};
 
-#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
+#[derive(MemSize, MemDbg)]
 /// Rasterized corpus.
 ///
 /// # Implementation details

@@ -191,8 +191,9 @@ where
     log::error!("Edges: {}, Ngrams: {}", corpus.graph().number_of_edges() * 2, corpus.number_of_ngrams());
     load_corpus_par_new::<NG>();
     load_corpus_rcl_par_new::<NG>();
-    load_corpus_webgraph::<NG>();
-    load_corpus_rcl_webgraph::<NG>();
+    log::warn!("The webgraph benchmarks are skipped because the necessary version of the webgraph crate is not available.");
+    // load_corpus_webgraph::<NG>();
+    // load_corpus_rcl_webgraph::<NG>();
     load_corpus_old(NG::ARITY);
 }
 

@@ -10,11 +10,10 @@ use std::iter::{Copied, Map};
 use crate::traits::key::Key;
 use crate::{Corpus, Float, Keys, Ngram, SearchResult, WeightedBipartiteGraph};
 
-#[cfg(feature = "mem_dbg")]
 use mem_dbg::{MemDbg, MemSize};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
-#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
+#[derive(MemSize, MemDbg)]
 /// A struct representing a query hashmap, with several values precomputed.
 pub struct QueryHashmap {
     /// The hashmap with the identified ngram ids as keys and their counts as values.

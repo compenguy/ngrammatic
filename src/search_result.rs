@@ -3,7 +3,6 @@
 use crate::prelude::*;
 use std::cmp::{Ordering, Reverse};
 
-#[cfg(feature = "mem_dbg")]
 use mem_dbg::{MemDbg, MemSize};
 
 /// Holds a collection of search results.
@@ -12,7 +11,7 @@ pub type SearchResults<'a, KS, NG, F> = Vec<SearchResult<<KS as Keys<NG>>::KeyRe
 /// Holds a fuzzy match search result string, and its associated similarity
 /// to the query text.
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "mem_dbg", derive(MemSize, MemDbg))]
+#[derive(MemSize, MemDbg)]
 pub struct SearchResult<K, F: Float> {
     /// The key of a fuzzy match
     key: K,

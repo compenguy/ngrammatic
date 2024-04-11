@@ -17,7 +17,6 @@ use std::hash::Hasher;
 use tempfile::Builder;
 use webgraph::prelude::*;
 
-#[cfg(feature = "mem_dbg")]
 use mem_dbg::MemSize;
 
 #[cfg(feature = "rayon")]
@@ -36,9 +35,24 @@ type DecoderFactoryType = DynCodesDecoderFactory<
     epserde::deser::DeserType<'static, webgraph::graphs::bvgraph::EF>,
 >;
 
-type LoadedGraph = BVGraph<DecoderFactoryType>;
+struct LoadedGraph {
+    bvgraph: BVGraph<DecoderFactoryType>,
+}
 
-#[cfg_attr(feature = "mem_dbg", derive(MemSize))]
+impl MemSize for LoadedGraph {
+    fn mem_size(&self, _flags: mem_dbg::SizeFlags) -> usize {
+        todo!(
+            concat!(
+                "The trait MemSize is not yet implemented for the ",
+                "published version of webgraph. When the new version ",
+                "is published, we can replace this todo with a simple ",
+                "derive of the MemSize and MemDbg traits." 
+            )
+        )
+    }
+}
+
+#[derive(MemSize)]
 /// A weighted bipartite graph implementation based on Webgraph.
 pub struct BiWebgraph {
     /// Webgraph graph.
@@ -134,7 +148,7 @@ impl TryFrom<WeightedBitFieldBipartiteGraph> for BiWebgraph {
             .map_err(|_| "Could not remove elias-fano (.ef) file")?;
 
         Ok(Self {
-            graph: bvgraph,
+            graph: LoadedGraph { bvgraph },
             number_of_source_nodes: graph.number_of_source_nodes(),
             number_of_destination_nodes: graph.number_of_destination_nodes(),
             srcs_to_dsts_weights: graph.srcs_to_dsts_weights,
@@ -248,7 +262,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     /// }
     /// ```
     fn src_degree(&self, src_id: usize) -> usize {
-        self.graph.outdegree(src_id)
+        self.graph.bvgraph.outdegree(src_id)
     }
 
     #[inline(always)]
@@ -281,10 +295,12 @@ impl WeightedBipartiteGraph for BiWebgraph {
     /// }
     /// ```
     fn dst_degree(&self, dst_id: usize) -> usize {
-        self.graph.outdegree(dst_id + self.number_of_source_nodes())
+        self.graph
+            .bvgraph
+            .outdegree(dst_id + self.number_of_source_nodes())
     }
 
-    type Srcs<'a> = <LoadedGraph as RandomAccessLabeling>::Labels<'a>;
+    type Srcs<'a> = <BVGraph<DecoderFactoryType> as RandomAccessLabeling>::Labels<'a>;
 
     #[inline(always)]
     /// Returns the source nodes of a given destination node.
@@ -319,10 +335,11 @@ impl WeightedBipartiteGraph for BiWebgraph {
     /// ```
     fn srcs_from_dst(&self, dst_id: usize) -> Self::Srcs<'_> {
         self.graph
+            .bvgraph
             .successors(dst_id + self.number_of_source_nodes())
     }
 
-    type Dsts<'a> = Offset<<LoadedGraph as RandomAccessLabeling>::Labels<'a>>;
+    type Dsts<'a> = Offset<<BVGraph<DecoderFactoryType> as RandomAccessLabeling>::Labels<'a>>;
 
     #[inline(always)]
     /// Returns the destination nodes of a given source node.
@@ -357,6 +374,7 @@ impl WeightedBipartiteGraph for BiWebgraph {
     /// ```
     fn dsts_from_src(&self, src_id: usize) -> Self::Dsts<'_> {
         self.graph
+            .bvgraph
             .successors(src_id)
             .offset(-(self.number_of_source_nodes as isize))
     }
@@ -466,6 +484,6 @@ impl WeightedBipartiteGraph for BiWebgraph {
     /// }
     /// ```
     fn degrees(&self) -> Self::Degrees<'_> {
-        self.graph.offset_deg_iter().map(|(_, deg)| deg)
+        self.graph.bvgraph.offset_deg_iter().map(|(_, deg)| deg)
     }
 }

@@ -229,18 +229,9 @@ where
         let mut comulative_sum = 0;
         let mut ngram_offsets_builder =
             EliasFanoBuilder::new(ngram_degrees.len(), cooccurrences.num_weights());
-        unsafe { ngram_offsets_builder.push_unchecked(0) };
 
         // We iterate on the ngram_degrees vector, and we compute the comulative sum of the inbound degrees.
-        for ngram_degree in ngram_degrees.iter_from(1) {
-            debug_assert!(
-                ngram_degree > 0,
-                "Since all ngrams appear in at least one key, the degree of a ngram should be at least one."
-            );
-            debug_assert!(
-                ngram_degree <= cooccurrences.num_weights(),
-                "The degree of a ngram should be less than or equal to the number of keys in the corpus."
-            );
+        for ngram_degree in ngram_degrees.iter() {
             comulative_sum += ngram_degree;
             unsafe { ngram_offsets_builder.push_unchecked(comulative_sum) };
         }
