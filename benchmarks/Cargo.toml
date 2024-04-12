@@ -10,7 +10,7 @@ flate2 = "1.0.28"
 indicatif = "0.17.8"
 log = "0.4.21"
 mem_dbg = "0.1"
-ngrammatic = { path = "../../ngrammatic", features = ["mem_dbg", "rayon"] }
+ngrammatic = { path = "../../ngrammatic"}
 rayon = "1.10.0"
 serde_json = "1.0.115"
 # We also use the version of the ngrammatic library before the refactoring

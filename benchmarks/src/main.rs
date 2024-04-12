@@ -199,12 +199,18 @@ where
 
 fn main() {
     env_logger::builder().try_init().unwrap();
-    experiment::<UniGram<ASCIIChar>>();
-    experiment::<BiGram<ASCIIChar>>();
-    experiment::<TriGram<ASCIIChar>>();
-    experiment::<TetraGram<ASCIIChar>>();
-    experiment::<PentaGram<ASCIIChar>>();
-    experiment::<HexaGram<ASCIIChar>>();
-    experiment::<HeptaGram<ASCIIChar>>();
-    experiment::<OctaGram<ASCIIChar>>();
+    // experiment::<UniGram<ASCIIChar>>();
+    // experiment::<BiGram<ASCIIChar>>();
+    // experiment::<TriGram<ASCIIChar>>();
+    // experiment::<TetraGram<ASCIIChar>>();
+    // experiment::<PentaGram<ASCIIChar>>();
+    // experiment::<HexaGram<ASCIIChar>>();
+    // experiment::<HeptaGram<ASCIIChar>>();
+    // experiment::<OctaGram<ASCIIChar>>();
+    use ngrammatic::prelude::*;
+    let mut animals: Vec<String> = iter_taxons().collect();
+
+    let corpus: Corpus<Vec<String>, TriGram<char>, Lowercase> = Corpus::par_from(animals);
+    
+    corpus.mem_dbg(DbgFlags::default() | DbgFlags::CAPACITY | DbgFlags::HUMANIZE).unwrap();
 }

@@ -335,6 +335,217 @@ for search_result in search_results {
 
 ```
 
+### MemDbg support
+[MemDbg](https://github.com/zommiommy/mem_dbg-rs) is a rust library that measures and breaks down the memory requirements of structs. It is available across most of the data structures used in this crate, with the exception of webgraph (there it is only available in the nightly version of webgraph, they are still working on it). Here follows a couple of examples on using MemDbg on the version using the Rear Coded List and the version using a simple vector. In both, we use the taxons dataset, which contains about 2.5 million species from NCBI taxons.
+
+First, the version using a simple vector:
+
+
+```rust
+use ngrammatic::prelude::*;
+use mem_dbg::*;
+
+/// Returns an iterator over the taxons in the corpus.
+fn iter_taxons() -> impl Iterator<Item = String> {
+    use flate2::read::GzDecoder;
+    use std::fs::File;
+    use std::io::{BufRead, BufReader};
+
+    let file = File::open("./benchmarks/taxons.csv.gz").unwrap();
+    let reader = BufReader::new(GzDecoder::new(file));
+    reader.lines().map(|line| line.unwrap())
+}
+
+let mut animals: Vec<String> = iter_taxons().collect();
+
+let corpus: Corpus<Vec<String>, TriGram<char>, Lowercase> = Corpus::par_from(animals);
+
+corpus.mem_dbg(DbgFlags::default() | DbgFlags::CAPACITY | DbgFlags::HUMANIZE).unwrap();
+```
+
+This script outputs:
+
+```text
+513.5 MB 100.00% ⏺: ngrammatic::corpus::Corpus<alloc::vec::Vec<alloc::string::String>, [char; 3], ngrammatic::traits::char_normalizer::Lowercase>
+170.0 MB  33.11% ├╴keys: alloc::vec::Vec<alloc::string::String>
+565.4 kB   0.11% ├╴ngrams: alloc::vec::Vec<[char; 3]>
+342.9 MB  66.78% ├╴graph: ngrammatic::bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph
+10.53 MB   2.05% │ ├╴srcs_to_dsts_weights: ngrammatic::weights::Weights
+8.389 MB   1.63% │ │ ├╴reader_factory: ngrammatic::weights::CursorReaderFactory
+8.389 MB   1.63% │ │ │ ╰╴data: alloc::vec::Vec<u8>
+2.137 MB   0.42% │ │ ├╴offsets: sux::dict::elias_fano::EliasFano<sux::rank_sel::select_fixed2::SelectFixed2>
+    8  B   0.00% │ │ │ ├╴u: usize
+    8  B   0.00% │ │ │ ├╴n: usize
+    8  B   0.00% │ │ │ ├╴l: usize
+1.286 MB   0.25% │ │ │ ├╴low_bits: sux::bits::bit_field_vec::BitFieldVec
+1.286 MB   0.25% │ │ │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ │ │ ├╴mask: usize
+    8  B   0.00% │ │ │ │ ╰╴len: usize
+851.3 kB   0.17% │ │ │ ╰╴high_bits: sux::rank_sel::select_fixed2::SelectFixed2
+750.8 kB   0.15% │ │ │   ├╴bits: sux::bits::bit_vec::CountBitVec
+750.8 kB   0.15% │ │ │   │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │   │ ├╴len: usize
+    8  B   0.00% │ │ │   │ ╰╴number_of_ones: usize
+100.5 kB   0.02% │ │ │   ╰╴inventory: alloc::vec::Vec<u64>
+    8  B   0.00% │ │ ├╴num_nodes: usize
+    8  B   0.00% │ │ ╰╴num_weights: usize
+2.250 MB   0.44% │ ├╴srcs_offsets: sux::dict::elias_fano::EliasFano<sux::rank_sel::select_fixed2::SelectFixed2>
+    8  B   0.00% │ │ ├╴u: usize
+    8  B   0.00% │ │ ├╴n: usize
+    8  B   0.00% │ │ ├╴l: usize
+1.286 MB   0.25% │ │ ├╴low_bits: sux::bits::bit_field_vec::BitFieldVec
+1.286 MB   0.25% │ │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ │ ├╴mask: usize
+    8  B   0.00% │ │ │ ╰╴len: usize
+964.8 kB   0.19% │ │ ╰╴high_bits: sux::rank_sel::select_fixed2::SelectFixed2
+864.3 kB   0.17% │ │   ├╴bits: sux::bits::bit_vec::CountBitVec
+864.3 kB   0.17% │ │   │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │   │ ├╴len: usize
+    8  B   0.00% │ │   │ ╰╴number_of_ones: usize
+100.5 kB   0.02% │ │   ╰╴inventory: alloc::vec::Vec<u64>
+75.30 kB   0.01% │ ├╴dsts_offsets: sux::dict::elias_fano::EliasFano<sux::rank_sel::select_fixed2::SelectFixed2>
+    8  B   0.00% │ │ ├╴u: usize
+    8  B   0.00% │ │ ├╴n: usize
+    8  B   0.00% │ │ ├╴l: usize
+58.94 kB   0.01% │ │ ├╴low_bits: sux::bits::bit_field_vec::BitFieldVec
+58.92 kB   0.01% │ │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ │ ├╴mask: usize
+    8  B   0.00% │ │ │ ╰╴len: usize
+16.33 kB   0.00% │ │ ╰╴high_bits: sux::rank_sel::select_fixed2::SelectFixed2
+14.42 kB   0.00% │ │   ├╴bits: sux::bits::bit_vec::CountBitVec
+14.40 kB   0.00% │ │   │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │   │ ├╴len: usize
+    8  B   0.00% │ │   │ ╰╴number_of_ones: usize
+1.912 kB   0.00% │ │   ╰╴inventory: alloc::vec::Vec<u64>
+191.1 MB  37.22% │ ├╴srcs_to_dsts: sux::bits::bit_field_vec::BitFieldVec
+191.1 MB  37.22% │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ ├╴mask: usize
+    8  B   0.00% │ │ ╰╴len: usize
+139.0 MB  27.07% │ ╰╴dsts_to_srcs: sux::bits::bit_field_vec::BitFieldVec
+139.0 MB  27.07% │   ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │   ├╴bit_width: usize
+    8  B   0.00% │   ├╴mask: usize
+    8  B   0.00% │   ╰╴len: usize
+    8  B   0.00% ├╴average_key_length: f64
+    0  B   0.00% ╰╴_phantom: core::marker::PhantomData<ngrammatic::traits::char_normalizer::Lowercase>
+```
+
+
+Then, the version using the Rear Coded List:
+
+```rust
+use ngrammatic::prelude::*;
+use rayon::slice::ParallelSliceMut;
+use mem_dbg::*;
+
+/// Returns an iterator over the taxons in the corpus.
+fn iter_taxons() -> impl Iterator<Item = String> {
+    use flate2::read::GzDecoder;
+    use std::fs::File;
+    use std::io::{BufRead, BufReader};
+
+    let file = File::open("./benchmarks/taxons.csv.gz").unwrap();
+    let reader = BufReader::new(GzDecoder::new(file));
+    reader.lines().map(|line| line.unwrap())
+}
+
+let mut animals: Vec<String> = iter_taxons().collect();
+animals.par_sort_unstable();
+
+let mut builder = RearCodedListBuilder::new(8);
+for animal in animals {
+    builder.push(&animal);
+}
+
+let rear_coded_list: RearCodedList = builder.build();
+
+let corpus: Corpus<RearCodedList, TriGram<char>, Lowercase> = Corpus::par_from(rear_coded_list);
+
+corpus.mem_dbg(DbgFlags::default() | DbgFlags::CAPACITY | DbgFlags::HUMANIZE).unwrap();
+```
+
+This version instead outputs:
+
+```text
+381.2 MB 100.00% ⏺: ngrammatic::corpus::Corpus<sux::dict::rear_coded_list::RearCodedList, [char; 3], ngrammatic::traits::char_normalizer::Lowercase>
+37.75 MB   9.90% ├╴keys: sux::dict::rear_coded_list::RearCodedList
+    8  B   0.00% │ ├╴k: usize
+    8  B   0.00% │ ├╴len: usize
+    1  B   0.00% │ ├╴is_sorted: bool
+33.55 MB   8.80% │ ├╴data: alloc::vec::Vec<u8>
+4.194 MB   1.10% │ ╰╴pointers: alloc::vec::Vec<usize>
+565.4 kB   0.15% ├╴ngrams: alloc::vec::Vec<[char; 3]>
+342.9 MB  89.95% ├╴graph: ngrammatic::bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph
+10.53 MB   2.76% │ ├╴srcs_to_dsts_weights: ngrammatic::weights::Weights
+8.389 MB   2.20% │ │ ├╴reader_factory: ngrammatic::weights::CursorReaderFactory
+8.389 MB   2.20% │ │ │ ╰╴data: alloc::vec::Vec<u8>
+2.137 MB   0.56% │ │ ├╴offsets: sux::dict::elias_fano::EliasFano<sux::rank_sel::select_fixed2::SelectFixed2>
+    8  B   0.00% │ │ │ ├╴u: usize
+    8  B   0.00% │ │ │ ├╴n: usize
+    8  B   0.00% │ │ │ ├╴l: usize
+1.286 MB   0.34% │ │ │ ├╴low_bits: sux::bits::bit_field_vec::BitFieldVec
+1.286 MB   0.34% │ │ │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ │ │ ├╴mask: usize
+    8  B   0.00% │ │ │ │ ╰╴len: usize
+851.3 kB   0.22% │ │ │ ╰╴high_bits: sux::rank_sel::select_fixed2::SelectFixed2
+750.8 kB   0.20% │ │ │   ├╴bits: sux::bits::bit_vec::CountBitVec
+750.8 kB   0.20% │ │ │   │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │   │ ├╴len: usize
+    8  B   0.00% │ │ │   │ ╰╴number_of_ones: usize
+100.5 kB   0.03% │ │ │   ╰╴inventory: alloc::vec::Vec<u64>
+    8  B   0.00% │ │ ├╴num_nodes: usize
+    8  B   0.00% │ │ ╰╴num_weights: usize
+2.250 MB   0.59% │ ├╴srcs_offsets: sux::dict::elias_fano::EliasFano<sux::rank_sel::select_fixed2::SelectFixed2>
+    8  B   0.00% │ │ ├╴u: usize
+    8  B   0.00% │ │ ├╴n: usize
+    8  B   0.00% │ │ ├╴l: usize
+1.286 MB   0.34% │ │ ├╴low_bits: sux::bits::bit_field_vec::BitFieldVec
+1.286 MB   0.34% │ │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ │ ├╴mask: usize
+    8  B   0.00% │ │ │ ╰╴len: usize
+964.8 kB   0.25% │ │ ╰╴high_bits: sux::rank_sel::select_fixed2::SelectFixed2
+864.3 kB   0.23% │ │   ├╴bits: sux::bits::bit_vec::CountBitVec
+864.3 kB   0.23% │ │   │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │   │ ├╴len: usize
+    8  B   0.00% │ │   │ ╰╴number_of_ones: usize
+100.5 kB   0.03% │ │   ╰╴inventory: alloc::vec::Vec<u64>
+75.30 kB   0.02% │ ├╴dsts_offsets: sux::dict::elias_fano::EliasFano<sux::rank_sel::select_fixed2::SelectFixed2>
+    8  B   0.00% │ │ ├╴u: usize
+    8  B   0.00% │ │ ├╴n: usize
+    8  B   0.00% │ │ ├╴l: usize
+58.94 kB   0.02% │ │ ├╴low_bits: sux::bits::bit_field_vec::BitFieldVec
+58.92 kB   0.02% │ │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ │ ├╴mask: usize
+    8  B   0.00% │ │ │ ╰╴len: usize
+16.33 kB   0.00% │ │ ╰╴high_bits: sux::rank_sel::select_fixed2::SelectFixed2
+14.42 kB   0.00% │ │   ├╴bits: sux::bits::bit_vec::CountBitVec
+14.40 kB   0.00% │ │   │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │   │ ├╴len: usize
+    8  B   0.00% │ │   │ ╰╴number_of_ones: usize
+1.912 kB   0.00% │ │   ╰╴inventory: alloc::vec::Vec<u64>
+191.1 MB  50.12% │ ├╴srcs_to_dsts: sux::bits::bit_field_vec::BitFieldVec
+191.1 MB  50.12% │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ ├╴mask: usize
+    8  B   0.00% │ │ ╰╴len: usize
+139.0 MB  36.45% │ ╰╴dsts_to_srcs: sux::bits::bit_field_vec::BitFieldVec
+139.0 MB  36.45% │   ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │   ├╴bit_width: usize
+    8  B   0.00% │   ├╴mask: usize
+    8  B   0.00% │   ╰╴len: usize
+    8  B   0.00% ├╴average_key_length: f64
+    0  B   0.00% ╰╴_phantom: core::marker::PhantomData<ngrammatic::traits::char_normalizer::Lowercase>
+```
+
+In this use case, the use of RCL allows us to save about 132 MB of memory, a non-negligible amount of memory.
+
 ## Contributing
 Contributions from the community are highly appreciated and can help improve this project. If you have any suggestions, feature requests, or bugs to report, please open an issue on GitHub. Additionally, if you want to contribute to the project, you can open a pull request with your proposed changes. Before making any substantial changes, please discuss them with the project maintainers in the issue tracker.
 
