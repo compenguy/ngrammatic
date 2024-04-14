@@ -249,7 +249,7 @@ In the new edition we also provide a parallel version, which has the same memory
 | OLD     | 5     | 20,336    | 9,583,720,360 |
 | NEW     | 6     | 3,893,922 | 615,458,920   |
 | NEWPAR  | 6     | 163,489   | 615,458,920   |
-| OLD     | 6     | 22,206    | 10,211,711,214|
+| OLD     | 6     | 22,206    | 10,211,711,214|ments relative to building corpus)
 
 ## Benchmarks 5 April 2024, 08:00 PM
 The sixth benchmark was run on a 6-core machine with 32 GBs of RAM. We loaded the entirety of the taxons dataset into memory.

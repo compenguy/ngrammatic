@@ -10,7 +10,6 @@ use core::fmt::Debug;
 use mem_dbg::*;
 use ngrammatic::prelude::*;
 use rayon::prelude::*;
-use sux::dict::rear_coded_list::{RearCodedList, RearCodedListBuilder};
 
 /// Returns an iterator over the taxons in the corpus.
 fn iter_taxons() -> impl Iterator<Item = String> {
@@ -129,6 +128,10 @@ fn load_corpus_old(arity: usize) -> ngrammatic_old::Corpus {
     corpus
 }
 
+/// We allow dead code here because the version of the
+/// webgraph crate that is necessary for this benchmark
+/// is currently in nightly.
+#[allow(dead_code)]
 fn load_corpus_webgraph<NG>()
 where
     NG: Ngram<G = ASCIIChar> + Debug,
@@ -156,6 +159,10 @@ where
     );
 }
 
+/// We allow dead code here because the version of the
+/// webgraph crate that is necessary for this benchmark
+/// is currently in nightly.
+#[allow(dead_code)]
 fn load_corpus_rcl_webgraph<NG>()
 where
     NG: Ngram<G = ASCIIChar> + Debug,
@@ -199,18 +206,12 @@ where
 
 fn main() {
     env_logger::builder().try_init().unwrap();
-    // experiment::<UniGram<ASCIIChar>>();
-    // experiment::<BiGram<ASCIIChar>>();
-    // experiment::<TriGram<ASCIIChar>>();
-    // experiment::<TetraGram<ASCIIChar>>();
-    // experiment::<PentaGram<ASCIIChar>>();
-    // experiment::<HexaGram<ASCIIChar>>();
-    // experiment::<HeptaGram<ASCIIChar>>();
-    // experiment::<OctaGram<ASCIIChar>>();
-    use ngrammatic::prelude::*;
-    let mut animals: Vec<String> = iter_taxons().collect();
-
-    let corpus: Corpus<Vec<String>, TriGram<char>, Lowercase> = Corpus::par_from(animals);
-    
-    corpus.mem_dbg(DbgFlags::default() | DbgFlags::CAPACITY | DbgFlags::HUMANIZE).unwrap();
+    experiment::<UniGram<ASCIIChar>>();
+    experiment::<BiGram<ASCIIChar>>();
+    experiment::<TriGram<ASCIIChar>>();
+    experiment::<TetraGram<ASCIIChar>>();
+    experiment::<PentaGram<ASCIIChar>>();
+    experiment::<HexaGram<ASCIIChar>>();
+    experiment::<HeptaGram<ASCIIChar>>();
+    experiment::<OctaGram<ASCIIChar>>();
 }
