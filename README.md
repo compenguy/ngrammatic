@@ -345,7 +345,7 @@ Here follows an example of how you can create a corpus with the Trie representat
 use ngrammatic::prelude::*;
 
 let trie = Trie::from_iter(ANIMALS);
-let corpus: Corpus<Trie<u8>, TriGram<u8>, Lowercase> = Corpus::par_from(trie);
+let corpus_trie: Corpus<Trie<u8>, TriGram<u8>, Lowercase> = Corpus::par_from(trie);
 
 // We define a search config
 let search_config = NgramSearchConfig::default()
@@ -355,7 +355,7 @@ let search_config = NgramSearchConfig::default()
 // And now you can use the corpus as you would normally do, with the catch that the search
 // results will necessarily be of type SearchResult<String, f32> instead of references since
 // the RearCodedList cannot provide references to the strings.
-let search_results: Vec<SearchResult<String, f32>> = corpus_webgraph.ngram_search("Cattos", search_config);
+let search_results: Vec<SearchResult<String, f32>> = corpus_trie.ngram_search("Cattos", search_config);
 
 assert!(!search_results.is_empty());
 
