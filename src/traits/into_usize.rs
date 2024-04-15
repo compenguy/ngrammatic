@@ -1,7 +1,7 @@
 //! Trait to convert objects into usize, occasionally with zero padding on the left side.
 
 use crate::{
-    ASCIIChar, BiGram, HeptaGram, HexaGram, UniGram, OctaGram, PentaGram, TetraGram, TriGram,
+    ASCIIChar, BiGram, HeptaGram, HexaGram, OctaGram, PentaGram, TetraGram, TriGram, UniGram,
 };
 
 /// Trait to convert objects into usize, occasionally with zero padding on the left side.

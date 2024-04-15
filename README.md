@@ -335,8 +335,39 @@ for search_result in search_results {
 
 ```
 
+### Trie
+A [Trie](https://github.com/laysakura/trie-rs) is a tree-like data structure that stores a dynamic set of strings. It is a memory-efficient way to store a large number of strings, and it is particularly useful for searching for strings with a common prefix. This data structure is avilable under the `trie-rs` feature.
+
+Here follows an example of how you can create a corpus with the Trie representation:
+
+```rust
+#[cfg(feature = "trie-rs")] {
+use ngrammatic::prelude::*;
+
+let trie = Trie::from_iter(ANIMALS);
+let corpus: Corpus<Trie<u8>, TriGram<u8>, Lowercase> = Corpus::par_from(trie);
+
+// We define a search config
+let search_config = NgramSearchConfig::default()
+    .set_minimum_similarity_score(0.3).unwrap()
+    .set_maximum_number_of_results(5);
+
+// And now you can use the corpus as you would normally do, with the catch that the search
+// results will necessarily be of type SearchResult<String, f32> instead of references since
+// the RearCodedList cannot provide references to the strings.
+let search_results: Vec<SearchResult<String, f32>> = corpus_webgraph.ngram_search("Cattos", search_config);
+
+assert!(!search_results.is_empty());
+
+for search_result in search_results {
+    println!("{}: {}", search_result.key(), search_result.score());
+}
+
+}
+```
+
 ### MemDbg support
-[MemDbg](https://github.com/zommiommy/mem_dbg-rs) is a rust library that measures and breaks down the memory requirements of structs. It is available across most of the data structures used in this crate, with the exception of webgraph (there it is only available in the nightly version of webgraph, they are still working on it). Here follows a couple of examples on using MemDbg on the version using the Rear Coded List and the version using a simple vector. In both, we use the taxons dataset, which contains about 2.5 million species from NCBI taxons.
+[MemDbg](https://github.com/zommiommy/mem_dbg-rs) is a rust library that measures and breaks down the memory requirements of structs. It is available across most of the data structures used in this crate, with the exception of webgraph (there it is only available in the nightly version of webgraph, they are still working on it). Here follows a couple of examples on using MemDbg on the version using the Rear Coded List, the trie and the version using a simple vector. In both, we use the taxons dataset, which contains about 2.5 million species from NCBI taxons.
 
 First, the version using a simple vector:
 
@@ -544,7 +575,38 @@ This version instead outputs:
     0  B   0.00% ╰╴_phantom: core::marker::PhantomData<ngrammatic::traits::char_normalizer::Lowercase>
 ```
 
-In this use case, the use of RCL allows us to save about 132 MB of memory, a non-negligible amount of memory.
+And finally, the version using [trie](https://github.com/laysakura/trie-rs):
+
+```rust
+/// Returns an iterator over the taxons in the corpus.
+fn iter_taxons() -> impl Iterator<Item = String> {
+    use flate2::read::GzDecoder;
+    use std::fs::File;
+    use std::io::{BufRead, BufReader};
+
+    let file = File::open("./benchmarks/taxons.csv.gz").unwrap();
+    let reader = BufReader::new(GzDecoder::new(file));
+    reader.lines().map(|line| line.unwrap())
+}
+
+#[cfg(feature = "trie-rs")] {
+use ngrammatic::prelude::*;
+use mem_dbg::*;
+
+let trie = Trie::from_iter(iter_taxons());
+let corpus: Corpus<Trie<u8>, TriGram<u8>, Lowercase> = Corpus::par_from(trie);
+
+corpus.mem_dbg(DbgFlags::default() | DbgFlags::CAPACITY | DbgFlags::HUMANIZE).unwrap();
+
+}
+```
+
+This script outputs:
+
+```text
+```
+
+In this use case, the use of RCL allows us to save about 132 MB of memory, a non-negligible amount of memory. The RCL beats the Trie data structure in terms of memory usage, and even results faster in terms of search times.
 
 ## Contributing
 Contributions from the community are highly appreciated and can help improve this project. If you have any suggestions, feature requests, or bugs to report, please open an issue on GitHub. Additionally, if you want to contribute to the project, you can open a pull request with your proposed changes. Before making any substantial changes, please discuss them with the project maintainers in the issue tracker.

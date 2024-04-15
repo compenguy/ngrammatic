@@ -21,6 +21,7 @@ mem_dbg = { version = "0.1.8"}
 sux = {git = "https://github.com/LucaCappelletti94/sux-rs.git", no-default-features = true}
 half = {version="2.4.0", optional = true, features = ["zerocopy"]}
 rayon = {version="1.10.0", optional=true}
+trie-rs = {git = "https://github.com/LucaCappelletti94/trie-rs.git", optional = true, features = ["mem_dbg"]}
 webgraph = {git="https://github.com/vigna/webgraph-rs.git" }
 
 fxhash = "0.2.1"
@@ -41,9 +42,9 @@ ngrammatic_old = { version = "0.4.0", package="ngrammatic" }
 paste = "1.0.14"
 
 [features]
-default = ["rayon"]
-serde = ["dep:serde", "half/serde"]
-rayon = ["dep:rayon", "sux/rayon"]
+default = ["rayon", "trie-rs"]
+serde = ["dep:serde", "half/serde", "trie-rs/serde"]
+rayon = ["dep:rayon", "sux/rayon", "trie-rs/rayon"]
 
 [profile.release]
 overflow-checks = false   # Disable integer overflow checks.

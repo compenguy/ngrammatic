@@ -44,4 +44,7 @@ pub mod prelude {
     pub use crate::search::*;
     pub use crate::tfidf::*;
     pub use sux::dict::rear_coded_list::{RearCodedList, RearCodedListBuilder};
+
+    #[cfg(feature = "trie-rs")]
+    pub use trie_rs::Trie;
 }

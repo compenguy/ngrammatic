@@ -134,3 +134,29 @@ where
         self.iter_from(0)
     }
 }
+
+#[cfg(feature = "trie-rs")]
+impl<NG: Ngram> Keys<NG> for trie_rs::Trie<u8>
+where
+    String: Key<NG, <NG as Ngram>::G>,
+{
+    type K = String;
+    type KeyRef<'a> = String where Self: 'a;
+    type IterKeys<'a> = trie_rs::iter::Keys<
+        trie_rs::iter::PostfixIter<'a, u8, (), String, trie_rs::try_collect::StringCollect>,
+    >;
+
+    fn len(&self) -> usize {
+        <trie_rs::iter::Keys<
+            trie_rs::iter::PostfixIter<'_, u8, (), String, trie_rs::try_collect::StringCollect>,
+        > as std::iter::Iterator>::count(trie_rs::Trie::postfix_search(self, []))
+    }
+
+    fn get_ref(&self, index: usize) -> Self::KeyRef<'_> {
+        trie_rs::Trie::postfix_search(self, []).nth(index).unwrap()
+    }
+
+    fn iter(&self) -> Self::IterKeys<'_> {
+        trie_rs::Trie::postfix_search(self, [])
+    }
+}

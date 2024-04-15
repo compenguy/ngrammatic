@@ -6,7 +6,7 @@ The taxons dataset contains the `2_571_000` taxons from NCBI Taxons. While compr
 To run the memory benchmarks, navigate to the `benchmarks` directory and run the following command:
 
 ```bash
-RUST_LOG=info RUSTFLAGS="-C target-cpu=native" cargo run --release
+RUST_LOG=error RUSTFLAGS="-C target-cpu=native" cargo run --release
 ```
 
 ## Benchmarks 11 April 2024, 02:00 PM
