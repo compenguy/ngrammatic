@@ -367,7 +367,7 @@ for search_result in search_results {
 ```
 
 ### MemDbg support
-[MemDbg](https://github.com/zommiommy/mem_dbg-rs) is a rust library that measures and breaks down the memory requirements of structs. It is available across most of the data structures used in this crate, with the exception of webgraph (there it is only available in the nightly version of webgraph, they are still working on it). Here follows a couple of examples on using MemDbg on the version using the Rear Coded List, the trie and the version using a simple vector. In both, we use the taxons dataset, which contains about 2.5 million species from NCBI taxons.
+[MemDbg](https://github.com/zommiommy/mem_dbg-rs) is a rust library that measures and breaks down the memory requirements of structs. It is available across most of the data structures used in this crate, with the exception of webgraph (there it is only available in the nightly version of webgraph, they are still working on it). Here follows a couple of examples on using MemDbg on the version using the [Rear Coded List](https://docs.rs/sux/0.3.1/sux/dict/rear_coded_list/struct.RearCodedList.html), the [trie](https://github.com/laysakura/trie-rs) and the version using a simple vector. In both, we use the taxons dataset, which contains about 2.5 million species from NCBI taxons.
 
 First, the version using a simple vector:
 
@@ -466,7 +466,7 @@ This script outputs:
 ```
 
 
-Then, the version using the Rear Coded List:
+Then, the version using the [Rear Coded List](https://docs.rs/sux/0.3.1/sux/dict/rear_coded_list/struct.RearCodedList.html):
 
 ```rust
 use ngrammatic::prelude::*;
