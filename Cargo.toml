@@ -42,7 +42,7 @@ ngrammatic_old = { version = "0.4.0", package="ngrammatic" }
 paste = "1.0.14"
 
 [features]
-default = ["rayon", "trie-rs"]
+default = ["rayon"]
 serde = ["dep:serde", "half/serde", "trie-rs/serde"]
 rayon = ["dep:rayon", "sux/rayon", "trie-rs/rayon"]
 
