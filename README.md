@@ -604,9 +604,101 @@ corpus.mem_dbg(DbgFlags::default() | DbgFlags::CAPACITY | DbgFlags::HUMANIZE).un
 This script outputs:
 
 ```text
+391.5 MB 100.00% ⏺: ngrammatic::corpus::Corpus<trie_rs::trie::trie_impl::Trie<u8>, [ngrammatic::traits::ascii_char::ASCIIChar; 3], ngrammatic::traits::char_normalizer::Lowercase>
+49.91 MB  12.75% ├╴keys: trie_rs::trie::trie_impl::Trie<u8>
+49.91 MB  12.75% │ ╰╴0: trie_rs::map::Trie<u8, ()>
+16.36 MB   4.18% │   ├╴louds: louds_rs::louds::Louds
+16.36 MB   4.18% │   │ ╰╴lbs: fid_rs::fid::Fid
+3.873 MB   0.99% │   │   ├╴byte_vec: alloc::vec::Vec<u8>
+    8  B   0.00% │   │   ├╴bit_len: u64
+12.48 MB   3.19% │   │   ├╴chunks: fid_rs::fid::Chunks
+12.48 MB   3.19% │   │   │ ├╴chunks: alloc::vec::Vec<fid_rs::fid::Chunk>
+    8  B   0.00% │   │   │ ╰╴chunks_cnt: u64
+4.128 kB   0.00% │   │   ╰╴table: fid_rs::internal_data_structure::popcount_table::PopcountTable
+    1  B   0.00% │   │     ├╴bit_length: u8
+4.120 kB   0.00% │   │     ╰╴table: alloc::vec::Vec<u8>
+33.55 MB   8.57% │   ╰╴trie_labels: alloc::vec::Vec<trie_rs::map::TrieLabel<u8, ()>>
+56.98 kB   0.01% ├╴ngrams: sux::dict::elias_fano::EliasFano<sux::rank_sel::select_fixed2::SelectFixed2>
+    8  B   0.00% │ ├╴u: usize
+    8  B   0.00% │ ├╴n: usize
+    8  B   0.00% │ ├╴l: usize
+41.27 kB   0.01% │ ├╴low_bits: sux::bits::bit_field_vec::BitFieldVec
+41.25 kB   0.01% │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ ├╴mask: usize
+    8  B   0.00% │ │ ╰╴len: usize
+15.68 kB   0.00% │ ╰╴high_bits: sux::rank_sel::select_fixed2::SelectFixed2
+13.77 kB   0.00% │   ├╴bits: sux::bits::bit_vec::CountBitVec
+13.75 kB   0.00% │   │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │   │ ├╴len: usize
+    8  B   0.00% │   │ ╰╴number_of_ones: usize
+1.912 kB   0.00% │   ╰╴inventory: alloc::vec::Vec<u64>
+341.6 MB  87.24% ├╴graph: ngrammatic::bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph
+10.51 MB   2.69% │ ├╴srcs_to_dsts_weights: ngrammatic::weights::Weights
+8.389 MB   2.14% │ │ ├╴reader_factory: ngrammatic::weights::CursorReaderFactory
+8.389 MB   2.14% │ │ │ ╰╴data: alloc::vec::Vec<u8>
+2.125 MB   0.54% │ │ ├╴offsets: sux::dict::elias_fano::EliasFano<sux::rank_sel::select_fixed2::SelectFixed2>
+    8  B   0.00% │ │ │ ├╴u: usize
+    8  B   0.00% │ │ │ ├╴n: usize
+    8  B   0.00% │ │ │ ├╴l: usize
+1.278 MB   0.33% │ │ │ ├╴low_bits: sux::bits::bit_field_vec::BitFieldVec
+1.278 MB   0.33% │ │ │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ │ │ ├╴mask: usize
+    8  B   0.00% │ │ │ │ ╰╴len: usize
+846.7 kB   0.22% │ │ │ ╰╴high_bits: sux::rank_sel::select_fixed2::SelectFixed2
+746.8 kB   0.19% │ │ │   ├╴bits: sux::bits::bit_vec::CountBitVec
+746.8 kB   0.19% │ │ │   │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │   │ ├╴len: usize
+    8  B   0.00% │ │ │   │ ╰╴number_of_ones: usize
+99.87 kB   0.03% │ │ │   ╰╴inventory: alloc::vec::Vec<u64>
+    8  B   0.00% │ │ ├╴num_nodes: usize
+    8  B   0.00% │ │ ╰╴num_weights: usize
+2.238 MB   0.57% │ ├╴srcs_offsets: sux::dict::elias_fano::EliasFano<sux::rank_sel::select_fixed2::SelectFixed2>
+    8  B   0.00% │ │ ├╴u: usize
+    8  B   0.00% │ │ ├╴n: usize
+    8  B   0.00% │ │ ├╴l: usize
+1.278 MB   0.33% │ │ ├╴low_bits: sux::bits::bit_field_vec::BitFieldVec
+1.278 MB   0.33% │ │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ │ ├╴mask: usize
+    8  B   0.00% │ │ │ ╰╴len: usize
+960.1 kB   0.25% │ │ ╰╴high_bits: sux::rank_sel::select_fixed2::SelectFixed2
+860.2 kB   0.22% │ │   ├╴bits: sux::bits::bit_vec::CountBitVec
+860.2 kB   0.22% │ │   │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │   │ ├╴len: usize
+    8  B   0.00% │ │   │ ╰╴number_of_ones: usize
+99.87 kB   0.03% │ │   ╰╴inventory: alloc::vec::Vec<u64>
+75.26 kB   0.02% │ ├╴dsts_offsets: sux::dict::elias_fano::EliasFano<sux::rank_sel::select_fixed2::SelectFixed2>
+    8  B   0.00% │ │ ├╴u: usize
+    8  B   0.00% │ │ ├╴n: usize
+    8  B   0.00% │ │ ├╴l: usize
+58.94 kB   0.02% │ │ ├╴low_bits: sux::bits::bit_field_vec::BitFieldVec
+58.92 kB   0.02% │ │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ │ ├╴mask: usize
+    8  B   0.00% │ │ │ ╰╴len: usize
+16.30 kB   0.00% │ │ ╰╴high_bits: sux::rank_sel::select_fixed2::SelectFixed2
+14.38 kB   0.00% │ │   ├╴bits: sux::bits::bit_vec::CountBitVec
+14.37 kB   0.00% │ │   │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │   │ ├╴len: usize
+    8  B   0.00% │ │   │ ╰╴number_of_ones: usize
+1.912 kB   0.00% │ │   ╰╴inventory: alloc::vec::Vec<u64>
+190.3 MB  48.61% │ ├╴srcs_to_dsts: sux::bits::bit_field_vec::BitFieldVec
+190.3 MB  48.61% │ │ ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │ │ ├╴bit_width: usize
+    8  B   0.00% │ │ ├╴mask: usize
+    8  B   0.00% │ │ ╰╴len: usize
+138.4 MB  35.35% │ ╰╴dsts_to_srcs: sux::bits::bit_field_vec::BitFieldVec
+138.4 MB  35.35% │   ├╴data: alloc::vec::Vec<usize>
+    8  B   0.00% │   ├╴bit_width: usize
+    8  B   0.00% │   ├╴mask: usize
+    8  B   0.00% │   ╰╴len: usize
+    8  B   0.00% ├╴average_key_length: f64
+    0  B   0.00% ╰╴_phantom: core::marker::PhantomData<ngrammatic::traits::char_normalizer::Lowercase>
 ```
 
-In this use case, the use of RCL allows us to save about 132 MB of memory, a non-negligible amount of memory. The RCL beats the Trie data structure in terms of memory usage, and even results faster in terms of search times.
+In this use case, the use of RCL allows us to save about 132 MB of memory, a non-negligible amount of memory. The RCL beats the Trie data structure in terms of memory usage, and even results faster in terms of build and search times.
 
 ## Contributing
 Contributions from the community are highly appreciated and can help improve this project. If you have any suggestions, feature requests, or bugs to report, please open an issue on GitHub. Additionally, if you want to contribute to the project, you can open a pull request with your proposed changes. Before making any substantial changes, please discuss them with the project maintainers in the issue tracker.

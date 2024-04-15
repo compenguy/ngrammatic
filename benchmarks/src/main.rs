@@ -134,6 +134,10 @@ where
     );
 
     corpus
+        .mem_dbg(DbgFlags::default() | DbgFlags::CAPACITY | DbgFlags::HUMANIZE)
+        .unwrap();
+
+    corpus
 }
 
 fn load_corpus_old(arity: usize) -> ngrammatic_old::Corpus {
@@ -240,7 +244,7 @@ where
     log::warn!("The webgraph benchmarks are skipped because the necessary version of the webgraph crate is not available.");
     // load_corpus_webgraph::<NG>();
     // load_corpus_rcl_webgraph::<NG>();
-    // load_corpus_trie_par_new::<NG>();
+    load_corpus_trie_par_new::<NG>();
     load_corpus_old(NG::ARITY);
 }
 
@@ -248,15 +252,10 @@ fn main() {
     env_logger::builder().try_init().unwrap();
     // experiment::<UniGram<ASCIIChar>>();
     // experiment::<BiGram<ASCIIChar>>();
-    // experiment::<TriGram<ASCIIChar>>();
+    experiment::<TriGram<ASCIIChar>>();
     // experiment::<TetraGram<ASCIIChar>>();
     // experiment::<PentaGram<ASCIIChar>>();
     // experiment::<HexaGram<ASCIIChar>>();
     // experiment::<HeptaGram<ASCIIChar>>();
     // experiment::<OctaGram<ASCIIChar>>();
-    let corpus: Corpus<Trie<u8>, TriGram<ASCIIChar>, Lowercase> = load_corpus_trie_par_new::<TriGram<ASCIIChar>>();
-
-    corpus
-        .mem_dbg(DbgFlags::default() | DbgFlags::CAPACITY | DbgFlags::HUMANIZE)
-        .unwrap();
 }
