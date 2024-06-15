@@ -1,0 +1,11 @@
+target
+ngrams*
+node_degrees.csv
+.ipynb_checkpoints
+cooccurrence_weights.csv
+cooccurrence_weights.csv.gz
+cooccurrences.json
+cooccurrences.json.gz
+cooccurrences.ragged
+cooccurrences.ragged.gz
+*.graph
