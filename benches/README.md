@@ -6,7 +6,7 @@ Since cargo bench will run the benchmarks multiple times, we will use only a sub
 To run the time benchmarks, run from the root of the repository the following command:
 
 ```bash
-RUSTFLAGS="-C target-cpu=native" cargo bench
+RUSTFLAGS="-C target-cpu=native" cargo bench  
 ```
 
 ## Benchmarks 26 July 2024, 05:00 PM
