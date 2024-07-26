@@ -1,4 +1,3 @@
-
 running 200 tests
 test bigram_bitvec_par_search_rcl      ... bench:  16,177,541.10 ns/iter (+/- 2,089,176.93)
 test bigram_bitvec_par_search_vec      ... bench:  16,461,056.30 ns/iter (+/- 1,654,920.29)
