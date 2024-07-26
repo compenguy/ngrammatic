@@ -60,7 +60,7 @@ impl<'a> From<&'a WeightedBitFieldBipartiteGraph> for RaggedListIter<'a> {
 }
 
 impl<'a> Iterator for RaggedListIter<'a> {
-    type Item = (usize, Offset<BitFieldVecIterator<'a, usize, Vec<usize>>>);
+    type Item = (usize, Offset<std::iter::Take<BitFieldVecIterator<'a, usize, Vec<usize>>>>);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.start >= self.end {
@@ -135,8 +135,8 @@ impl<'a> ExactSizeLender for RaggedListIter<'a> {
 }
 
 impl<'a, 'b> NodeLabelsLender<'b> for RaggedListIter<'a> {
-    type Label = <Offset<BitFieldVecIterator<'a, usize, Vec<usize>>> as Iterator>::Item;
-    type IntoIterator = Offset<BitFieldVecIterator<'a, usize, Vec<usize>>>;
+    type Label = <Offset<std::iter::Take<BitFieldVecIterator<'a, usize, Vec<usize>>>> as Iterator>::Item;
+    type IntoIterator = Offset<std::iter::Take<BitFieldVecIterator<'a, usize, Vec<usize>>>>;
 }
 
 /// A struct iterating across the nodes and their neighbours in a ragged list.

@@ -6,3 +6,4 @@ Cargo.lock
 test.txt
 rustc-ice-*
 *.graph
+*.offsets

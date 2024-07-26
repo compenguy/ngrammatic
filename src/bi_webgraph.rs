@@ -16,6 +16,7 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use tempfile::Builder;
 use webgraph::prelude::*;
+use webgraph::cli::get_thread_pool;
 
 use mem_dbg::MemSize;
 
@@ -117,14 +118,14 @@ impl TryFrom<WeightedBitFieldBipartiteGraph> for BiWebgraph {
             graph.iter_fractional_ragged_list(num_threads()),
             number_of_nodes,
             CompFlags::default(),
-            Threads::Default,
+            get_thread_pool(num_threads()),
             dir,
         )
         .map_err(|_| "Could not create BVComp")?;
 
         // Next, we need to create the offset elias fano.
         let cli_args = webgraph::cli::build::ef::CliArgs {
-            basename: (&basename).into(),
+            src: (&basename).into(),
             n: None,
         };
 

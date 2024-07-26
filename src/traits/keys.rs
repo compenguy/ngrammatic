@@ -2,8 +2,8 @@
 
 use crate::{Key, Ngram};
 use sux::dict::rear_coded_list::RearCodedList;
-use sux::dict::rear_coded_list::ValueIterator;
-use sux::traits::IndexedDict;
+use sux::traits::IndexedSeq;
+use sux::dict::rear_coded_list::Iter as ValueIterator;
 
 /// Trait defining a container of keys.
 pub trait Keys<NG: Ngram> {
@@ -123,11 +123,11 @@ where
     type IterKeys<'a> =  ValueIterator<'a, D, P> where Self: 'a;
 
     fn len(&self) -> usize {
-        <Self as IndexedDict>::len(self)
+        <Self as IndexedSeq>::len(self)
     }
 
     fn get_ref(&self, index: usize) -> Self::KeyRef<'_> {
-        <Self as IndexedDict>::get(self, index)
+        <Self as IndexedSeq>::get(self, index)
     }
 
     fn iter(&self) -> Self::IterKeys<'_> {

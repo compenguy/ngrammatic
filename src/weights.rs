@@ -10,7 +10,14 @@ use webgraph::prelude::*;
 
 type Writer<W> = BufBitWriter<LittleEndian, WordAdapter<u32, W>>;
 type Reader<R> = BufBitReader<LittleEndian, WordAdapter<u32, R>>;
-type EF = EliasFano<SelectFixed2>;
+pub(crate) type HighBitsEF =
+    sux::rank_sel::SelectAdaptConst<sux::bits::BitVec<Box<[usize]>>, Box<[usize]>, 14, 4>;
+pub(crate) type EF = sux::dict::EliasFano<HighBitsEF, sux::bits::BitFieldVec<usize, Box<[usize]>>>;
+
+pub(crate) type HighBitsPredEF =
+    sux::rank_sel::SelectZeroAdaptConst<HighBitsEF, Box<[usize]>, 14, 4>;
+pub(crate) type PredEF =
+    sux::dict::EliasFano<HighBitsPredEF, sux::bits::BitFieldVec<usize, Box<[usize]>>>;
 
 /// A factory that can create a reader.
 /// The factory own the data and the reader borrows it.
@@ -144,14 +151,14 @@ impl WeightsBuilder {
     pub fn build(self) -> Weights {
         let mut efb = EliasFanoBuilder::new(self.num_nodes, self.len);
         for offset in self.offsets {
-            efb.push(offset).unwrap();
+            efb.push(offset);
         }
         let ef = efb.build();
 
         Weights {
             num_nodes: self.num_nodes,
             num_weights: self.num_weights,
-            offsets: ef.convert_to().unwrap(),
+            offsets: unsafe { ef.map_high_bits(HighBitsEF::new) },
             reader_factory: CursorReaderFactory::new(
                 self.writer.into_inner().unwrap().into_inner().into_inner(),
             ),
@@ -170,14 +177,14 @@ impl WeightsBuilder {
             .into_par_iter()
             .enumerate()
             .for_each(|(index, offset)| unsafe {
-                efb.set(index, offset, std::sync::atomic::Ordering::SeqCst);
+                efb.set(index, offset);
             });
         let ef = efb.build();
 
         Weights {
             num_nodes: self.num_nodes,
             num_weights: self.num_weights,
-            offsets: ef.convert_to().unwrap(),
+            offsets: unsafe { ef.map_high_bits(HighBitsEF::new) },
             reader_factory: CursorReaderFactory::new(
                 self.writer.into_inner().unwrap().into_inner().into_inner(),
             ),
@@ -404,7 +411,7 @@ impl<R: GammaRead<LittleEndian> + BitRead<LittleEndian>> Iterator for Succ<R> {
     }
 }
 
-impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> SequentialLabeling
+impl<RF: ReaderFactory, OFF: IndexedSeq<Input = usize, Output = usize>> SequentialLabeling
     for Weights<RF, OFF>
 {
     type Label = usize;
@@ -426,7 +433,7 @@ impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> Sequent
     }
 }
 
-impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> RandomAccessLabeling
+impl<RF: ReaderFactory, OFF: IndexedSeq<Input = usize, Output = usize>> RandomAccessLabeling
     for Weights<RF, OFF>
 {
     type Labels<'succ> = Succ<<RF as ReaderFactory>::Reader<'succ>> where RF: 'succ, OFF: 'succ;
@@ -449,7 +456,7 @@ impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> RandomA
     }
 }
 
-impl<RF: ReaderFactory, OFF: IndexedDict<Input = usize, Output = usize>> Weights<RF, OFF> {
+impl<RF: ReaderFactory, OFF: IndexedSeq<Input = usize, Output = usize>> Weights<RF, OFF> {
     /// Returns an iterator over all the weights of the successors of all nodes.
     pub fn weights(&self) -> WeightsIter<<RF as ReaderFactory>::Reader<'_>> {
         WeightsIter::new(self.reader_factory.get_reader(0), self.num_weights)

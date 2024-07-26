@@ -11,13 +11,9 @@ use std::{
 use sux::{
     bits::BitFieldVec,
     dict::{elias_fano::EliasFanoIterator, EliasFanoConcurrentBuilder},
-    traits::ConvertTo,
+    traits::IndexedSeq,
 };
-use sux::{
-    dict::{EliasFano, EliasFanoBuilder},
-    rank_sel::SelectFixed2,
-    traits::IndexedDict,
-};
+use sux::{dict::EliasFanoBuilder, traits::IndexedDict};
 
 use crate::{ASCIIChar, IntoUsize, Paddable};
 
@@ -104,7 +100,7 @@ impl<NG: Ngram> SortedNgramStorageBuilder<NG> for EliasFanoBuilder
 where
     NG: IntoUsize,
 {
-    type Storage = EliasFano<SelectFixed2>;
+    type Storage = crate::weights::PredEF;
 
     #[inline(always)]
     fn new_storage_builder(number_of_ngrams: usize, maximal_ngram: NG) -> Self {
@@ -118,13 +114,17 @@ where
 
     #[inline(always)]
     fn build(self) -> Self::Storage {
-        self.build().convert_to().unwrap()
+        unsafe {
+            self.build().map_high_bits(|high_bits| {
+                crate::weights::HighBitsPredEF::new(crate::weights::HighBitsEF::new(high_bits))
+            })
+        }
     }
 }
 
 #[cfg(feature = "rayon")]
 impl<NG: Ngram + IntoUsize> ConcurrentSortedNgramStorageBuilder<NG> for EliasFanoConcurrentBuilder {
-    type Storage = EliasFano<SelectFixed2>;
+    type Storage = crate::weights::PredEF;
 
     #[inline(always)]
     fn new_storage_builder(number_of_ngrams: usize, maximal_ngram: NG) -> Self {
@@ -133,16 +133,16 @@ impl<NG: Ngram + IntoUsize> ConcurrentSortedNgramStorageBuilder<NG> for EliasFan
 
     #[inline(always)]
     unsafe fn set_unchecked(&self, ngram: NG, index: usize) {
-        self.set(
-            index,
-            ngram.into_usize(),
-            std::sync::atomic::Ordering::SeqCst,
-        );
+        self.set(index, ngram.into_usize());
     }
 
     #[inline(always)]
     fn build(self) -> Self::Storage {
-        self.build().convert_to().unwrap()
+        unsafe {
+            self.build().map_high_bits(|high_bits| {
+                crate::weights::HighBitsPredEF::new(crate::weights::HighBitsEF::new(high_bits))
+            })
+        }
     }
 }
 
@@ -252,7 +252,7 @@ pub trait SortedNgramStorage<NG: Ngram>: Send + Sync + Clone {
     fn iter(&self) -> Self::Iter<'_>;
 }
 
-impl<NG: Ngram> SortedNgramStorage<NG> for EliasFano<SelectFixed2>
+impl<NG: Ngram> SortedNgramStorage<NG> for crate::weights::PredEF
 where
     NG: IntoUsize,
 {
@@ -278,15 +278,17 @@ where
 
     #[inline(always)]
     unsafe fn get_unchecked(&self, i: usize) -> NG {
-        NG::from_usize(<Self as IndexedDict>::get_unchecked(self, i))
+        NG::from_usize(<Self as IndexedSeq>::get_unchecked(self, i))
     }
 
-    type Iter<'a> =
-        std::iter::Map<EliasFanoIterator<'a, SelectFixed2, BitFieldVec>, fn(usize) -> NG>;
+    type Iter<'a> = std::iter::Map<
+        EliasFanoIterator<'a, crate::weights::HighBitsPredEF, BitFieldVec<usize, Box<[usize]>>>,
+        fn(usize) -> NG,
+    >;
 
     #[inline(always)]
     fn iter(&self) -> Self::Iter<'_> {
-        self.into_iter_from(0).map(NG::from_usize)
+        self.iter().map(NG::from_usize)
     }
 }
 
@@ -371,7 +373,7 @@ pub trait Ngram:
 impl Ngram for UniGram<u8> {
     const ARITY: usize = 1;
     type G = u8;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 0];
     const PADDING: Self::Pad = [Self::G::PADDING; 0];
@@ -385,7 +387,7 @@ impl Ngram for UniGram<u8> {
 impl Ngram for UniGram<ASCIIChar> {
     const ARITY: usize = 1;
     type G = ASCIIChar;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 0];
     const PADDING: Self::Pad = [Self::G::PADDING; 0];
@@ -399,7 +401,7 @@ impl Ngram for UniGram<ASCIIChar> {
 impl Ngram for UniGram<char> {
     const ARITY: usize = 1;
     type G = char;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 0];
     const PADDING: Self::Pad = [Self::G::PADDING; 0];
@@ -413,7 +415,7 @@ impl Ngram for UniGram<char> {
 impl Ngram for BiGram<u8> {
     const ARITY: usize = 2;
     type G = u8;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 1];
     const PADDING: Self::Pad = [Self::G::PADDING; 1];
@@ -427,7 +429,7 @@ impl Ngram for BiGram<u8> {
 impl Ngram for BiGram<ASCIIChar> {
     const ARITY: usize = 2;
     type G = ASCIIChar;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 1];
     const PADDING: Self::Pad = [Self::G::PADDING; 1];
@@ -441,7 +443,7 @@ impl Ngram for BiGram<ASCIIChar> {
 impl Ngram for BiGram<char> {
     const ARITY: usize = 2;
     type G = char;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 1];
     const PADDING: Self::Pad = [Self::G::PADDING; 1];
@@ -455,7 +457,7 @@ impl Ngram for BiGram<char> {
 impl Ngram for TriGram<u8> {
     const ARITY: usize = 3;
     type G = u8;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 2];
     const PADDING: Self::Pad = [Self::G::PADDING; 2];
@@ -469,7 +471,7 @@ impl Ngram for TriGram<u8> {
 impl Ngram for TriGram<ASCIIChar> {
     const ARITY: usize = 3;
     type G = ASCIIChar;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 2];
     const PADDING: Self::Pad = [Self::G::PADDING; 2];
@@ -497,7 +499,7 @@ impl Ngram for TriGram<char> {
 impl Ngram for TetraGram<u8> {
     const ARITY: usize = 4;
     type G = u8;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 3];
     const PADDING: Self::Pad = [Self::G::PADDING; 3];
@@ -511,7 +513,7 @@ impl Ngram for TetraGram<u8> {
 impl Ngram for TetraGram<ASCIIChar> {
     const ARITY: usize = 4;
     type G = ASCIIChar;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 3];
     const PADDING: Self::Pad = [Self::G::PADDING; 3];
@@ -539,7 +541,7 @@ impl Ngram for TetraGram<char> {
 impl Ngram for PentaGram<u8> {
     const ARITY: usize = 5;
     type G = u8;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 4];
     const PADDING: Self::Pad = [Self::G::PADDING; 4];
@@ -553,7 +555,7 @@ impl Ngram for PentaGram<u8> {
 impl Ngram for PentaGram<ASCIIChar> {
     const ARITY: usize = 5;
     type G = ASCIIChar;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 4];
     const PADDING: Self::Pad = [Self::G::PADDING; 4];
@@ -581,7 +583,7 @@ impl Ngram for PentaGram<char> {
 impl Ngram for HexaGram<u8> {
     const ARITY: usize = 6;
     type G = u8;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 5];
     const PADDING: Self::Pad = [Self::G::PADDING; 5];
@@ -595,7 +597,7 @@ impl Ngram for HexaGram<u8> {
 impl Ngram for HexaGram<ASCIIChar> {
     const ARITY: usize = 6;
     type G = ASCIIChar;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 5];
     const PADDING: Self::Pad = [Self::G::PADDING; 5];
@@ -623,7 +625,7 @@ impl Ngram for HexaGram<char> {
 impl Ngram for HeptaGram<u8> {
     const ARITY: usize = 7;
     type G = u8;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 6];
     const PADDING: Self::Pad = [Self::G::PADDING; 6];
@@ -637,7 +639,7 @@ impl Ngram for HeptaGram<u8> {
 impl Ngram for HeptaGram<ASCIIChar> {
     const ARITY: usize = 7;
     type G = ASCIIChar;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 6];
     const PADDING: Self::Pad = [Self::G::PADDING; 6];
@@ -665,7 +667,7 @@ impl Ngram for HeptaGram<char> {
 impl Ngram for OctaGram<u8> {
     const ARITY: usize = 8;
     type G = u8;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 7];
     const PADDING: Self::Pad = [Self::G::PADDING; 7];
@@ -679,7 +681,7 @@ impl Ngram for OctaGram<u8> {
 impl Ngram for OctaGram<ASCIIChar> {
     const ARITY: usize = 8;
     type G = ASCIIChar;
-    type SortedStorage = EliasFano<SelectFixed2>;
+    type SortedStorage = crate::weights::PredEF;
 
     type Pad = [Self::G; 7];
     const PADDING: Self::Pad = [Self::G::PADDING; 7];

@@ -1,8 +1,6 @@
 //! Module providing a vector that adaptatively grows in data type.
 
-use sux::dict::{EliasFano, EliasFanoBuilder};
-use sux::prelude::SelectFixed2;
-use sux::traits::ConvertTo;
+use sux::dict::EliasFanoBuilder;
 
 /// Trait defining a bounded type.
 pub trait Bounded {
@@ -268,7 +266,7 @@ impl AdaptativeVector {
     ///
     /// # Safety
     /// This method assumes that the vector is sorted.
-    pub(crate) unsafe fn par_into_elias_fano(self) -> EliasFano<SelectFixed2> {
+    pub(crate) unsafe fn par_into_elias_fano(self) -> crate::weights::PredEF {
         use rayon::prelude::*;
         use sux::dict::EliasFanoConcurrentBuilder;
 
@@ -282,9 +280,16 @@ impl AdaptativeVector {
                     .into_par_iter()
                     .enumerate()
                     .for_each(|(index, value)| {
-                        builder.set(index, value as usize, std::sync::atomic::Ordering::SeqCst);
+                        builder.set(index, value as usize);
                     });
-                builder.build().convert_to().unwrap()
+                let elias_fano = builder.build();
+                unsafe {
+                    elias_fano.map_high_bits(|high_bits| {
+                        crate::weights::HighBitsPredEF::new(crate::weights::HighBitsEF::new(
+                            high_bits,
+                        ))
+                    })
+                }
             }
             AdaptativeVector::U16(vector) => {
                 let builder = EliasFanoConcurrentBuilder::new(
@@ -295,9 +300,15 @@ impl AdaptativeVector {
                     .into_par_iter()
                     .enumerate()
                     .for_each(|(index, value)| {
-                        builder.set(index, value as usize, std::sync::atomic::Ordering::SeqCst);
+                        builder.set(index, value as usize);
                     });
-                builder.build().convert_to().unwrap()
+                unsafe {
+                    builder.build().map_high_bits(|high_bits| {
+                        crate::weights::HighBitsPredEF::new(crate::weights::HighBitsEF::new(
+                            high_bits,
+                        ))
+                    })
+                }
             }
             AdaptativeVector::U32(vector) => {
                 let builder = EliasFanoConcurrentBuilder::new(
@@ -308,9 +319,15 @@ impl AdaptativeVector {
                     .into_par_iter()
                     .enumerate()
                     .for_each(|(index, value)| {
-                        builder.set(index, value as usize, std::sync::atomic::Ordering::SeqCst);
+                        builder.set(index, value as usize);
                     });
-                builder.build().convert_to().unwrap()
+                unsafe {
+                    builder.build().map_high_bits(|high_bits| {
+                        crate::weights::HighBitsPredEF::new(crate::weights::HighBitsEF::new(
+                            high_bits,
+                        ))
+                    })
+                }
             }
             AdaptativeVector::U64(vector) => {
                 let builder = EliasFanoConcurrentBuilder::new(
@@ -321,9 +338,15 @@ impl AdaptativeVector {
                     .into_par_iter()
                     .enumerate()
                     .for_each(|(index, value)| {
-                        builder.set(index, value as usize, std::sync::atomic::Ordering::SeqCst);
+                        builder.set(index, value as usize);
                     });
-                builder.build().convert_to().unwrap()
+                unsafe {
+                    builder.build().map_high_bits(|high_bits| {
+                        crate::weights::HighBitsPredEF::new(crate::weights::HighBitsEF::new(
+                            high_bits,
+                        ))
+                    })
+                }
             }
         }
     }
@@ -332,7 +355,7 @@ impl AdaptativeVector {
     ///
     /// # Safety
     /// This method assumes that the vector is sorted.
-    pub(crate) unsafe fn into_elias_fano(self) -> EliasFano<SelectFixed2> {
+    pub(crate) unsafe fn into_elias_fano(self) -> crate::weights::PredEF {
         match self {
             AdaptativeVector::U8(vector) => {
                 let mut builder = EliasFanoBuilder::new(
@@ -342,7 +365,13 @@ impl AdaptativeVector {
                 for value in vector {
                     builder.push_unchecked(value as usize);
                 }
-                builder.build().convert_to().unwrap()
+                unsafe {
+                    builder.build().map_high_bits(|high_bits| {
+                        crate::weights::HighBitsPredEF::new(crate::weights::HighBitsEF::new(
+                            high_bits,
+                        ))
+                    })
+                }
             }
             AdaptativeVector::U16(vector) => {
                 let mut builder = EliasFanoBuilder::new(
@@ -352,7 +381,13 @@ impl AdaptativeVector {
                 for value in vector {
                     builder.push_unchecked(value as usize);
                 }
-                builder.build().convert_to().unwrap()
+                unsafe {
+                    builder.build().map_high_bits(|high_bits| {
+                        crate::weights::HighBitsPredEF::new(crate::weights::HighBitsEF::new(
+                            high_bits,
+                        ))
+                    })
+                }
             }
             AdaptativeVector::U32(vector) => {
                 let mut builder = EliasFanoBuilder::new(
@@ -362,7 +397,13 @@ impl AdaptativeVector {
                 for value in vector {
                     builder.push_unchecked(value as usize);
                 }
-                builder.build().convert_to().unwrap()
+                unsafe {
+                    builder.build().map_high_bits(|high_bits| {
+                        crate::weights::HighBitsPredEF::new(crate::weights::HighBitsEF::new(
+                            high_bits,
+                        ))
+                    })
+                }
             }
             AdaptativeVector::U64(vector) => {
                 let mut builder = EliasFanoBuilder::new(
@@ -372,7 +413,13 @@ impl AdaptativeVector {
                 for value in vector {
                     builder.push_unchecked(value as usize);
                 }
-                builder.build().convert_to().unwrap()
+                unsafe {
+                    builder.build().map_high_bits(|high_bits| {
+                        crate::weights::HighBitsPredEF::new(crate::weights::HighBitsEF::new(
+                            high_bits,
+                        ))
+                    })
+                }
             }
         }
     }

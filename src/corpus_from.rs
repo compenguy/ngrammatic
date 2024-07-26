@@ -4,9 +4,9 @@ use std::io::Cursor;
 
 use fxhash::FxBuildHasher;
 use sux::prelude::*;
-use sux::traits::bit_field_slice::BitFieldSliceApply;
+use sux::traits::bit_field_slice::BitFieldSliceMut;
 
-use crate::weights::WeightsBuilder;
+use crate::weights::{HighBitsEF, HighBitsPredEF, WeightsBuilder};
 use crate::{
     bit_field_bipartite_graph::WeightedBitFieldBipartiteGraph, traits::*, AdaptativeVector,
 };
@@ -155,7 +155,7 @@ where
         let mut keys_iter = key_to_ngrams.into_iter();
 
         unsafe {
-            key_to_ngram_edges.apply_inplace_unchecked(|_| {
+            key_to_ngram_edges.apply_in_place_unchecked(|_| {
                 let ngram = keys_iter.next().unwrap();
                 // We find the index of the ngram in the ngrams vector.
                 // We can always unwrap since we know that the ngram is in the ngrams vector.
@@ -205,7 +205,10 @@ where
         );
 
         // We build the ngram_offsets vector.
-        let ngram_offsets = ngram_offsets_builder.build().convert_to().unwrap();
+        let ngram_offsets = ngram_offsets_builder.build();
+        let ngram_offsets = unsafe {
+            ngram_offsets.map_high_bits(|high_bits| HighBitsPredEF::new(HighBitsEF::new(high_bits)))
+        };
 
         log::debug!("Building edges from gram to key.");
         // Finally, we can allocate and populate the gram_to_key_edges vector. This vector has the same length
@@ -223,10 +226,8 @@ where
 
         let mut ngram_iterator = key_to_ngram_edges.iter();
 
-        for (key_id, (key_offset_start, key_offset_end)) in key_offsets
-            .into_iter_from(0)
-            .zip(key_offsets.into_iter_from(1))
-            .enumerate()
+        for (key_id, (key_offset_start, key_offset_end)) in
+            key_offsets.iter().zip(key_offsets.iter_from(1)).enumerate()
         {
             // Note that we check for the key offsets to be increasing or equal as
             // it may happen that a key does not contain any ngrams. This could be
@@ -246,7 +247,7 @@ where
 
                 // We find the position of the key in the gram_to_key_edges vector.
                 let ngram_offset =
-                    unsafe { sux::traits::IndexedDict::get_unchecked(&ngram_offsets, ngram_id) };
+                    unsafe { sux::traits::IndexedSeq::get_unchecked(&ngram_offsets, ngram_id) };
                 let inbound_edge_id = ngram_offset + ngram_degree;
 
                 // We store the key index in the gram_to_key_edges vector.

@@ -9,7 +9,7 @@ env_logger = "0.11.3"
 flate2 = "1.0.28"
 indicatif = "0.17.8"
 log = "0.4.21"
-mem_dbg = "0.1"
+mem_dbg = "0.2"
 ngrammatic = { path = "../../ngrammatic"}
 rayon = "1.10.0"
 serde_json = "1.0.115"
@@ -17,7 +17,7 @@ serde_json = "1.0.115"
 # to evaluate the changes in performance. The version we refer to is the 0.4.0
 # version of the library.
 ngrammatic_old = { git="https://github.com/LucaCappelletti94/ngrammatic-old.git", branch="main", package="ngrammatic" }
-sux = { git = "https://github.com/LucaCappelletti94/sux-rs.git", no-default-features = true }
+sux = { git = "https://github.com/vigna/sux-rs.git", no-default-features = true }
 
 
 [profile.release]
