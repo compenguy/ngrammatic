@@ -9,6 +9,8 @@ To run the time benchmarks, run from the root of the repository the following co
 RUSTFLAGS="-C target-cpu=native" cargo bench
 ```
 
+## Benchmarks 26 July 2024, 05:00 PM
+
 ## Benchmarks 9 April 2024, 06:00 PM
 The sixth benchmark was run on a 32-core machine with 64 threads and with 256 GBs of RAM. In this iteration, we run the benchmarks relative to loading the first `10_000` taxons from the dataset into memory. The novelty of this benchmark is the use of the RCL data structure for holding the strings of the dataset itself.
 

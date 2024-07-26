@@ -1,0 +1,72 @@
+[2024-07-26T15:01:06Z ERROR benchmarks] BITVEC - Arity: 1, Time (ms): 3_299, memory (B): 282_487_660
+[2024-07-26T15:01:06Z ERROR benchmarks] Edges: 78571966, Ngrams: 37
+[2024-07-26T15:01:09Z ERROR benchmarks] VEC - Arity: 1, Time (ms): 2_549, memory (B): 620_385_668
+[2024-07-26T15:01:12Z ERROR benchmarks] VEC RCL - Arity: 1, Time (ms): 2_870, memory (B): 521_285_095
+[2024-07-26T15:01:15Z ERROR benchmarks] BITVECPAR - Arity: 1, Time (ms): 2_990, memory (B): 282_487_660
+[2024-07-26T15:01:18Z ERROR benchmarks] RCL BITVECPAR - Arity: 1, Time (ms): 3_438, memory (B): 183_387_087
+[2024-07-26T15:01:23Z ERROR benchmarks] WEBGRAPH - Arity: 1, Time (ms): 4_502, memory (B): 171_445_164
+[2024-07-26T15:01:28Z ERROR benchmarks] RCL WEBGRAPH - Arity: 1, Time (ms): 4_851, memory (B): 71_640_679
+[2024-07-26T15:01:41Z ERROR benchmarks] OLD - Arity: 1, Time (ms): 12_066, memory (B): 5_603_963_834
+[2024-07-26T15:02:00Z ERROR benchmarks] BITVEC - Arity: 2, Time (ms): 6_354, memory (B): 407_118_560
+[2024-07-26T15:02:00Z ERROR benchmarks] Edges: 129014720, Ngrams: 1437
+[2024-07-26T15:02:05Z ERROR benchmarks] VEC - Arity: 2, Time (ms): 4_951, memory (B): 923_054_520
+[2024-07-26T15:02:11Z ERROR benchmarks] VEC RCL - Arity: 2, Time (ms): 5_312, memory (B): 823_953_947
+[2024-07-26T15:02:16Z ERROR benchmarks] BITVECPAR - Arity: 2, Time (ms): 5_181, memory (B): 407_118_560
+[2024-07-26T15:02:22Z ERROR benchmarks] RCL BITVECPAR - Arity: 2, Time (ms): 5_676, memory (B): 308_017_987
+[2024-07-26T15:02:30Z ERROR benchmarks] WEBGRAPH - Arity: 2, Time (ms): 7_924, memory (B): 203_916_992
+[2024-07-26T15:02:38Z ERROR benchmarks] RCL WEBGRAPH - Arity: 2, Time (ms): 8_293, memory (B): 103_082_587
+[2024-07-26T15:02:55Z ERROR benchmarks] OLD - Arity: 2, Time (ms): 15_840, memory (B): 8_003_769_656
+[2024-07-26T15:03:21Z ERROR benchmarks] BITVEC - Arity: 3, Time (ms): 8_799, memory (B): 469_728_660
+[2024-07-26T15:03:21Z ERROR benchmarks] Edges: 138978258, Ngrams: 47111
+[2024-07-26T15:03:28Z ERROR benchmarks] VEC - Arity: 3, Time (ms): 6_993, memory (B): 983_256_524
+[2024-07-26T15:03:35Z ERROR benchmarks] VEC RCL - Arity: 3, Time (ms): 7_353, memory (B): 884_155_951
+[2024-07-26T15:03:42Z ERROR benchmarks] BITVECPAR - Arity: 3, Time (ms): 6_238, memory (B): 469_728_660
+[2024-07-26T15:03:48Z ERROR benchmarks] RCL BITVECPAR - Arity: 3, Time (ms): 6_621, memory (B): 370_628_087
+[2024-07-26T15:03:57Z ERROR benchmarks] WEBGRAPH - Arity: 3, Time (ms): 8_386, memory (B): 238_650_044
+[2024-07-26T15:04:05Z ERROR benchmarks] RCL WEBGRAPH - Arity: 3, Time (ms): 8_746, memory (B): 137_098_567
+[2024-07-26T15:04:24Z ERROR benchmarks] OLD - Arity: 3, Time (ms): 17_346, memory (B): 8_583_476_604
+[2024-07-26T15:04:53Z ERROR benchmarks] BITVEC - Arity: 4, Time (ms): 11_564, memory (B): 512_088_952
+[2024-07-26T15:04:53Z ERROR benchmarks] Edges: 144931790, Ngrams: 477806
+[2024-07-26T15:05:03Z ERROR benchmarks] VEC - Arity: 4, Time (ms): 9_173, memory (B): 1_023_223_196
+[2024-07-26T15:05:12Z ERROR benchmarks] VEC RCL - Arity: 4, Time (ms): 9_560, memory (B): 924_122_623
+[2024-07-26T15:05:20Z ERROR benchmarks] BITVECPAR - Arity: 4, Time (ms): 7_330, memory (B): 512_088_952
+[2024-07-26T15:05:27Z ERROR benchmarks] RCL BITVECPAR - Arity: 4, Time (ms): 7_864, memory (B): 412_986_571
+[2024-07-26T15:05:36Z ERROR benchmarks] WEBGRAPH - Arity: 4, Time (ms): 8_114, memory (B): 273_428_552
+[2024-07-26T15:05:44Z ERROR benchmarks] RCL WEBGRAPH - Arity: 4, Time (ms): 8_569, memory (B): 172_012_603
+[2024-07-26T15:06:05Z ERROR benchmarks] OLD - Arity: 4, Time (ms): 19_257, memory (B): 9_036_530_407
+[2024-07-26T15:06:38Z ERROR benchmarks] BITVEC - Arity: 5, Time (ms): 14_398, memory (B): 549_983_888
+[2024-07-26T15:06:38Z ERROR benchmarks] Edges: 150243064, Ngrams: 1982191
+[2024-07-26T15:06:51Z ERROR benchmarks] VEC - Arity: 5, Time (ms): 12_367, memory (B): 1_071_300_272
+[2024-07-26T15:07:03Z ERROR benchmarks] VEC RCL - Arity: 5, Time (ms): 12_051, memory (B): 972_199_699
+[2024-07-26T15:07:12Z ERROR benchmarks] BITVECPAR - Arity: 5, Time (ms): 8_901, memory (B): 549_983_888
+[2024-07-26T15:07:21Z ERROR benchmarks] RCL BITVECPAR - Arity: 5, Time (ms): 9_411, memory (B): 450_882_411
+[2024-07-26T15:07:31Z ERROR benchmarks] WEBGRAPH - Arity: 5, Time (ms): 9_640, memory (B): 311_249_368
+[2024-07-26T15:07:41Z ERROR benchmarks] RCL WEBGRAPH - Arity: 5, Time (ms): 10_334, memory (B): 210_199_091
+[2024-07-26T15:08:03Z ERROR benchmarks] OLD - Arity: 5, Time (ms): 20_775, memory (B): 9_583_720_360
+[2024-07-26T15:08:40Z ERROR benchmarks] BITVEC - Arity: 6, Time (ms): 18_717, memory (B): 595_000_376
+[2024-07-26T15:08:40Z ERROR benchmarks] Edges: 155497150, Ngrams: 4351054
+[2024-07-26T15:08:57Z ERROR benchmarks] VEC - Arity: 6, Time (ms): 16_182, memory (B): 1_131_555_308
+[2024-07-26T15:09:13Z ERROR benchmarks] VEC RCL - Arity: 6, Time (ms): 16_343, memory (B): 1_032_454_735
+[2024-07-26T15:09:23Z ERROR benchmarks] BITVECPAR - Arity: 6, Time (ms): 10_020, memory (B): 595_000_376
+[2024-07-26T15:09:34Z ERROR benchmarks] RCL BITVECPAR - Arity: 6, Time (ms): 10_679, memory (B): 495_900_707
+[2024-07-26T15:09:45Z ERROR benchmarks] WEBGRAPH - Arity: 6, Time (ms): 10_976, memory (B): 353_423_592
+[2024-07-26T15:09:56Z ERROR benchmarks] RCL WEBGRAPH - Arity: 6, Time (ms): 11_314, memory (B): 252_691_291
+[2024-07-26T15:10:20Z ERROR benchmarks] OLD - Arity: 6, Time (ms): 23_200, memory (B): 10_211_711_214
+[2024-07-26T15:11:03Z ERROR benchmarks] BITVEC - Arity: 7, Time (ms): 22_163, memory (B): 626_625_188
+[2024-07-26T15:11:03Z ERROR benchmarks] Edges: 160731872, Ngrams: 6995796
+[2024-07-26T15:11:22Z ERROR benchmarks] VEC - Arity: 7, Time (ms): 18_814, memory (B): 1_199_434_984
+[2024-07-26T15:11:41Z ERROR benchmarks] VEC RCL - Arity: 7, Time (ms): 19_676, memory (B): 1_100_334_411
+[2024-07-26T15:11:53Z ERROR benchmarks] BITVECPAR - Arity: 7, Time (ms): 11_298, memory (B): 626_625_188
+[2024-07-26T15:12:05Z ERROR benchmarks] RCL BITVECPAR - Arity: 7, Time (ms): 12_182, memory (B): 527_523_711
+[2024-07-26T15:12:17Z ERROR benchmarks] WEBGRAPH - Arity: 7, Time (ms): 12_332, memory (B): 400_091_468
+[2024-07-26T15:12:30Z ERROR benchmarks] RCL WEBGRAPH - Arity: 7, Time (ms): 12_943, memory (B): 299_486_287
+[2024-07-26T15:13:00Z ERROR benchmarks] OLD - Arity: 7, Time (ms): 28_108, memory (B): 11_052_721_209
+[2024-07-26T15:13:49Z ERROR benchmarks] BITVEC - Arity: 8, Time (ms): 25_849, memory (B): 675_527_344
+[2024-07-26T15:13:49Z ERROR benchmarks] Edges: 165946588, Ngrams: 9979870
+[2024-07-26T15:14:11Z ERROR benchmarks] VEC - Arity: 8, Time (ms): 21_636, memory (B): 1_276_861_480
+[2024-07-26T15:14:34Z ERROR benchmarks] VEC RCL - Arity: 8, Time (ms): 23_199, memory (B): 1_177_760_907
+[2024-07-26T15:14:46Z ERROR benchmarks] BITVECPAR - Arity: 8, Time (ms): 12_366, memory (B): 675_527_344
+[2024-07-26T15:15:00Z ERROR benchmarks] RCL BITVECPAR - Arity: 8, Time (ms): 13_334, memory (B): 576_426_771
+[2024-07-26T15:15:13Z ERROR benchmarks] WEBGRAPH - Arity: 8, Time (ms): 13_408, memory (B): 455_122_144
+[2024-07-26T15:15:28Z ERROR benchmarks] RCL WEBGRAPH - Arity: 8, Time (ms): 14_427, memory (B): 354_515_979
+[2024-07-26T15:15:59Z ERROR benchmarks] OLD - Arity: 8, Time (ms): 29_409, memory (B): 11_496_992_467

@@ -32,8 +32,21 @@ fn build_rcl() -> RearCodedList {
     rcl_builder.build()
 }
 
+fn new_corpus_vec<NG, B>(
+    keys: B,
+) -> Corpus<B, NG, Lowercase<str>, WeightedVecBipartiteGraph>
+where
+    B: Keys<NG>,
+    NG: Ngram<G = ASCIIChar> + Debug,
+    for<'a> <B as ngrammatic::Keys<NG>>::KeyRef<'a>: AsRef<ngrammatic::Lowercase<str>>,
+{
+    Corpus::from(keys)
+}
+
 /// Returns ngram par-corpus.
-fn new_corpus_bitvec<NG, B>(keys: B) -> Corpus<B, NG, Lowercase<str>>
+fn new_corpus_bitvec<NG, B>(
+    keys: B,
+) -> Corpus<B, NG, Lowercase<str>, WeightedBitFieldBipartiteGraph>
 where
     B: Keys<NG>,
     NG: Ngram<G = ASCIIChar> + Debug,
@@ -53,7 +66,24 @@ where
 }
 
 /// Returns ngram par-corpus.
-fn new_corpus_bitvec_vec<NG>() -> Corpus<Vec<String>, NG, Lowercase<str>>
+fn new_corpus_vec_vec<NG>() -> Corpus<Vec<String>, NG, Lowercase<str>, WeightedVecBipartiteGraph>
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    new_corpus_vec::<NG, Vec<String>>(build_vec())
+}
+
+/// Returns ngram par-corpus.
+fn new_corpus_vec_rcl<NG>() -> Corpus<RearCodedList, NG, Lowercase<str>, WeightedVecBipartiteGraph>
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    new_corpus_vec::<NG, RearCodedList>(build_rcl())
+}
+
+/// Returns ngram par-corpus.
+fn new_corpus_bitvec_vec<NG>(
+) -> Corpus<Vec<String>, NG, Lowercase<str>, WeightedBitFieldBipartiteGraph>
 where
     NG: Ngram<G = ASCIIChar> + Debug,
 {
@@ -61,7 +91,8 @@ where
 }
 
 /// Returns ngram par-corpus.
-fn new_corpus_bitvec_rcl<NG>() -> Corpus<RearCodedList, NG, Lowercase<str>>
+fn new_corpus_bitvec_rcl<NG>(
+) -> Corpus<RearCodedList, NG, Lowercase<str>, WeightedBitFieldBipartiteGraph>
 where
     NG: Ngram<G = ASCIIChar> + Debug,
 {
@@ -262,6 +293,34 @@ where
     tfidf_par_search(b, new_corpus_bitvec_vec::<NG>());
 }
 
+fn ngram_vec_seq_search_vec<NG>(b: &mut Bencher)
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    ngram_seq_search(b, new_corpus_vec_vec::<NG>());
+}
+
+fn tfidf_vec_seq_vec<NG>(b: &mut Bencher)
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    tfidf_seq_search(b, new_corpus_vec_vec::<NG>());
+}
+
+fn ngram_vec_par_search_vec<NG>(b: &mut Bencher)
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    ngram_par_search(b, new_corpus_vec_vec::<NG>());
+}
+
+fn tfidf_vec_par_vec<NG>(b: &mut Bencher)
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    tfidf_par_search(b, new_corpus_vec_vec::<NG>());
+}
+
 fn ngram_webgraph_seq_search_rcl<NG>(b: &mut Bencher)
 where
     NG: Ngram<G = ASCIIChar> + Debug,
@@ -316,6 +375,34 @@ where
     NG: Ngram<G = ASCIIChar> + Debug,
 {
     tfidf_par_search(b, new_corpus_bitvec_rcl::<NG>());
+}
+
+fn ngram_vec_seq_search_rcl<NG>(b: &mut Bencher)
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    ngram_seq_search(b, new_corpus_vec_rcl::<NG>());
+}
+
+fn tfidf_vec_seq_rcl<NG>(b: &mut Bencher)
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    tfidf_seq_search(b, new_corpus_vec_rcl::<NG>());
+}
+
+fn ngram_vec_par_search_rcl<NG>(b: &mut Bencher)
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    ngram_par_search(b, new_corpus_vec_rcl::<NG>());
+}
+
+fn tfidf_vec_par_rcl<NG>(b: &mut Bencher)
+where
+    NG: Ngram<G = ASCIIChar> + Debug,
+{
+    tfidf_par_search(b, new_corpus_vec_rcl::<NG>());
 }
 
 fn ngram_old_seq_search<NG>(b: &mut Bencher)
@@ -421,6 +508,46 @@ macro_rules! make_bench {
             #[bench]
             fn [< $gram _tfidf_bitvec_par_rcl >] (b: &mut Bencher) {
                 tfidf_bitvec_par_rcl::<$ngram_type>(b);
+            }
+
+            #[bench]
+            fn [< $gram _vec_seq_search_vec >] (b: &mut Bencher) {
+                ngram_vec_seq_search_vec::<$ngram_type>(b);
+            }
+
+            #[bench]
+            fn [< $gram _vec_par_search_vec >] (b: &mut Bencher) {
+                ngram_vec_par_search_vec::<$ngram_type>(b);
+            }
+
+            #[bench]
+            fn [< $gram _tfidf_vec_seq_vec >] (b: &mut Bencher) {
+                tfidf_vec_seq_vec::<$ngram_type>(b);
+            }
+
+            #[bench]
+            fn [< $gram _tfidf_vec_par_vec >] (b: &mut Bencher) {
+                tfidf_vec_par_vec::<$ngram_type>(b);
+            }
+
+            #[bench]
+            fn [< $gram _vec_seq_search_rcl >] (b: &mut Bencher) {
+                ngram_vec_seq_search_rcl::<$ngram_type>(b);
+            }
+
+            #[bench]
+            fn [< $gram _vec_par_search_rcl >] (b: &mut Bencher) {
+                ngram_vec_par_search_rcl::<$ngram_type>(b);
+            }
+
+            #[bench]
+            fn [< $gram _tfidf_vec_seq_rcl >] (b: &mut Bencher) {
+                tfidf_vec_seq_rcl::<$ngram_type>(b);
+            }
+
+            #[bench]
+            fn [< $gram _tfidf_vec_par_rcl >] (b: &mut Bencher) {
+                tfidf_vec_par_rcl::<$ngram_type>(b);
             }
 
             #[bench]

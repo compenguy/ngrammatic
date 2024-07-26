@@ -18,7 +18,7 @@ use tempfile::Builder;
 use webgraph::prelude::*;
 use webgraph::cli::get_thread_pool;
 
-use mem_dbg::MemSize;
+use mem_dbg::{MemSize, MemDbg};
 
 #[cfg(feature = "rayon")]
 fn num_threads() -> usize {
@@ -36,22 +36,12 @@ type DecoderFactoryType = DynCodesDecoderFactory<
     epserde::deser::DeserType<'static, webgraph::graphs::bvgraph::EF>,
 >;
 
+#[derive(MemSize, MemDbg)]
 struct LoadedGraph {
     bvgraph: BVGraph<DecoderFactoryType>,
 }
 
-impl MemSize for LoadedGraph {
-    fn mem_size(&self, _flags: mem_dbg::SizeFlags) -> usize {
-        todo!(concat!(
-            "The trait MemSize is not yet implemented for the ",
-            "published version of webgraph. When the new version ",
-            "is published, we can replace this todo with a simple ",
-            "derive of the MemSize and MemDbg traits."
-        ))
-    }
-}
-
-#[derive(MemSize)]
+#[derive(MemSize, MemDbg)]
 /// A weighted bipartite graph implementation based on Webgraph.
 pub struct BiWebgraph {
     /// Webgraph graph.

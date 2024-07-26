@@ -9,6 +9,8 @@ To run the memory benchmarks, navigate to the `benchmarks` directory and run the
 RUST_LOG=error RUSTFLAGS="-C target-cpu=native" cargo run --release
 ```
 
+## Benchmarks 26 July 2024, 05:00 PM
+
 ## Benchmarks 11 April 2024, 02:00 PM
 The ileventh benchmark was run on a 32-core machine (64 threads) with 256 GBs of RAM. We loaded the entirety of the taxons dataset into memory.
 The novelty of this benchmark is to use the Vec data structure of ngrams for the initial indexof conversion, and only afterwards compressing it into an Elias-Fano. This has lead to a massive improvement in construction time, while not impacting the memory requirements of the built corpus.

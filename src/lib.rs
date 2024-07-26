@@ -14,6 +14,7 @@ pub mod search;
 pub use adaptative_vector::*;
 pub mod animals;
 pub mod bit_field_bipartite_graph;
+pub mod vec_bipartite_graph;
 pub mod corpus_from;
 pub mod lender_bit_field_bipartite_graph;
 pub mod ngram_search;
@@ -44,6 +45,8 @@ pub mod prelude {
     pub use crate::search::*;
     pub use crate::tfidf::*;
     pub use sux::dict::rear_coded_list::{RearCodedList, RearCodedListBuilder};
+    pub use crate::bit_field_bipartite_graph::*;
+    pub use crate::vec_bipartite_graph::*;
 
     #[cfg(feature = "trie-rs")]
     pub use trie_rs::Trie;

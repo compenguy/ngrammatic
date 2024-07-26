@@ -41,9 +41,57 @@ fn build_rcl() -> RearCodedList {
     rcl_builder.build()
 }
 
+#[cfg(feature = "trie-rs")]
 /// Returns the built trie
 fn build_trie() -> Trie<u8> {
     Trie::from_iter(iter_taxons())
+}
+
+fn load_corpus_vec_new<NG>() -> Corpus<Vec<String>, NG, Lowercase<str>, WeightedVecBipartiteGraph>
+where
+    NG: Ngram<G = ASCIIChar>,
+{
+    let start_time = std::time::Instant::now();
+    let taxons: Vec<String> = iter_taxons().collect();
+    let corpus: Corpus<Vec<String>, NG, Lowercase<str>, WeightedVecBipartiteGraph> = Corpus::from(taxons);
+
+    let end_time = std::time::Instant::now();
+    let duration: usize = (end_time - start_time).as_millis() as usize;
+
+    // While this is a simple info message, we use the error flag so that the log will
+    // not get polluted by the log messages of the other dependencies which can, at times
+    // be quite significant.
+    log::error!(
+        "VEC - Arity: {}, Time (ms): {}, memory (B): {}",
+        NG::ARITY,
+        duration.underscored(),
+        corpus.mem_size(SizeFlags::default()).underscored()
+    );
+
+    corpus
+}
+
+fn load_corpus_vec_rcl<NG>() -> Corpus<RearCodedList, NG, Lowercase<str>, WeightedVecBipartiteGraph>
+where
+    NG: Ngram<G = ASCIIChar>,
+{
+    let start_time = std::time::Instant::now();
+    let corpus: Corpus<RearCodedList, NG, Lowercase<str>, WeightedVecBipartiteGraph> = Corpus::from(build_rcl());
+
+    let end_time = std::time::Instant::now();
+    let duration: usize = (end_time - start_time).as_millis() as usize;
+
+    // While this is a simple info message, we use the error flag so that the log will
+    // not get polluted by the log messages of the other dependencies which can, at times
+    // be quite significant.
+    log::error!(
+        "VEC RCL - Arity: {}, Time (ms): {}, memory (B): {}",
+        NG::ARITY,
+        duration.underscored(),
+        corpus.mem_size(SizeFlags::default()).underscored()
+    );
+
+    corpus
 }
 
 fn load_corpus_new<NG>() -> Corpus<Vec<String>, NG, Lowercase<str>>
@@ -61,7 +109,7 @@ where
     // not get polluted by the log messages of the other dependencies which can, at times
     // be quite significant.
     log::error!(
-        "NEW - Arity: {}, Time (ms): {}, memory (B): {}",
+        "BITVEC - Arity: {}, Time (ms): {}, memory (B): {}",
         NG::ARITY,
         duration.underscored(),
         corpus.mem_size(SizeFlags::default()).underscored()
@@ -85,7 +133,7 @@ where
     // not get polluted by the log messages of the other dependencies which can, at times
     // be quite significant.
     log::error!(
-        "NEWPAR - Arity: {}, Time (ms): {}, memory (B): {}",
+        "BITVECPAR - Arity: {}, Time (ms): {}, memory (B): {}",
         NG::ARITY,
         duration.underscored(),
         corpus.mem_size(SizeFlags::default()).underscored(),
@@ -106,13 +154,14 @@ where
     // not get polluted by the log messages of the other dependencies which can, at times
     // be quite significant.
     log::error!(
-        "RCL NEWPAR - Arity: {}, Time (ms): {}, memory (B): {}",
+        "RCL BITVECPAR - Arity: {}, Time (ms): {}, memory (B): {}",
         NG::ARITY,
         duration.underscored(),
         corpus.mem_size(SizeFlags::default()).underscored(),
     );
 }
 
+#[cfg(feature = "trie-rs")]
 fn load_corpus_trie_par_new<NG>() -> Corpus<Trie<u8>, NG, Lowercase<str>>
 where
     NG: Ngram<G = ASCIIChar>,
@@ -127,7 +176,7 @@ where
     // not get polluted by the log messages of the other dependencies which can, at times
     // be quite significant.
     log::error!(
-        "TRIE NEWPAR - Arity: {}, Time (ms): {}, memory (B): {}",
+        "TRIE BITVECPAR - Arity: {}, Time (ms): {}, memory (B): {}",
         NG::ARITY,
         duration.underscored(),
         corpus.mem_size(SizeFlags::default()).underscored(),
@@ -239,23 +288,25 @@ where
         corpus.graph().number_of_edges() * 2,
         corpus.number_of_ngrams()
     );
+    load_corpus_vec_new::<NG>();
+    load_corpus_vec_rcl::<NG>();
     load_corpus_par_new::<NG>();
     load_corpus_rcl_par_new::<NG>();
-    log::warn!("The webgraph benchmarks are skipped because the necessary version of the webgraph crate is not available.");
-    // load_corpus_webgraph::<NG>();
-    // load_corpus_rcl_webgraph::<NG>();
+    load_corpus_webgraph::<NG>();
+    load_corpus_rcl_webgraph::<NG>();
+    #[cfg(feature = "trie-rs")]
     load_corpus_trie_par_new::<NG>();
     load_corpus_old(NG::ARITY);
 }
 
 fn main() {
     env_logger::builder().try_init().unwrap();
-    // experiment::<UniGram<ASCIIChar>>();
-    // experiment::<BiGram<ASCIIChar>>();
+    experiment::<UniGram<ASCIIChar>>();
+    experiment::<BiGram<ASCIIChar>>();
     experiment::<TriGram<ASCIIChar>>();
-    // experiment::<TetraGram<ASCIIChar>>();
-    // experiment::<PentaGram<ASCIIChar>>();
-    // experiment::<HexaGram<ASCIIChar>>();
-    // experiment::<HeptaGram<ASCIIChar>>();
-    // experiment::<OctaGram<ASCIIChar>>();
+    experiment::<TetraGram<ASCIIChar>>();
+    experiment::<PentaGram<ASCIIChar>>();
+    experiment::<HexaGram<ASCIIChar>>();
+    experiment::<HeptaGram<ASCIIChar>>();
+    experiment::<OctaGram<ASCIIChar>>();
 }

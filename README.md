@@ -47,6 +47,29 @@ for search_result in search_results {
 }
 ```
 
+To use a different graph data structure such as the `WeightedVecBipartiteGraph`, you can use the following code:
+
+```rust
+use ngrammatic::prelude::*;
+
+let corpus: Corpus<[&str; 699], TriGram<char>, Lowercase<str>, WeightedVecBipartiteGraph> = Corpus::from(ANIMALS);
+
+// We setup the search configuration
+let search_config = NgramSearchConfig::default()
+    .set_minimum_similarity_score(0.3).unwrap()
+    .set_maximum_number_of_results(5);
+
+// We search for a word similar to "catt"
+let search_results: Vec<SearchResult<&&str, f32>> = corpus.ngram_search("Cattos", search_config);
+
+assert!(!search_results.is_empty());
+
+// We print the search results
+for search_result in search_results {
+    println!("{}: {}", search_result.key(), search_result.score());
+}
+```
+
 ### Text normalization
 Natural language processing is notoriously difficult, and one of the first steps is to normalize the text. You can add any normalization you want by creating new struct markers that implement [`std::convert::AsRef`] to the type of the keys you want to use, which may be for instance [`str`] or [`String`]. In this case, we use the [`Lowercase`] struct marker to normalize the text to lowercase. By default, text represented in [`str`] or [`String`] is padded with [`NULL`](https://theasciicode.com.ar/ascii-control-characters/null-character-ascii-code-0.html) characters to ensure that the n-grams minimum length is respected by default, we drop all non-alphanumeric characters, remove duplicated spaces and trim both spaces and [`NULL`](https://theasciicode.com.ar/ascii-control-characters/null-character-ascii-code-0.html) characters from the sides of the text. You can use struct markers to customize the normalization process to remove or add any other normalization steps you may need.
 
