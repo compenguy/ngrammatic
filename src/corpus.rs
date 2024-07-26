@@ -539,16 +539,10 @@ where
     ///     let number_of_keys_from_ngram = animals.number_of_keys_from_ngram(ngram);
     ///     assert_eq!(
     ///         Some(animals.number_of_keys_from_ngram_id(ngram_id)),
-    ///         number_of_keys_from_ngram,
-    ///         "number of expected keys from ngram {:?} is not equal to the number of keys from ngram id {:?}",
-    ///         number_of_keys_from_ngram,
-    ///         Some(animals.number_of_keys_from_ngram_id(ngram_id))
+    ///         number_of_keys_from_ngram
     ///     );
     ///     let keys_iterator = animals.keys_from_ngram(ngram).unwrap();
     ///     assert_eq!(
-    ///         keys_iterator.len(),
-    ///         animals.number_of_keys_from_ngram(ngram).unwrap(),
-    ///         "number of keys from ngram {:?} is not equal to the number of keys from ngram id {:?}",
     ///         keys_iterator.len(),
     ///         animals.number_of_keys_from_ngram(ngram).unwrap()
     ///     );
