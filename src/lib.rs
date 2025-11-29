@@ -55,7 +55,15 @@ use std::collections::HashSet;
 use std::f32;
 use std::hash::{Hash, Hasher};
 
-use fast_radix_trie::StringRadixMap;
+// Select StringMap implementation between StringRadixMap<T> and HashMap<String, T>
+/// StringRadixMap used for tying ngrams to words and words to counts/ngrams
+#[cfg(feature = "trie")]
+pub use fast_radix_trie::StringRadixMap as StringMap;
+#[cfg(not(feature = "trie"))]
+use std::collections::HashMap;
+/// HashMap used for tying ngrams to words and words to counts/ngrams
+#[cfg(not(feature = "trie"))]
+pub type StringMap<T> = HashMap<String, T>;
 
 /// Holds a fuzzy match search result string, and its associated similarity
 /// to the query text.
@@ -143,7 +151,7 @@ pub struct Ngram {
     pub text_padded: String,
     /// A collection of all generated ngrams for the text, with a
     /// count of how many times that ngram appears in the text
-    pub grams: StringRadixMap<usize>,
+    pub grams: StringMap<usize>,
 }
 
 impl PartialEq for Ngram {
@@ -456,7 +464,7 @@ impl NgramBuilder {
             arity: self.arity,
             text: self.text.clone(),
             text_padded: Pad::pad_text(&self.text, self.pad_left, self.pad_right, self.arity - 1),
-            grams: StringRadixMap::new(),
+            grams: StringMap::new(),
         };
         ngram.init();
         ngram
@@ -469,8 +477,8 @@ pub struct Corpus {
     arity: usize,
     pad_left: Pad,
     pad_right: Pad,
-    ngrams: StringRadixMap<Ngram>,
-    gram_to_words: StringRadixMap<Vec<String>>,
+    ngrams: StringMap<Ngram>,
+    gram_to_words: StringMap<Vec<String>>,
     key_trans: Box<dyn Fn(&str) -> String + Send + Sync>,
 }
 
@@ -506,7 +514,7 @@ impl Corpus {
     /// ```
     #[allow(dead_code)]
     pub fn add_ngram(&mut self, ngram: Ngram) {
-        self.ngrams.insert(&ngram.text, ngram.clone());
+        self._insert(&ngram);
         for gram in ngram.grams.keys() {
             let ngram_list = self
                 .gram_to_words
@@ -514,6 +522,18 @@ impl Corpus {
                 .or_insert_with(Vec::new);
             ngram_list.push(ngram.text.to_string());
         }
+    }
+
+    /// Internal helper function to ease switching between HashMap and StringRadixTrie
+    #[cfg(feature = "trie")]
+    fn _insert(&mut self, ngram: &Ngram) {
+        self.ngrams.insert(&ngram.text, ngram.clone());
+    }
+
+    /// Internal helper function to ease switching between HashMap and StringRadixTrie
+    #[cfg(not(feature = "trie"))]
+    fn _insert(&mut self, ngram: &Ngram) {
+        self.ngrams.insert(ngram.text.to_string(), ngram.clone());
     }
 
     /// Generate an `Ngram` for the supplied `text`, and add it to the
@@ -556,8 +576,22 @@ impl Corpus {
     /// `Corpus` index, after processing it with the `Corpus`'s `key_trans`
     /// function.
     #[allow(dead_code)]
+    #[cfg(feature = "trie")]
     pub fn key(&self, text: &str) -> Option<String> {
         if self.ngrams.contains_key((self.key_trans)(text)) {
+            Some(text.to_string())
+        } else {
+            None
+        }
+    }
+
+    /// Determines whether an exact match exists for the supplied `text` in the
+    /// `Corpus` index, after processing it with the `Corpus`'s `key_trans`
+    /// function.
+    #[allow(dead_code)]
+    #[cfg(not(feature = "trie"))]
+    pub fn key(&self, text: &str) -> Option<String> {
+        if self.ngrams.contains_key(&(self.key_trans)(text)) {
             Some(text.to_string())
         } else {
             None
@@ -768,8 +802,8 @@ impl CorpusBuilder {
     pub fn finish(self) -> Corpus {
         let mut corpus = Corpus {
             arity: self.arity,
-            ngrams: StringRadixMap::new(),
-            gram_to_words: StringRadixMap::new(),
+            ngrams: StringMap::new(),
+            gram_to_words: StringMap::new(),
             pad_left: self.pad_left,
             pad_right: self.pad_right,
             key_trans: self.key_trans,

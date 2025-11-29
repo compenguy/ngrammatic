@@ -1,6 +1,6 @@
 [package]
 name = "ngrammatic"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Will Page <compenguy@gmail.com>"]
 description = "Character-oriented ngram generator and fuzzy matching library."
 homepage = "https://github.com/compenguy/ngrammatic"
@@ -13,11 +13,15 @@ license = "MIT"
 edition = "2021"
 rust-version = "1.61"
 
+[features]
+default = []
+trie = ["dep:fast_radix_trie"]
+
 [lib]
 name = "ngrammatic"
 
 [dependencies]
-fast_radix_trie = "1.1"
+fast_radix_trie = { version = "1.1", optional = true }
 
 [package.metadata]
 msrv = "1.27.2"

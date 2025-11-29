@@ -18,7 +18,14 @@ To use it, add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-ngrammatic = "0.3.4"
+ngrammatic = "0.4.1"
+```
+
+Or, to reduce memory usage for large corpuses, enable the "trie" feature:
+
+```toml
+[dependencies]
+ngrammatic = { version = "0.4.1", features = ["trie"] }
 ```
 
 ### Usage
