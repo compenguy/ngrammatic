@@ -65,6 +65,12 @@ use std::collections::HashMap;
 #[cfg(not(feature = "trie"))]
 pub type StringMap<T> = HashMap<String, T>;
 
+// Import traits for rayon parallelization
+#[cfg(feature = "rayon")]
+use rayon::iter::{
+    IntoParallelIterator, IntoParallelRefIterator, ParallelExtend, ParallelIterator,
+};
+
 /// Holds a fuzzy match search result string, and its associated similarity
 /// to the query text.
 #[derive(Debug, Clone)]
@@ -513,6 +519,7 @@ impl Corpus {
     /// # }
     /// ```
     #[allow(dead_code)]
+    #[allow(clippy::unwrap_or_default)]
     pub fn add_ngram(&mut self, ngram: Ngram) {
         self._insert(&ngram);
         for gram in ngram.grams.keys() {
@@ -619,6 +626,28 @@ impl Corpus {
         self.search_with_warp(text, 2.0, threshold)
     }
 
+    /// Perform a parallelized fuzzy search of the `Corpus` for `Ngrams` above
+    /// some `threshold` of similarity to the supplied `text`.  Returns up to
+    /// 10 results, sorted by highest similarity to lowest.
+    /// ```rust
+    /// # use ngrammatic::CorpusBuilder;
+    /// # fn main() {
+    /// let mut corpus = CorpusBuilder::new().finish();
+    /// corpus.add_text("tomato");
+    /// let results = corpus.search_par("tomacco", 0.40);
+    /// if let Some(result) = results.first() {
+    ///     println!("Closest match to 'tomacco' in the corpus was {}", result.text);
+    /// } else {
+    ///     println!("The corpus contained no words similar to 'tomacco'.");
+    /// }
+    /// # }
+    /// ```
+    #[allow(dead_code)]
+    #[cfg(feature = "rayon")]
+    pub fn search_par(&self, text: &str, threshold: f32) -> Vec<SearchResult> {
+        self.search_with_warp_par(text, 2.0, threshold)
+    }
+
     /// Perform a fuzzy search of the `Corpus` for `Ngrams` with a custom `warp` for
     /// results above some `threshold` of similarity to the supplied `text`.  Returns
     /// up to 10 results, sorted by highest similarity to lowest.
@@ -642,13 +671,13 @@ impl Corpus {
             .pad_left(self.pad_left.clone())
             .pad_right(self.pad_right.clone())
             .finish();
-        let mut ngrams_to_consider: HashSet<&Ngram> = HashSet::new();
-        for gram in item.grams.keys() {
-            if let Some(words) = self.gram_to_words.get(gram) {
-                // Fetch ngrams from raw words
-                ngrams_to_consider.extend(words.iter().filter_map(|word| self.ngrams.get(word)));
-            }
-        }
+        let grams: Vec<_> = item.grams.keys().collect();
+        let ngrams_to_consider: HashSet<&Ngram> = grams
+            .into_iter()
+            .filter_map(|gram| self.gram_to_words.get(gram))
+            // Fetch ngrams from raw words
+            .flat_map(|words| words.iter().filter_map(|word| self.ngrams.get(word)))
+            .collect();
         let mut results: Vec<SearchResult> = ngrams_to_consider
             .iter()
             .filter_map(|n| item.matches_with_warp(n, warp, threshold))
@@ -656,6 +685,47 @@ impl Corpus {
 
         // Sort highest similarity to lowest
         results.sort_by(|a, b| b.partial_cmp(a).unwrap());
+        results.truncate(10);
+        results
+    }
+
+    /// Perform a parallelized fuzzy search of the `Corpus` for `Ngrams` with a custom
+    /// `warp` for results above some `threshold` of similarity to the supplied `text`.
+    /// Returns up to 10 results, sorted by highest similarity to lowest.
+    /// ```rust
+    /// # use ngrammatic::CorpusBuilder;
+    /// # fn main() {
+    /// let mut corpus = CorpusBuilder::new().finish();
+    /// corpus.add_text("tomato");
+    /// let results = corpus.search_with_warp_par("tomacco", 2.0, 0.40);
+    /// if let Some(result) = results.first() {
+    ///     println!("Closest match to 'tomacco' in the corpus was {}", result.text);
+    /// } else {
+    ///     println!("The corpus contained no words similar to 'tomacco'.");
+    /// }
+    /// # }
+    /// ```
+    #[allow(dead_code)]
+    #[cfg(feature = "rayon")]
+    pub fn search_with_warp_par(&self, text: &str, warp: f32, threshold: f32) -> Vec<SearchResult> {
+        let item = NgramBuilder::new(&(self.key_trans)(text))
+            .arity(self.arity)
+            .pad_left(self.pad_left.clone())
+            .pad_right(self.pad_right.clone())
+            .finish();
+        let grams: Vec<_> = item.grams.keys().collect();
+        let ngrams_to_consider: HashSet<&Ngram> = grams
+            .par_iter()
+            .filter_map(|gram| self.gram_to_words.get(gram.as_str()))
+            .flat_map(|words| words.par_iter().filter_map(|word| self.ngrams.get(word)))
+            .collect();
+        let mut results: Vec<SearchResult> = ngrams_to_consider
+            .into_par_iter()
+            .filter_map(|n| item.matches_with_warp(n, warp, threshold))
+            .collect();
+
+        // Sort highest similarity to lowest
+        results.par_sort_by(|a, b| b.partial_cmp(a).unwrap());
         results.truncate(10);
         results
     }
@@ -754,6 +824,19 @@ impl CorpusBuilder {
         It::Item: Into<String>,
     {
         self.texts.extend(iterable.into_iter().map(<_>::into));
+        self
+    }
+
+    /// Provide an iterator that will be parallelized that yields strings to
+    /// be added to the `Corpus`.
+    #[cfg(feature = "rayon")]
+    pub fn fill_par<FillIt>(mut self, iterable: FillIt) -> Self
+    where
+        FillIt: IntoIterator + rayon::iter::IntoParallelIterator,
+        String: From<<FillIt as rayon::iter::IntoParallelIterator>::Item>,
+    {
+        self.texts
+            .par_extend(iterable.into_par_iter().map(<_>::into));
         self
     }
 

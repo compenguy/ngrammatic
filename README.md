@@ -28,6 +28,9 @@ Or, to reduce memory usage for large corpuses, enable the "trie" feature:
 ngrammatic = { version = "0.4.1", features = ["trie"] }
 ```
 
+Additionally, the `rayon` feature is available which may improve performance
+some, but this has not yet been tested.
+
 ### Usage
 To do fuzzy matching, build up your corpus of valid symbols like this:
 
