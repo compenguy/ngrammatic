@@ -10,11 +10,14 @@ readme = "README.md"
 categories = ["text-processing"]
 keywords = ["fuzzy", "ngrams", "shingles"]
 license = "MIT"
+edition = "2021"
+rust-version = "1.61"
 
 [lib]
 name = "ngrammatic"
 
 [dependencies]
+fast_radix_trie = "1.1"
 
 [package.metadata]
 msrv = "1.27.2"

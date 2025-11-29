@@ -51,9 +51,11 @@ assert_eq!(top_match.unwrap().text,String::from("tomato"));
 #![deny(missing_docs)]
 
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::f32;
 use std::hash::{Hash, Hasher};
+
+use fast_radix_trie::StringRadixMap;
 
 /// Holds a fuzzy match search result string, and its associated similarity
 /// to the query text.
@@ -141,7 +143,7 @@ pub struct Ngram {
     pub text_padded: String,
     /// A collection of all generated ngrams for the text, with a
     /// count of how many times that ngram appears in the text
-    pub grams: HashMap<String, usize>,
+    pub grams: StringRadixMap<usize>,
 }
 
 impl PartialEq for Ngram {
@@ -169,7 +171,7 @@ impl Ngram {
     /// Static method to calculate `Ngram` similarity based on samegram count,
     /// allgram count, and a `warp` factor.
     pub(crate) fn similarity(samegram_count: usize, allgram_count: usize, warp: f32) -> f32 {
-        let warp = warp.max(1.0).min(3.0);
+        let warp = warp.clamp(1.0, 3.0);
         let samegrams = samegram_count as f32;
         let allgrams = allgram_count as f32;
         if (warp - 1.0).abs() < 0.0000000001 {
@@ -192,7 +194,7 @@ impl Ngram {
     /// # }
     /// ```
     pub fn similarity_to(&self, other: &Ngram, warp: f32) -> f32 {
-        let warp = warp.max(1.0).min(3.0);
+        let warp = warp.clamp(1.0, 3.0);
         let samegram_count = self.count_samegrams(other);
         let allgram_count = self.count_allgrams(other);
         Ngram::similarity(samegram_count, allgram_count, warp)
@@ -330,7 +332,10 @@ impl Ngram {
         }
         let chars_padded: Vec<char> = self.text_padded.chars().collect();
         for window in chars_padded.windows(self.arity) {
-            let count = self.grams.entry(window.iter().collect()).or_insert(0);
+            let count = self
+                .grams
+                .entry(window.iter().collect::<String>())
+                .or_insert(0);
             *count += 1;
         }
     }
@@ -451,7 +456,7 @@ impl NgramBuilder {
             arity: self.arity,
             text: self.text.clone(),
             text_padded: Pad::pad_text(&self.text, self.pad_left, self.pad_right, self.arity - 1),
-            grams: HashMap::new(),
+            grams: StringRadixMap::new(),
         };
         ngram.init();
         ngram
@@ -464,8 +469,8 @@ pub struct Corpus {
     arity: usize,
     pad_left: Pad,
     pad_right: Pad,
-    ngrams: HashMap<String, Ngram>,
-    gram_to_words: HashMap<String, Vec<String>>,
+    ngrams: StringRadixMap<Ngram>,
+    gram_to_words: StringRadixMap<Vec<String>>,
     key_trans: Box<dyn Fn(&str) -> String + Send + Sync>,
 }
 
@@ -501,7 +506,7 @@ impl Corpus {
     /// ```
     #[allow(dead_code)]
     pub fn add_ngram(&mut self, ngram: Ngram) {
-        self.ngrams.insert(ngram.text.to_string(), ngram.clone());
+        self.ngrams.insert(&ngram.text, ngram.clone());
         for gram in ngram.grams.keys() {
             let ngram_list = self
                 .gram_to_words
@@ -552,7 +557,7 @@ impl Corpus {
     /// function.
     #[allow(dead_code)]
     pub fn key(&self, text: &str) -> Option<String> {
-        if self.ngrams.contains_key(&(self.key_trans)(text)) {
+        if self.ngrams.contains_key((self.key_trans)(text)) {
             Some(text.to_string())
         } else {
             None
@@ -763,8 +768,8 @@ impl CorpusBuilder {
     pub fn finish(self) -> Corpus {
         let mut corpus = Corpus {
             arity: self.arity,
-            ngrams: HashMap::new(),
-            gram_to_words: HashMap::new(),
+            ngrams: StringRadixMap::new(),
+            gram_to_words: StringRadixMap::new(),
             pad_left: self.pad_left,
             pad_right: self.pad_right,
             key_trans: self.key_trans,
