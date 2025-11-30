@@ -25,7 +25,7 @@ fn get_domains() -> Vec<&'static str> {
 fn build_corpus<It>(words: It) -> ngrammatic::Corpus
 where
     It: IntoIterator,
-    It::Item: Into<String>,
+    It::Item: AsRef<str>,
 {
     ngrammatic::CorpusBuilder::new()
         .arity(2)
@@ -111,7 +111,7 @@ fn bench_get_novel(c: &mut Criterion) {
 
     group.bench_function("serial search of novel", |b| {
         b.iter(|| {
-            corpus.search_par("ToMaTo", 0.90);
+            corpus.search("ToMaTo", 0.90);
         });
     });
 
@@ -131,7 +131,7 @@ fn bench_get_random(c: &mut Criterion) {
 
     group.bench_function("serial search of random text", |b| {
         b.iter(|| {
-            corpus.search_par("ToMaTo", 0.90);
+            corpus.search("ToMaTo", 0.90);
         });
     });
 
@@ -151,7 +151,7 @@ fn bench_get_domainnames(c: &mut Criterion) {
 
     group.bench_function("serial search of domain names", |b| {
         b.iter(|| {
-            corpus.search_par("ToMaTo", 0.90);
+            corpus.search("ToMaTo", 0.90);
         });
     });
 

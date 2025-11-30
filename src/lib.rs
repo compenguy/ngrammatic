@@ -51,25 +51,17 @@ assert_eq!(top_match.unwrap().text,String::from("tomato"));
 #![deny(missing_docs)]
 
 use std::cmp::Ordering;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::f32;
 use std::hash::{Hash, Hasher};
 
-// Select StringMap implementation between StringRadixMap<T> and HashMap<String, T>
-/// StringRadixMap used for tying ngrams to words and words to counts/ngrams
-#[cfg(feature = "trie")]
-pub use fast_radix_trie::StringRadixMap as StringMap;
-#[cfg(not(feature = "trie"))]
-use std::collections::HashMap;
-/// HashMap used for tying ngrams to words and words to counts/ngrams
-#[cfg(not(feature = "trie"))]
-pub type StringMap<T> = HashMap<String, T>;
+use string_interner::{DefaultBackend, DefaultSymbol, StringInterner};
 
 // Import traits for rayon parallelization
 #[cfg(feature = "rayon")]
 use rayon::{
-    iter::IntoParallelIterator, iter::IntoParallelRefIterator, iter::ParallelExtend,
-    iter::ParallelIterator, slice::ParallelSliceMut,
+    iter::IntoParallelIterator, iter::IntoParallelRefIterator, iter::ParallelIterator,
+    slice::ParallelSliceMut,
 };
 
 /// Holds a fuzzy match search result string, and its associated similarity
@@ -161,7 +153,10 @@ pub struct Ngram {
     pub text_padded: String,
     /// A collection of all generated ngrams for the text, with a
     /// count of how many times that ngram appears in the text
-    pub grams: StringMap<usize>,
+    // TODO: this should benefit from const generics, as a [u8; arity]
+    // significantly reducing overhead
+    // to a size of `arity` bytes, which is typically pretty small
+    pub grams: HashMap<String, usize>,
 }
 
 impl PartialEq for Ngram {
@@ -477,7 +472,7 @@ impl NgramBuilder {
             arity: self.arity,
             text: self.text.clone(),
             text_padded: Pad::pad_text(&self.text, self.pad_left, self.pad_right, self.arity - 1),
-            grams: StringMap::new(),
+            grams: HashMap::new(),
         };
         ngram.init();
         ngram
@@ -490,8 +485,9 @@ pub struct Corpus {
     arity: usize,
     pad_left: Pad,
     pad_right: Pad,
-    ngrams: StringMap<Ngram>,
-    gram_to_words: StringMap<Vec<String>>,
+    strings: StringInterner<DefaultBackend>,
+    ngrams: HashMap<DefaultSymbol, Ngram>,
+    gram_to_words: HashMap<DefaultSymbol, Vec<DefaultSymbol>>,
     key_trans: Box<dyn Fn(&str) -> String + Send + Sync>,
 }
 
@@ -528,26 +524,15 @@ impl Corpus {
     #[allow(dead_code)]
     #[allow(clippy::unwrap_or_default)]
     pub fn add_ngram(&mut self, ngram: Ngram) {
-        self._insert(&ngram);
-        for gram in ngram.grams.keys() {
-            let ngram_list = self
-                .gram_to_words
-                .entry(gram.clone())
-                .or_insert_with(Vec::new);
-            ngram_list.push(ngram.text.to_string());
+        let word_sym = self.strings.get_or_intern(ngram.text.as_str());
+        self.ngrams.insert(word_sym, ngram.clone());
+        for gram_str in ngram.grams.keys() {
+            let gram_sym = self.strings.get_or_intern(gram_str.as_str());
+            self.gram_to_words
+                .entry(gram_sym)
+                .or_insert_with(Vec::new)
+                .push(word_sym);
         }
-    }
-
-    /// Internal helper function to ease switching between HashMap and StringRadixTrie
-    #[cfg(feature = "trie")]
-    fn _insert(&mut self, ngram: &Ngram) {
-        self.ngrams.insert(&ngram.text, ngram.clone());
-    }
-
-    /// Internal helper function to ease switching between HashMap and StringRadixTrie
-    #[cfg(not(feature = "trie"))]
-    fn _insert(&mut self, ngram: &Ngram) {
-        self.ngrams.insert(ngram.text.to_string(), ngram.clone());
     }
 
     /// Generate an `Ngram` for the supplied `text`, and add it to the
@@ -590,26 +575,12 @@ impl Corpus {
     /// `Corpus` index, after processing it with the `Corpus`'s `key_trans`
     /// function.
     #[allow(dead_code)]
-    #[cfg(feature = "trie")]
     pub fn key(&self, text: &str) -> Option<String> {
-        if self.ngrams.contains_key((self.key_trans)(text)) {
-            Some(text.to_string())
-        } else {
-            None
-        }
-    }
-
-    /// Determines whether an exact match exists for the supplied `text` in the
-    /// `Corpus` index, after processing it with the `Corpus`'s `key_trans`
-    /// function.
-    #[allow(dead_code)]
-    #[cfg(not(feature = "trie"))]
-    pub fn key(&self, text: &str) -> Option<String> {
-        if self.ngrams.contains_key(&(self.key_trans)(text)) {
-            Some(text.to_string())
-        } else {
-            None
-        }
+        let transformed = (self.key_trans)(text);
+        self.strings
+            .get(transformed.as_str())
+            .and_then(|sym| self.ngrams.get(&sym))
+            .map(|_| text.to_string())
     }
 
     /// Perform a fuzzy search of the `Corpus` for `Ngrams` above some
@@ -678,12 +649,13 @@ impl Corpus {
             .pad_left(self.pad_left.clone())
             .pad_right(self.pad_right.clone())
             .finish();
-        let grams: Vec<_> = item.grams.keys().collect();
-        let ngrams_to_consider: HashSet<&Ngram> = grams
-            .into_iter()
-            .filter_map(|gram| self.gram_to_words.get(gram))
+        let ngrams_to_consider: HashSet<&Ngram> = item
+            .grams
+            .keys()
+            .filter_map(|gram_str| self.strings.get(gram_str.as_str()))
+            .filter_map(|gram_sym| self.gram_to_words.get(&gram_sym))
             // Fetch ngrams from raw words
-            .flat_map(|words| words.iter().filter_map(|word| self.ngrams.get(word)))
+            .flat_map(|word_syms| word_syms.iter().filter_map(|ws| self.ngrams.get(ws)))
             .collect();
         let mut results: Vec<SearchResult> = ngrams_to_consider
             .iter()
@@ -720,11 +692,14 @@ impl Corpus {
             .pad_left(self.pad_left.clone())
             .pad_right(self.pad_right.clone())
             .finish();
-        let grams: Vec<_> = item.grams.keys().collect();
-        let ngrams_to_consider: HashSet<&Ngram> = grams
+        let ngrams_to_consider: HashSet<&Ngram> = item
+            .grams
+            .keys()
+            .collect::<Vec<_>>()
             .par_iter()
-            .filter_map(|gram| self.gram_to_words.get(gram.as_str()))
-            .flat_map_iter(|words| words.iter().filter_map(|word| self.ngrams.get(word)))
+            .filter_map(|gram_str| self.strings.get(gram_str.as_str()))
+            .filter_map(|gram_sym| self.gram_to_words.get(&gram_sym))
+            .flat_map_iter(|word_syms| word_syms.iter().filter_map(|ws| self.ngrams.get(ws)))
             .collect();
         let mut results: Vec<SearchResult> = ngrams_to_consider
             .into_par_iter()
@@ -746,7 +721,8 @@ pub struct CorpusBuilder {
     arity: usize,
     pad_left: Pad,
     pad_right: Pad,
-    texts: Vec<String>,
+    strings: StringInterner<DefaultBackend>,
+    texts: Vec<DefaultSymbol>,
     key_trans: Box<dyn Fn(&str) -> String + Send + Sync>,
 }
 
@@ -793,6 +769,7 @@ impl CorpusBuilder {
             arity: 2,
             pad_left: Pad::Auto,
             pad_right: Pad::Auto,
+            strings: StringInterner::default(),
             texts: Vec::new(),
             key_trans: Box::new(|x| x.into()),
         }
@@ -828,9 +805,9 @@ impl CorpusBuilder {
     pub fn fill<It>(mut self, iterable: It) -> Self
     where
         It: IntoIterator,
-        It::Item: Into<String>,
+        It::Item: AsRef<str>,
     {
-        self.texts.extend(iterable.into_iter().map(<_>::into));
+        self.texts.extend(iterable.into_iter().map(|s| self.strings.get_or_intern(s.as_ref())));
         self
     }
 
@@ -839,11 +816,12 @@ impl CorpusBuilder {
     #[cfg(feature = "rayon")]
     pub fn fill_par<FillIt>(mut self, iterable: FillIt) -> Self
     where
-        FillIt: IntoIterator + rayon::iter::IntoParallelIterator,
-        String: From<<FillIt as rayon::iter::IntoParallelIterator>::Item>,
+        FillIt: rayon::iter::IntoParallelIterator,
+        String: From<<FillIt as IntoParallelIterator>::Item>
     {
+        let tmp: Vec<String> = iterable.into_par_iter().map(<_>::into).collect();
         self.texts
-            .par_extend(iterable.into_par_iter().map(<_>::into));
+            .extend(tmp.into_iter().map(|s| self.strings.get_or_intern(s)));
         self
     }
 
@@ -892,14 +870,17 @@ impl CorpusBuilder {
     pub fn finish(self) -> Corpus {
         let mut corpus = Corpus {
             arity: self.arity,
-            ngrams: StringMap::new(),
-            gram_to_words: StringMap::new(),
+            ngrams: HashMap::new(),
+            gram_to_words: HashMap::new(),
+            strings: self.strings,
             pad_left: self.pad_left,
             pad_right: self.pad_right,
             key_trans: self.key_trans,
         };
-        for text in self.texts {
-            corpus.add_text(&text);
+        for sym in self.texts {
+            if let Some(owned) = corpus.strings.resolve(sym).map(str::to_owned) {
+                corpus.add_text(&owned);
+            }
         }
         corpus
     }

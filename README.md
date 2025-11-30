@@ -18,23 +18,21 @@ To use it, add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-ngrammatic = "0.4.1"
+ngrammatic = "0.5"
 ```
 
-Or, to reduce memory usage for large corpuses, enable the "trie" feature:
+Or, for a possible improvement search speeds, enable the "rayon" feature:
 
 ```toml
 [dependencies]
-ngrammatic = { version = "0.4.1", features = ["trie"] }
+ngrammatic = { version = "0.5", features = ["rayon"] }
 ```
 
-Benchmarking suggests that trie is 30-45% slower for corpus creation and 25-45%
-slower for search.
-
-The `rayon` feature is available, and benchmark results show 0-3% performance
-improvement in search, but a 0-3% performance decline for corpus creation. It
-is possible to use serialized corpus creation and parallel search, which might
-yield the best overall results.
+Benchmark results show 0-80% performance improvement in search, but a 0-3%
+performance decline for corpus creation. With such a wide variation in
+performance impact, it was decided not to enable it by default. When enabled,
+it is possible to use any combination of serialized or parallelized methods
+depending on which shows better performance for your use cases.
 
 ### Usage
 To do fuzzy matching, build up your corpus of valid symbols like this:
