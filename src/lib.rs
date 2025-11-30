@@ -67,8 +67,9 @@ pub type StringMap<T> = HashMap<String, T>;
 
 // Import traits for rayon parallelization
 #[cfg(feature = "rayon")]
-use rayon::iter::{
-    IntoParallelIterator, IntoParallelRefIterator, ParallelExtend, ParallelIterator,
+use rayon::{
+    iter::IntoParallelIterator, iter::IntoParallelRefIterator, iter::ParallelExtend,
+    iter::ParallelIterator, slice::ParallelSliceMut,
 };
 
 /// Holds a fuzzy match search result string, and its associated similarity
@@ -129,7 +130,7 @@ impl Pad {
         match *self {
             Pad::Auto => " ".repeat(autopad_width),
             Pad::Pad(ref p) => p.to_string(),
-            Pad::None => "".to_string(),
+            Pad::None => String::new(),
         }
     }
 
@@ -140,7 +141,10 @@ impl Pad {
         pad_right: Pad,
         autopad_width: usize,
     ) -> String {
-        pad_left.to_string(autopad_width) + text + pad_right.to_string(autopad_width).as_ref()
+        let mut s = pad_left.to_string(autopad_width);
+        s.push_str(text);
+        s.push_str(&pad_right.to_string(autopad_width));
+        s
     }
 }
 
@@ -185,6 +189,9 @@ impl Ngram {
     /// Static method to calculate `Ngram` similarity based on samegram count,
     /// allgram count, and a `warp` factor.
     pub(crate) fn similarity(samegram_count: usize, allgram_count: usize, warp: f32) -> f32 {
+        if allgram_count == 0 {
+            return 0.0;
+        }
         let warp = warp.clamp(1.0, 3.0);
         let samegrams = samegram_count as f32;
         let allgrams = allgram_count as f32;
@@ -345,11 +352,11 @@ impl Ngram {
             return;
         }
         let chars_padded: Vec<char> = self.text_padded.chars().collect();
+        let mut tmp = String::with_capacity(self.arity);
         for window in chars_padded.windows(self.arity) {
-            let count = self
-                .grams
-                .entry(window.iter().collect::<String>())
-                .or_insert(0);
+            tmp.clear();
+            tmp.extend(window.iter());
+            let count = self.grams.entry(tmp.clone()).or_insert(0);
             *count += 1;
         }
     }
@@ -717,7 +724,7 @@ impl Corpus {
         let ngrams_to_consider: HashSet<&Ngram> = grams
             .par_iter()
             .filter_map(|gram| self.gram_to_words.get(gram.as_str()))
-            .flat_map(|words| words.par_iter().filter_map(|word| self.ngrams.get(word)))
+            .flat_map_iter(|words| words.iter().filter_map(|word| self.ngrams.get(word)))
             .collect();
         let mut results: Vec<SearchResult> = ngrams_to_consider
             .into_par_iter()

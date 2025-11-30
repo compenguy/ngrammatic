@@ -28,8 +28,13 @@ Or, to reduce memory usage for large corpuses, enable the "trie" feature:
 ngrammatic = { version = "0.4.1", features = ["trie"] }
 ```
 
-Additionally, the `rayon` feature is available which may improve performance
-some, but this has not yet been tested.
+Benchmarking suggests that trie is 30-45% slower for corpus creation and 25-45%
+slower for search.
+
+The `rayon` feature is available, and benchmark results show 0-3% performance
+improvement in search, but a 0-3% performance decline for corpus creation. It
+is possible to use serialized corpus creation and parallel search, which might
+yield the best overall results.
 
 ### Usage
 To do fuzzy matching, build up your corpus of valid symbols like this:
