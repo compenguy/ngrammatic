@@ -114,3 +114,15 @@ Here's a sample of data collected from the 0.5 version on my development machine
 Do note that those search times against the top domain names corpus were taking
 several seconds to complete in the case where a perfect match exists. It's unclear
 at the moment why search results with perfect matches always take significantly longer.
+
+### Areas for future improvement
+
+Adding string interning to the corpus was a really big performance and memory
+win. Unfortunately, updating `Ngram` with interning is quite a bit more
+complicated, and I'm open to proposals for how to accomplish it.
+
+Interning the grams themselves (`HashMap<String, usize>`) might be less of a
+win, though. The default symbol for StringInterner is a u32, while the string
+itself is the same size or small for `arity` <= 4. Because we don't actually
+care about the 'stringness' of the grams, something like a tinyvec<u8>
+pre-sized to `arity` could be a win.
