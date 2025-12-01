@@ -55,7 +55,7 @@ corpus.add_text("carbon");
 // Now we can try an unknown/misspelled word, and find a similar match
 // in the corpus
 let word = String::from("tomacco");
-if let Some(top_result) = corpus.search(word, 0.25).first() {
+if let Some(top_result) = corpus.search(word, 0.25, 10).first() {
     if top_result.similarity > 0.99 {
         println!("✔ {}", top_result.text);
     } else {
