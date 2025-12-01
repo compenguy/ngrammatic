@@ -807,7 +807,11 @@ impl CorpusBuilder {
         It: IntoIterator,
         It::Item: AsRef<str>,
     {
-        self.texts.extend(iterable.into_iter().map(|s| self.strings.get_or_intern(s.as_ref())));
+        self.texts.extend(
+            iterable
+                .into_iter()
+                .map(|s| self.strings.get_or_intern(s.as_ref())),
+        );
         self
     }
 
@@ -817,7 +821,7 @@ impl CorpusBuilder {
     pub fn fill_par<FillIt>(mut self, iterable: FillIt) -> Self
     where
         FillIt: rayon::iter::IntoParallelIterator,
-        String: From<<FillIt as IntoParallelIterator>::Item>
+        String: From<<FillIt as IntoParallelIterator>::Item>,
     {
         let tmp: Vec<String> = iterable.into_par_iter().map(<_>::into).collect();
         self.texts
