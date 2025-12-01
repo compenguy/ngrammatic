@@ -69,3 +69,48 @@ if let Some(top_result) = corpus.search(word, 0.25).first() {
 }
 ```
 
+### Benchmarking
+
+Some benchmarks exist to compare the performance of various scenarios.
+
+In order to run them, rayon must be enabled, e.g.:
+
+```
+cargo bench --features rayon
+```
+
+The benchmarks of the top-domains.txt file can take quite a long time to
+complete, as they're working against a very large dataset.
+
+Here's a sample of data collected from the 0.5 version on my development machine:
+
+| Test                                             | lower bound (ms) | typical (ms) | upper bound (ms) |
+| ------------------------------------------------ | ---------------- | ------------ | ---------------- |
+| novel parallel insertion case sensitive          |   84.477         |   84.857     |   85.236         |
+| novel parallel insertion case insensitive        |   83.806         |   84.185     |   84.581         |
+| novel serial insertion case sensitive            |   82.052         |   82.356     |   82.676         |
+| novel serial insertion case insensitive          |   81.476         |   81.793     |   82.135         |
+| random text parallel insertion case sensitive    |  154.46          |  154.95      |  155.45          |
+| random text parallel insertion case insensitive  |  156.2           |  156.74      |  157.31          |
+| random text serial insertion case sensitive      |  152.56          |  153.03      |  153.54          |
+| random text serial insertion case insensitive    |  153.9           |  154.28      |  154.67          |
+| domain names parallel insertion case sensitive   |  154.16          |  154.64      |  155.16          |
+| domain names parallel insertion case insensitive |  154.61          |  155.58      |  156.71          |
+| domain names serial insertion case sensitive     |  151.89          |  152.29      |  152.69          |
+| domain names serial insertion case insensitive   |  152.76          |  153.28      |  153.83          |
+| novel parallel search no match                   |    0.51049       |    0.51999   |    0.5306        |
+| novel parallel search match                      |    3.1019        |    3.1362    |    3.1746        |
+| novel serial search no match                     |    0.77879       |    0.77967   |    0.78066       |
+| novel serial search match                        |    6.9894        |    7.0099    |    7.0331        |
+| random text parallel search no match             |    0.50239       |    0.51616   |    0.53169       |
+| random text parallel search match                |    2.8231        |    2.8733    |    2.9281        |
+| random text serial search no match               |    1.4228        |    1.4238    |    1.4248        |
+| random text serial search match                  |   16.335         |   16.594     |   16.864         |
+| domain names parallel search no match            |   21.821         |   22.029     |   22.25          |
+| domain names parallel search match               | 2068.7           | 2071.8       | 2075.1           |
+| domain names serial search no match              |   81.061         |   81.687     |   82.348         |
+| domain names serial search match                 | 5898.3           | 5906.6       | 5914.9           |
+
+Do note that those search times against the top domain names corpus were taking
+several seconds to complete in the case where a perfect match exists. It's unclear
+at the moment why search results with perfect matches always take significantly longer.
