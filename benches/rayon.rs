@@ -155,33 +155,33 @@ fn bench_get_novel(c: &mut Criterion) {
 
     group.bench_function("novel parallel search no match", |b| {
         b.iter(|| {
-            corpus.search_par("ToMaTo", 0.90);
-            corpus.search_par("pOtAtO", 0.90);
-            corpus.search_par("CaRRoT", 0.90);
+            corpus.search_par("ToMaTo", 0.90, 10);
+            corpus.search_par("pOtAtO", 0.90, 10);
+            corpus.search_par("CaRRoT", 0.90, 10);
         });
     });
 
     group.bench_function("novel parallel search match", |b| {
         b.iter(|| {
-            corpus.search_par("cabbage", 0.90);
-            corpus.search_par("potato", 0.90);
-            corpus.search_par("carrot", 0.90);
+            corpus.search_par("cabbage", 0.90, 10);
+            corpus.search_par("potato", 0.90, 10);
+            corpus.search_par("carrot", 0.90, 10);
         });
     });
 
     group.bench_function("novel serial search no match", |b| {
         b.iter(|| {
-            corpus.search("ToMaTo", 0.90);
-            corpus.search("pOtAtO", 0.90);
-            corpus.search("CaRRoT", 0.90);
+            corpus.search("ToMaTo", 0.90, 10);
+            corpus.search("pOtAtO", 0.90, 10);
+            corpus.search("CaRRoT", 0.90, 10);
         });
     });
 
     group.bench_function("novel serial search match", |b| {
         b.iter(|| {
-            corpus.search("cabbage", 0.90);
-            corpus.search("potato", 0.90);
-            corpus.search("carrot", 0.90);
+            corpus.search("cabbage", 0.90, 10);
+            corpus.search("potato", 0.90, 10);
+            corpus.search("carrot", 0.90, 10);
         });
     });
 
@@ -195,33 +195,33 @@ fn bench_get_random(c: &mut Criterion) {
 
     group.bench_function("random text parallel search no match", |b| {
         b.iter(|| {
-            corpus.search_par("ToMaTo", 0.90);
-            corpus.search_par("pOtAtO", 0.90);
-            corpus.search_par("CaRRoT", 0.90);
+            corpus.search_par("ToMaTo", 0.90, 10);
+            corpus.search_par("pOtAtO", 0.90, 10);
+            corpus.search_par("CaRRoT", 0.90, 10);
         });
     });
 
     group.bench_function("random text parallel search match", |b| {
         b.iter(|| {
-            corpus.search_par("qsratf2ar", 0.90);
-            corpus.search_par("fimm5mm2f", 0.90);
-            corpus.search_par("d85rrz3l3a", 0.90);
+            corpus.search_par("qsratf2ar", 0.90, 10);
+            corpus.search_par("fimm5mm2f", 0.90, 10);
+            corpus.search_par("d85rrz3l3a", 0.90, 10);
         });
     });
 
     group.bench_function("random text serial search no match", |b| {
         b.iter(|| {
-            corpus.search("ToMaTo", 0.90);
-            corpus.search("pOtAtO", 0.90);
-            corpus.search("CaRRoT", 0.90);
+            corpus.search("ToMaTo", 0.90, 10);
+            corpus.search("pOtAtO", 0.90, 10);
+            corpus.search("CaRRoT", 0.90, 10);
         });
     });
 
     group.bench_function("random text serial search match", |b| {
         b.iter(|| {
-            corpus.search("qsratf2ar", 0.90);
-            corpus.search("fimm5mm2f", 0.90);
-            corpus.search("d85rrz3l3a", 0.90);
+            corpus.search("qsratf2ar", 0.90, 10);
+            corpus.search("fimm5mm2f", 0.90, 10);
+            corpus.search("d85rrz3l3a", 0.90, 10);
         });
     });
 
@@ -235,33 +235,33 @@ fn bench_get_domainnames(c: &mut Criterion) {
 
     group.bench_function("domain names parallel search no match", |b| {
         b.iter(|| {
-            corpus.search_par("ToMaTo", 0.90);
-            corpus.search_par("pOtAtO", 0.90);
-            corpus.search_par("CaRRoT", 0.90);
+            corpus.search_par("ToMaTo", 0.90, 10);
+            corpus.search_par("pOtAtO", 0.90, 10);
+            corpus.search_par("CaRRoT", 0.90, 10);
         });
     });
 
     group.bench_function("domain names parallel search match", |b| {
         b.iter(|| {
-            corpus.search_par("steampowered.com", 0.90);
-            corpus.search_par("steamgifts.com", 0.90);
-            corpus.search_par("steamcommunity.com", 0.90);
+            corpus.search_par("steampowered.com", 0.90, 10);
+            corpus.search_par("steamgifts.com", 0.90, 10);
+            corpus.search_par("steamcommunity.com", 0.90, 10);
         });
     });
 
     group.bench_function("domain names serial search no match", |b| {
         b.iter(|| {
-            corpus.search("ToMaTo", 0.90);
-            corpus.search("pOtAtO", 0.90);
-            corpus.search("CaRRoT", 0.90);
+            corpus.search("ToMaTo", 0.90, 10);
+            corpus.search("pOtAtO", 0.90, 10);
+            corpus.search("CaRRoT", 0.90, 10);
         });
     });
 
     group.bench_function("domain names serial search match", |b| {
         b.iter(|| {
-            corpus.search("steampowered.com", 0.90);
-            corpus.search("steamgifts.com", 0.90);
-            corpus.search("steamcommunity.com", 0.90);
+            corpus.search("steampowered.com", 0.90, 10);
+            corpus.search("steamgifts.com", 0.90, 10);
+            corpus.search("steamcommunity.com", 0.90, 10);
         });
     });
 
