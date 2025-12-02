@@ -31,21 +31,20 @@ To use it, add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-ngrammatic = "0.5"
+ngrammatic = "0.7"
 ```
 
 Or, for a possible improvement search speeds, enable the "rayon" feature:
 
 ```toml
 [dependencies]
-ngrammatic = { version = "0.5", features = ["rayon"] }
+ngrammatic = { version = "0.7", features = ["rayon"] }
 ```
 
-Benchmark results show 0-80% performance improvement in search, but a 0-3%
-performance decline for corpus creation. With such a wide variation in
-performance impact, it was decided not to enable it by default. When enabled,
-it is possible to use any combination of serialized or parallelized methods
-depending on which shows better performance for your use cases.
+Benchmark results show rayon offers a 30-80% performance improvement in search,
+but about a 2% performance decline for corpus creation. When enabling rayon,
+you'll likely see better results using serial corpus creation and parallel
+search, but this is no substitute for running your own benchmarks.
 
 ## Usage example
 To do fuzzy matching, build up your corpus of valid symbols like this:
@@ -88,34 +87,34 @@ $ cargo bench --features rayon
 The benchmarks of the top-domains.txt file can take quite a long time to
 complete, as they're working against a very large dataset.
 
-Here's a sample of data collected from the 0.5 version on my development machine:
+Here's a sample of data collected from the 0.7 version on my development machine (approx. 15-20% faster than 0.5!):
 
 | Test                                             | lower bound (ms) | typical (ms) | upper bound (ms) |
 | ------------------------------------------------ | ---------------- | ------------ | ---------------- |
-| novel parallel insertion case sensitive          |   84.477         |   84.857     |   85.236         |
-| novel parallel insertion case insensitive        |   83.806         |   84.185     |   84.581         |
-| novel serial insertion case sensitive            |   82.052         |   82.356     |   82.676         |
-| novel serial insertion case insensitive          |   81.476         |   81.793     |   82.135         |
-| random text parallel insertion case sensitive    |  154.46          |  154.95      |  155.45          |
-| random text parallel insertion case insensitive  |  156.2           |  156.74      |  157.31          |
-| random text serial insertion case sensitive      |  152.56          |  153.03      |  153.54          |
-| random text serial insertion case insensitive    |  153.9           |  154.28      |  154.67          |
-| domain names parallel insertion case sensitive   |  154.16          |  154.64      |  155.16          |
-| domain names parallel insertion case insensitive |  154.61          |  155.58      |  156.71          |
-| domain names serial insertion case sensitive     |  151.89          |  152.29      |  152.69          |
-| domain names serial insertion case insensitive   |  152.76          |  153.28      |  153.83          |
-| novel parallel search no match                   |    0.51049       |    0.51999   |    0.5306        |
-| novel parallel search match                      |    3.1019        |    3.1362    |    3.1746        |
-| novel serial search no match                     |    0.77879       |    0.77967   |    0.78066       |
-| novel serial search match                        |    6.9894        |    7.0099    |    7.0331        |
-| random text parallel search no match             |    0.50239       |    0.51616   |    0.53169       |
-| random text parallel search match                |    2.8231        |    2.8733    |    2.9281        |
-| random text serial search no match               |    1.4228        |    1.4238    |    1.4248        |
-| random text serial search match                  |   16.335         |   16.594     |   16.864         |
-| domain names parallel search no match            |   21.821         |   22.029     |   22.25          |
-| domain names parallel search match               | 2068.7           | 2071.8       | 2075.1           |
-| domain names serial search no match              |   81.061         |   81.687     |   82.348         |
-| domain names serial search match                 | 5898.3           | 5906.6       | 5914.9           |
+| novel parallel insertion case sensitive          |   69.424         |   69.680     |   69.951         |
+| novel parallel insertion case insensitive        |   69.865         |   70.118     |   70.392         |
+| novel serial insertion case sensitive            |   67.468         |   67.715     |   67.976         |
+| novel serial insertion case insensitive          |   68.839         |   69.253     |   69.698         |
+| random text parallel insertion case sensitive    |  107.67          |  107.94      |  108.22          |
+| random text parallel insertion case insensitive  |  109.89          |  110.41      |  110.97          |
+| random text serial insertion case sensitive      |  107.46          |  107.90      |  108.41          |
+| random text serial insertion case insensitive    |  108.04          |  108.39      |  108.77          |
+| domain names parallel insertion case sensitive   |  108.76          |  109.15      |  109.56          |
+| domain names parallel insertion case insensitive |  108.96          |  109.27      |  109.59          |
+| domain names serial insertion case sensitive     |  107.00          |  107.23      |  107.46          |
+| domain names serial insertion case insensitive   |  107.70          |  107.93      |  108.19          |
+| novel parallel search no match                   |    0.49750       |    0.50972   |    0.52333       |
+| novel parallel search match                      |    2.9885        |    3.0266    |    3.0700        |
+| novel serial search no match                     |    0.75857       |    0.75919   |    0.75993       |
+| novel serial search match                        |    6.7814        |    6.8057    |    6.8324        |
+| random text parallel search no match             |    0.47633       |    0.49054   |    0.50553       |
+| random text parallel search match                |    2.6893        |    2.7269    |    2.7673        |
+| random text serial search no match               |    1.3826        |    1.3860    |    1.3901        |
+| random text serial search match                  |   13.709         |   13.940     |   14.182         |
+| domain names parallel search no match            |   15.018         |   15.194     |   15.379         |
+| domain names parallel search match               | 1590.0           | 1593.5       | 1597.1           |
+| domain names serial search no match              |   61.813         |   62.431     |   63.085         |
+| domain names serial search match                 | 4466.2           | 4475.0       | 4498.9           |
 
 Do note that those search times against the top domain names corpus were taking
 several seconds to complete in the case where a perfect match exists. It's unclear
@@ -127,8 +126,7 @@ Adding string interning to the corpus was a really big performance and memory
 win. Unfortunately, updating `Ngram` with interning is quite a bit more
 complicated, and I'm open to proposals for how to accomplish it.
 
-Interning the grams themselves (`HashMap<String, usize>`) might be less of a
-win, though. The default symbol for StringInterner is a u32, while the string
-itself is the same size or small for `arity` <= 4. Because we don't actually
-care about the 'stringness' of the grams, something like a tinyvec<u8>
-pre-sized to `arity` could be a win.
+In the meantime, replacing Strings in `Ngram` with SmolStrs netted about a 15%
+performance win vs without.
+
+New major gains will likely require some thoughtful cpu and memory profiling.
