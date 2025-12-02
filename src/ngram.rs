@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::f32;
 use std::hash::{Hash, Hasher};
 
+use smol_str::SmolStr;
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -15,16 +17,13 @@ pub struct Ngram {
     /// The "symbol size" for the ngrams
     pub arity: usize,
     /// The text for which ngrams were generated
-    pub text: String,
+    pub text: SmolStr,
     /// The text for which ngrams were generated, with the padding
     /// used for generating the ngrams
-    pub text_padded: String,
+    pub text_padded: SmolStr,
     /// A collection of all generated ngrams for the text, with a
     /// count of how many times that ngram appears in the text
-    // TODO: this should benefit from const generics, as a [u8; arity]
-    // significantly reducing overhead
-    // to a size of `arity` bytes, which is typically pretty small
-    pub grams: HashMap<String, usize>,
+    pub grams: HashMap<SmolStr, usize>,
 }
 
 impl PartialEq for Ngram {
@@ -40,13 +39,6 @@ impl Hash for Ngram {
         self.arity.hash(state);
     }
 }
-
-// TODO: When rust adds const generics
-// (see https://github.com/rust-lang/rust/issues/44580)
-// switch Ngram's "arity" member to be a const generic
-// on Ngram, and implement From(String) so that we can
-// do things like Ngram::<3>::From(text) to construct
-// new ngrams
 
 impl Ngram {
     /// Static method to calculate `Ngram` similarity based on samegram count,
@@ -127,7 +119,7 @@ impl Ngram {
     ) -> Option<SearchResult> {
         let similarity = self.similarity_to(other, warp);
         if similarity >= threshold {
-            Some(SearchResult::new(other.text.clone(), similarity))
+            Some(SearchResult::new(other.text.to_string(), similarity))
         } else {
             None
         }
@@ -219,7 +211,7 @@ impl Ngram {
         for window in chars_padded.windows(self.arity) {
             tmp.clear();
             tmp.extend(window.iter());
-            let count = self.grams.entry(tmp.clone()).or_insert(0);
+            let count = self.grams.entry(SmolStr::new(&tmp)).or_insert(0);
             *count += 1;
         }
     }
@@ -339,8 +331,8 @@ impl NgramBuilder {
     pub fn finish(self) -> Ngram {
         let mut ngram = Ngram {
             arity: self.arity,
-            text: self.text.clone(),
-            text_padded: Pad::pad_text(&self.text, self.pad_left, self.pad_right, self.arity - 1),
+            text: SmolStr::new(&self.text),
+            text_padded: SmolStr::new(Pad::pad_text(&self.text, self.pad_left, self.pad_right, self.arity - 1)),
             grams: HashMap::new(),
         };
         ngram.init();

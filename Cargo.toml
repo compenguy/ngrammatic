@@ -1,7 +1,7 @@
 [package]
 name = "ngrammatic"
-version = "0.6.0"
-authors = ["Will Page <compenguy@gmail.com>"]
+version = "0.7.0"
+authors = ["William Page <williamtpage@gmail.com>"]
 description = "Character-oriented ngram generator and fuzzy matching library."
 homepage = "https://github.com/compenguy/ngrammatic"
 repository = "https://github.com/compenguy/ngrammatic"
@@ -16,13 +16,14 @@ rust-version = "1.61"
 [features]
 default = []
 rayon = ["dep:rayon"]
-serde = ["dep:serde"]
+serde = ["dep:serde", "smol_str/serde"]
 
 [lib]
 name = "ngrammatic"
 
 [dependencies]
 string-interner = "0.19"
+smol_str = { version = "0.2", default-features = false }
 rayon = { version = "1.11", optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
 
